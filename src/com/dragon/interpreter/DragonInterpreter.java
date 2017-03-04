@@ -48,7 +48,7 @@ public class DragonInterpreter extends com.dragon.lang.DragonBasicInterpreter {
 
     private void init() {
         try {
-            linkNativeMethod(DragonNativeMethod.wrapJavaMethod(new DragonBuiltinInterface()));
+            linkNativeMethod(DragonNativeMethod.wrapJavaMethod(new DragonBuiltinInterface(this)));
 
         } catch (Exception e) {
             e.printStackTrace();

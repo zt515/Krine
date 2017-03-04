@@ -6,10 +6,15 @@ import com.dragon.extension.DragonNativeInterface;
  * Created by kiva on 2017/2/24.
  */
 public class DragonBuiltinInterface {
+    private DragonInterpreter interpreter;
+
+    public DragonBuiltinInterface(DragonInterpreter interpreter) {
+        this.interpreter = interpreter;
+    }
 
     @DragonNativeInterface
     public void print(Object o) {
-        System.out.println(o.toString());
+        interpreter.print(o.toString());
     }
 
     @DragonNativeInterface
