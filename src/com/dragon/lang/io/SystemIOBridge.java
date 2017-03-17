@@ -9,8 +9,6 @@ import java.io.Reader;
  * <p>
  * A simple console may ignore some of these or map them to trivial
  * implementations.  e.g. print() with color can be mapped to plain text.
- *
- * @see dragon.util.GUIConsoleInterface
  */
 public interface SystemIOBridge {
     Reader getIn();

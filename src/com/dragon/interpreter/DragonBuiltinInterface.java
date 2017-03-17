@@ -3,7 +3,8 @@ package com.dragon.interpreter;
 import com.dragon.extension.DragonNativeInterface;
 
 /**
- * Created by kiva on 2017/2/24.
+ * @author kiva
+ * @date 2017/2/24
  */
 public class DragonBuiltinInterface {
     private DragonInterpreter interpreter;

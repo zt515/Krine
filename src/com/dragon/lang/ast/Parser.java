@@ -9,7 +9,7 @@ import java.io.Reader;
 /**
  * This is the Dragon parser.  It is used internally by the DragonInterpreter
  * class (which is probably what you are looking for).  The parser knows
- * only how to parse the structure of the language, it does not understand
+ * only how to init the structure of the language, it does not understand
  * names, commands, etc.
  * <p>
  * You can use the Parser from the command line to do basic structural

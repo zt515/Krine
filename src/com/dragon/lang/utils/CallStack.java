@@ -52,7 +52,7 @@ import java.util.Stack;
  * <p>
  * Note: How can this be thread safe, you might ask?  Wouldn't a thread
  * executing various beanshell methods be mutating the callStack?  Don't we
- * need one CallStack per Thread in the dragonInterpreterInternal?  The answer is that we do.
+ * need one CallStack per Thread in the dragonBasicInterpreter?  The answer is that we do.
  * Any java.lang.Thread enters our script via an external (hard) Java
  * reference via a This type interface, e.g.  the Runnable interface
  * implemented by This or an arbitrary interface implemented by XThis.

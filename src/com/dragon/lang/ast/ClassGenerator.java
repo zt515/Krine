@@ -17,7 +17,7 @@ import java.util.List;
 public final class ClassGenerator {
 
     private static ClassGenerator cg;
-    private static final String DEBUG_DIR = System.getProperty("dragon.debugClasses");
+    private static final String DEBUG_DIR = System.getProperty("dragon.debugClassssDir");
 
 
     public static ClassGenerator getClassGenerator() {
@@ -43,9 +43,9 @@ public final class ClassGenerator {
      * This is not a normal function of the Java reflection API and is
      * provided by generated class accessor methods.
      */
-    public Object invokeSuperclassMethod(DragonClassManager bcm, Object instance, String methodName, Object[] args) throws UtilEvalException, ReflectException, InvocationTargetException {
+    public Object invokeSuperclassMethod(DragonClassManager dcm, Object instance, String methodName, Object[] args) throws UtilEvalException, ReflectException, InvocationTargetException {
         // Delegate to the static method
-        return invokeSuperclassMethodImpl(bcm, instance, methodName, args);
+        return invokeSuperclassMethodImpl(dcm, instance, methodName, args);
     }
 
 
@@ -71,9 +71,9 @@ public final class ClassGenerator {
         String className = enclosingNameSpace.isClass ? (enclosingNameSpace.getName() + "$" + name) : name;
         String fqClassName = packageName == null ? className : packageName + "." + className;
 
-        DragonClassManager bcm = dragonBasicInterpreter.getClassManager();
+        DragonClassManager dcm = dragonBasicInterpreter.getClassManager();
         // Race condition here...
-        bcm.definingClass(fqClassName);
+        dcm.definingClass(fqClassName);
 
         // Create the class static namespace
         NameSpace classStaticNameSpace = new NameSpace(enclosingNameSpace, className);
@@ -102,7 +102,7 @@ public final class ClassGenerator {
         }
 
         // Define the new class in the classloader
-        Class genClass = bcm.defineClass(fqClassName, code);
+        Class genClass = dcm.defineClass(fqClassName, code);
 
         // import the unq name into parent
         enclosingNameSpace.importClass(fqClassName.replace('$', '.'));
@@ -133,7 +133,7 @@ public final class ClassGenerator {
             }
         }
 
-        bcm.doneDefiningClass(fqClassName);
+        dcm.doneDefiningClass(fqClassName);
         return genClass;
     }
 
@@ -236,18 +236,18 @@ public final class ClassGenerator {
     }
 
 
-    public static Object invokeSuperclassMethodImpl(DragonClassManager bcm, Object instance, String methodName, Object[] args) throws UtilEvalException, ReflectException, InvocationTargetException {
+    public static Object invokeSuperclassMethodImpl(DragonClassManager dcm, Object instance, String methodName, Object[] args) throws UtilEvalException, ReflectException, InvocationTargetException {
         String superName = ClassGeneratorUtil.DRAGONSUPER + methodName;
 
         // look for the specially named super delegate method
         Class clas = instance.getClass();
-        Method superMethod = Reflect.resolveJavaMethod(bcm, clas, superName, Types.getTypes(args), false/*onlyStatic*/);
+        Method superMethod = Reflect.resolveJavaMethod(dcm, clas, superName, Types.getTypes(args), false/*onlyStatic*/);
         if (superMethod != null) return Reflect.invokeMethod(superMethod, instance, args);
 
         // No super method, try to invoke regular method
         // could be a superfluous "super." which is legal.
         Class superClass = clas.getSuperclass();
-        superMethod = Reflect.resolveExpectedJavaMethod(bcm, superClass, instance, methodName, args, false/*onlyStatic*/);
+        superMethod = Reflect.resolveExpectedJavaMethod(dcm, superClass, instance, methodName, args, false/*onlyStatic*/);
         return Reflect.invokeMethod(superMethod, instance, args);
     }
 

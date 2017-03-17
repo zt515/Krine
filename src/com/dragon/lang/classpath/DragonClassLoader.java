@@ -135,7 +135,7 @@ public class DragonClassLoader extends URLClassLoader {
         // Deal with this cast somehow... maybe have this class use
         // ClassManagerImpl type directly.
         // Don't add the method to DragonClassManager... it's really an impl thing
-        ClassManagerImpl bcm = (ClassManagerImpl) getClassManager();
+        ClassManagerImpl dcm = (ClassManagerImpl) getClassManager();
 
         // Should we try to load the class ourselves or delegate?
         // look for overlay loader
@@ -143,7 +143,7 @@ public class DragonClassLoader extends URLClassLoader {
         // Deal with this cast somehow... maybe have this class use
         // ClassManagerImpl type directly.
         // Don't add the method to DragonClassManager... it's really an impl thing
-        ClassLoader cl = bcm.getLoaderForClass(name);
+        ClassLoader cl = dcm.getLoaderForClass(name);
 
         Class c;
 
@@ -167,7 +167,7 @@ public class DragonClassLoader extends URLClassLoader {
 
 
         // If there is a baseLoader and it's not us delegate to it
-        cl = bcm.getBaseLoader();
+        cl = dcm.getBaseLoader();
 
         if (cl != null && cl != this)
             try {
@@ -176,7 +176,7 @@ public class DragonClassLoader extends URLClassLoader {
             }
 
         // Try system loader
-        return bcm.plainClassForName(name);
+        return dcm.plainClassForName(name);
     }
 
 	/*

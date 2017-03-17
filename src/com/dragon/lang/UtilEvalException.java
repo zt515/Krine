@@ -43,7 +43,7 @@ public class UtilEvalException extends Exception {
      * the node.  If a node already exists the addNode is ignored.
      *
      * @param msg may be null for no additional message.
-     * @see #setNode(dragon.SimpleNode)
+     * @see com.dragon.lang.ast.EvalError#setNode(com.dragon.lang.ast.SimpleNode)
      * <p>
      */
     public EvalError toEvalError(

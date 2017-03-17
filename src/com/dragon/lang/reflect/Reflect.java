@@ -1,6 +1,9 @@
 package com.dragon.lang.reflect;
 
-import com.dragon.lang.*;
+import com.dragon.lang.DragonBasicInterpreter;
+import com.dragon.lang.InterpreterException;
+import com.dragon.lang.UtilEvalException;
+import com.dragon.lang.UtilTargetException;
 import com.dragon.lang.ast.*;
 import com.dragon.lang.classpath.DragonClassManager;
 import com.dragon.lang.utils.CallStack;
@@ -14,19 +17,17 @@ import java.util.*;
  * All of the reflection API code lies here.  It is in the form of static
  * utilities.  Maybe this belongs in LeftValue.java or a generic object
  * wrapper class.
+ * Note: This class is messy.  The method and field resolution need to be
+ * rewritten.  Various methods in here catch NoSuchMethod or NoSuchField
+ * exceptions during their searches.  These should be rewritten to avoid
+ * having to catch the exceptions.  Method lookups are now cached at a high
+ * level so they are less important, however the logic is messy.
  */
-/*
-    Note: This class is messy.  The method and field resolution need to be
-	rewritten.  Various methods in here catch NoSuchMethod or NoSuchField
-	exceptions during their searches.  These should be rewritten to avoid
-	having to catch the exceptions.  Method lookups are now cached at a high 
-	level so they are less important, however the logic is messy.
-*/
 public final class Reflect {
 
 
     /**
-     * A comperator wich sorts methods according to {@@link #getVisibility}.
+     * A comparator which sorts methods according to {@link #getVisibility}.
      */
     public static final Comparator<Method> METHOD_COMPARATOR = new Comparator<Method>() {
         public int compare(final Method a, final Method b) {
@@ -53,10 +54,10 @@ public final class Reflect {
 
         // Plain Java object, find the java method
         try {
-            DragonClassManager bcm = dragonBasicInterpreter == null ? null : dragonBasicInterpreter.getClassManager();
-            Class clas = object.getClass();
+            DragonClassManager dcm = dragonBasicInterpreter == null ? null : dragonBasicInterpreter.getClassManager();
+            Class clazz = object.getClass();
 
-            Method method = resolveExpectedJavaMethod(bcm, clas, object, methodName, args, false);
+            Method method = resolveExpectedJavaMethod(dcm, clazz, object, methodName, args, false);
 
             return invokeMethod(method, object, args);
         } catch (UtilEvalException e) {
@@ -70,9 +71,9 @@ public final class Reflect {
      * No object instance is needed and there is no possibility of the
      * method being a dragon scripted method.
      */
-    public static Object invokeStaticMethod(DragonClassManager bcm, Class clas, String methodName, Object[] args) throws ReflectException, UtilEvalException, InvocationTargetException {
+    public static Object invokeStaticMethod(DragonClassManager dcm, Class clas, String methodName, Object[] args) throws ReflectException, UtilEvalException, InvocationTargetException {
         DragonBasicInterpreter.debug("invoke static Method");
-        Method method = resolveExpectedJavaMethod(bcm, clas, null, methodName, args, true);
+        Method method = resolveExpectedJavaMethod(dcm, clas, null, methodName, args, true);
         return invokeMethod(method, null, args);
     }
 
@@ -93,7 +94,7 @@ public final class Reflect {
         boolean isVarArgs = method.isVarArgs();
 
         // Map types to assignable forms, need to keep this fast...
-        Class[] types = method.getParameterTypes();
+        Class<?>[] types = method.getParameterTypes();
         Object[] tmpArgs = new Object[types.length];
         int fixedArgLen = types.length;
         if (isVarArgs) {
@@ -169,12 +170,10 @@ public final class Reflect {
 
 
     public static Object getStaticFieldValue(Class clas, String fieldName) throws UtilEvalException, ReflectException {
-        return getFieldValue(clas, null, fieldName, true/*onlystatic*/);
+        return getFieldValue(clas, null, fieldName, true/*onlyStatic*/);
     }
 
 
-    /**
-     */
     public static Object getObjectFieldValue(Object object, String fieldName) throws UtilEvalException, ReflectException {
         if (object instanceof This) {
             return ((This) object).namespace.getVariable(fieldName);
@@ -183,9 +182,9 @@ public final class Reflect {
             throw new UtilTargetException(new NullPointerException("Attempt to access field '" + fieldName + "' on null value"));
         } else {
             try {
-                return getFieldValue(object.getClass(), object, fieldName, false/*onlystatic*/);
+                return getFieldValue(object.getClass(), object, fieldName, false/*onlyStatic*/);
             } catch (ReflectException e) {
-                // no field, try property acces
+                // no field, try property access
 
                 if (hasObjectPropertyGetter(object.getClass(), fieldName)) {
                     return getObjectProperty(object, fieldName);
@@ -198,7 +197,7 @@ public final class Reflect {
 
 
     public static LeftValue getLHSStaticField(Class clas, String fieldName) throws UtilEvalException, ReflectException {
-        Field f = resolveExpectedJavaField(clas, fieldName, true/*onlystatic*/);
+        Field f = resolveExpectedJavaField(clas, fieldName, true/*onlyStatic*/);
         return new LeftValue(f);
     }
 
@@ -231,29 +230,28 @@ public final class Reflect {
     }
 
 
-    private static Object getFieldValue(Class clas, Object object, String fieldName, boolean staticOnly) throws UtilEvalException, ReflectException {
+    private static Object getFieldValue(Class clazz, Object object, String fieldName, boolean staticOnly) throws UtilEvalException, ReflectException {
         try {
-            Field f = resolveExpectedJavaField(clas, fieldName, staticOnly);
+            Field f = resolveExpectedJavaField(clazz, fieldName, staticOnly);
 
             Object value = f.get(object);
             Class returnType = f.getType();
             return Primitive.wrap(value, returnType);
 
         } catch (NullPointerException e) { // shouldn't happen
-            throw new ReflectException("???" + fieldName + " is not a static field.");
+            throw new ReflectException(fieldName + " is not a static field.");
         } catch (IllegalAccessException e) {
             throw new ReflectException("Can't access field: " + fieldName);
         }
     }
 
-	/*
-             Note: this method and resolveExpectedJavaField should be rewritten
-			 to invert this logic so that no exceptions need to be caught
-			 unecessarily.  This is just a temporary impl.
-			 @return the field or null if not found
-		 */
-
-
+    /**
+     * Note: this method and resolveExpectedJavaField should be rewritten
+     * to invert this logic so that no exceptions need to be caught
+     * unnecessarily.  This is just a temporary impl.
+     *
+     * @return the field or null if not found
+     */
     public static Field resolveJavaField(Class clas, String fieldName, boolean staticOnly) throws UtilEvalException {
         try {
             return resolveExpectedJavaField(clas, fieldName, staticOnly);
@@ -265,11 +263,9 @@ public final class Reflect {
 
     /**
      * @throws ReflectException if the field is not found.
+     *                          Note: this should really just throw NoSuchFieldException... need
+     *                          to change related signatures and code.
      */
-    /*
-             Note: this should really just throw NoSuchFieldException... need
-			 to change related signatures and code.
-		 */
     protected static Field resolveExpectedJavaField(Class clas, String fieldName, boolean staticOnly) throws UtilEvalException, ReflectException {
         Field field;
         try {
@@ -295,7 +291,7 @@ public final class Reflect {
 
 
     /**
-     * Used when accessibility capability is available to locate an occurrance
+     * Used when accessibility capability is available to locate an occurrence
      * of the field in the most derived class or superclass and set its
      * accessibility flag.
      * Note that this method is not needed in the simple non accessible
@@ -308,8 +304,8 @@ public final class Reflect {
      * @return the Field or throws NoSuchFieldException
      * @throws NoSuchFieldException if the field is not found
      */
-	/*
-			 This method should be rewritten to use getFields() and avoid catching
+    /*
+             This method should be rewritten to use getFields() and avoid catching
 			 exceptions during the search.
 		 */
     private static Field findAccessibleField(Class clas, String fieldName) throws UtilEvalException, NoSuchFieldException {
@@ -324,8 +320,7 @@ public final class Reflect {
             try {
                 while (clas != null) {
                     final Field[] declaredFields = clas.getDeclaredFields();
-                    for (int i = 0; i < declaredFields.length; i++) {
-                        Field field = declaredFields[i];
+                    for (Field field : declaredFields) {
                         if (field.getName().equals(fieldName)) {
                             field.setAccessible(true);
                             return field;
@@ -345,14 +340,14 @@ public final class Reflect {
      * This method wraps resolveJavaMethod() and expects a non-null method
      * result. If the method is not found it throws a descriptive ReflectException.
      */
-    public static Method resolveExpectedJavaMethod(DragonClassManager bcm, Class clas, Object object, String name, Object[] args, boolean staticOnly) throws ReflectException, UtilEvalException {
+    public static Method resolveExpectedJavaMethod(DragonClassManager dcm, Class clas, Object object, String name, Object[] args, boolean staticOnly) throws ReflectException, UtilEvalException {
         if (object == Primitive.NULL) {
             //noinspection ThrowableInstanceNeverThrown
             throw new UtilTargetException(new NullPointerException("Attempt to invoke method " + name + " on null value"));
         }
 
         Class[] types = Types.getTypes(args);
-        Method method = resolveJavaMethod(bcm, clas, name, types, staticOnly);
+        Method method = resolveJavaMethod(dcm, clas, name, types, staticOnly);
 
         if (method == null) {
             throw new ReflectException((staticOnly ? "Static method " : "Method ") + StringUtil.methodString(name, types) + " not found in class'" + clas.getName() + "'");
@@ -374,7 +369,7 @@ public final class Reflect {
      * <p/>
      * <p/>
      * This method determines whether to attempt to use non-public methods
-     * based on Capabilities.haveAccessibility() and will set the accessibilty
+     * based on Capabilities.haveAccessibility() and will set the accessibility
      * flag on the method as necessary.
      * <p/>
      * <p/>
@@ -388,22 +383,22 @@ public final class Reflect {
      * @param staticOnly The method located must be static, the object param may be null.
      * @return the method or null if no matching method was found.
      */
-    public static Method resolveJavaMethod(DragonClassManager bcm, Class clas, String name, Class[] types, boolean staticOnly) throws UtilEvalException {
+    public static Method resolveJavaMethod(DragonClassManager dcm, Class clas, String name, Class[] types, boolean staticOnly) throws UtilEvalException {
         if (clas == null) {
             throw new InterpreterException("null class");
         }
 
         // Lookup previously cached method
         Method method = null;
-        if (bcm == null) {
+        if (dcm == null) {
             DragonBasicInterpreter.debug("resolveJavaMethod UNOPTIMIZED lookup");
         } else {
-            method = bcm.getResolvedMethod(clas, name, types, staticOnly);
+            method = dcm.getResolvedMethod(clas, name, types, staticOnly);
         }
 
         if (method == null) {
             boolean publicOnly = !Capabilities.haveAccessibility();
-            // Searching for the method may, itself be a priviledged action
+            // Searching for the method may, itself be a priviliged action
             try {
                 method = findOverloadedMethod(clas, name, types, publicOnly);
             } catch (SecurityException e) {
@@ -429,8 +424,8 @@ public final class Reflect {
             }
 
             // If succeeded cache the resolved method.
-            if (method != null && bcm != null) {
-                bcm.cacheResolvedMethod(clas, types, method);
+            if (method != null && dcm != null) {
+                dcm.cacheResolvedMethod(clas, types, method);
             }
         }
 
@@ -462,10 +457,10 @@ public final class Reflect {
 
     /**
      * Accumulate all matching methods, including non-public methods in the
-     * inheritence tree of provided baseClass.
+     * inheritance tree of provided baseClass.
      * <p/>
      * This method is analogous to Class getMethods() which returns all public
-     * methods in the inheritence tree.
+     * methods in the inheritance tree.
      * <p/>
      * In the normal (non-accessible) case this also addresses the problem
      * that arises when a package private class or private inner class
@@ -506,7 +501,7 @@ public final class Reflect {
      * invocation because constructors are not inherited.
      * <p/>
      * This method determines whether to attempt to use non-public constructors
-     * based on Capabilities.haveAccessibility() and will set the accessibilty
+     * based on Capabilities.haveAccessibility() and will set the accessibility
      * flag on the method as necessary.
      * <p/>
      */
@@ -537,7 +532,7 @@ public final class Reflect {
         try {
             return con.newInstance(args);
         } catch (InstantiationException e) {
-            throw new ReflectException("The class " + clas + " is abstract ", e);
+            throw new ReflectException("Class " + clas + " is abstract ", e);
         } catch (IllegalAccessException e) {
             throw new ReflectException("We don't have permission to create an instance. Use setAccessibility(true) to enable access.", e);
         } catch (IllegalArgumentException e) {
@@ -546,12 +541,12 @@ public final class Reflect {
     }
 
 
-    /*
-            This method should parallel findMostSpecificMethod()
-            The only reason it can't be combined is that Method and Constructor
-            don't have a common interface for their signatures
-        */
-    static Constructor findMostSpecificConstructor(Class[] idealMatch, Constructor[] constructors) {
+    /**
+     * This method should parallel findMostSpecificMethod()
+     * The only reason it can't be combined is that Method and Constructor
+     * don't have a common interface for their signatures
+     */
+    public static Constructor findMostSpecificConstructor(Class[] idealMatch, Constructor[] constructors) {
         int match = findMostSpecificConstructorIndex(idealMatch, constructors);
         return (match == -1) ? null : constructors[match];
     }
@@ -618,18 +613,17 @@ public final class Reflect {
      * unfortunately don't share a common interface for signature info).
      *
      * @return the index of the most specific candidate
+     * <p>
+     * Note: Two methods which are equally specific should not be allowed by
+     * the Java compiler.  In this case Dragon currently chooses the first
+     * one it finds.  We could add a test for this case here (I believe) by
+     * adding another isSignatureAssignable() in the other direction between
+     * the target and "best" match.  If the assignment works both ways then
+     * neither is more specific and they are ambiguous.  I'll leave this test
+     * out for now because I'm not sure how much another test would impact
+     * performance.  Method selection is now cached at a high level, so a few
+     * friendly extraneous tests shouldn't be a problem.
      */
-	/*
-		  Note: Two methods which are equally specific should not be allowed by
-		  the Java compiler.  In this case Dragon currently chooses the first
-		  one it finds.  We could add a test for this case here (I believe) by
-		  adding another isSignatureAssignable() in the other direction between
-		  the target and "best" match.  If the assignment works both ways then
-		  neither is more specific and they are ambiguous.  I'll leave this test
-		  out for now because I'm not sure how much another test would impact
-		  performance.  Method selection is now cached at a high level, so a few
-		  friendly extraneous tests shouldn't be a problem.
-		 */
     public static int findMostSpecificSignature(Class[] idealMatch, Class[][] candidates) {
         for (int round = Types.FIRST_ROUND_ASSIGNABLE; round <= Types.LAST_ROUND_ASSIGNABLE; round++) {
             Class[] bestMatch = null;
@@ -656,23 +650,23 @@ public final class Reflect {
     }
 
 
-    private static String accessorName(String getorset, String propName) {
-        return getorset + String.valueOf(Character.toUpperCase(propName.charAt(0))) + propName.substring(1);
+    private static String accessorName(String getOrSet, String propName) {
+        return getOrSet + String.valueOf(Character.toUpperCase(propName.charAt(0))) + propName.substring(1);
     }
 
 
-    public static boolean hasObjectPropertyGetter(Class clas, String propName) {
-        if (clas == Primitive.class) {
+    public static boolean hasObjectPropertyGetter(Class<?> clazz, String propName) {
+        if (clazz == Primitive.class) {
             return false;
         }
         String getterName = accessorName("get", propName);
         try {
-            clas.getMethod(getterName);
+            clazz.getMethod(getterName);
             return true;
         } catch (NoSuchMethodException e) { /* fall through */ }
         getterName = accessorName("is", propName);
         try {
-            Method m = clas.getMethod(getterName);
+            Method m = clazz.getMethod(getterName);
             return (m.getReturnType() == Boolean.TYPE);
         } catch (NoSuchMethodException e) {
             return false;
@@ -704,14 +698,14 @@ public final class Reflect {
         Exception e1 = null, e2 = null;
         try {
             String accessorName = accessorName("get", propName);
-            method = resolveExpectedJavaMethod(null/*bcm*/, obj.getClass(), obj, accessorName, args, false);
+            method = resolveExpectedJavaMethod(null/*dcm*/, obj.getClass(), obj, accessorName, args, false);
         } catch (Exception e) {
             e1 = e;
         }
         if (method == null) {
             try {
                 String accessorName = accessorName("is", propName);
-                method = resolveExpectedJavaMethod(null/*bcm*/, obj.getClass(), obj, accessorName, args, false);
+                method = resolveExpectedJavaMethod(null/*dcm*/, obj.getClass(), obj, accessorName, args, false);
                 if (method.getReturnType() != Boolean.TYPE) {
                     method = null;
                 }
@@ -737,7 +731,7 @@ public final class Reflect {
 
         DragonBasicInterpreter.debug("property access: ");
         try {
-            Method method = resolveExpectedJavaMethod(null/*bcm*/, obj.getClass(), obj, accessorName, args, false);
+            Method method = resolveExpectedJavaMethod(null/*dcm*/, obj.getClass(), obj, accessorName, args, false);
             invokeMethod(method, obj, args);
         } catch (InvocationTargetException e) {
             throw new UtilEvalException("Property accessor threw exception: " + e.getTargetException());
@@ -762,7 +756,7 @@ public final class Reflect {
                 className.append("[]");
             }
         } catch (ReflectException e) {
-			/*shouldn't happen*/
+            /*shouldn't happen*/
         }
 
         return className.toString();
@@ -805,14 +799,14 @@ public final class Reflect {
      * the result.
      */
     public static Object invokeCompiledMethod(Class commandClass, Object[] args, DragonBasicInterpreter dragonBasicInterpreter, CallStack callstack) throws UtilEvalException {
-        // add interpereter and namespace to args list
+        // add interpreter and namespace to args list
         Object[] invokeArgs = new Object[args.length + 2];
         invokeArgs[0] = dragonBasicInterpreter;
         invokeArgs[1] = callstack;
         System.arraycopy(args, 0, invokeArgs, 2, args.length);
-        DragonClassManager bcm = dragonBasicInterpreter.getClassManager();
+        DragonClassManager dcm = dragonBasicInterpreter.getClassManager();
         try {
-            return Reflect.invokeStaticMethod(bcm, commandClass, "invoke", invokeArgs);
+            return Reflect.invokeStaticMethod(dcm, commandClass, "invoke", invokeArgs);
         } catch (InvocationTargetException e) {
             throw new UtilEvalException("Error in compiled method: " + e.getTargetException(), e);
         } catch (ReflectException e) {

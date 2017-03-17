@@ -63,12 +63,12 @@ class DragonType extends SimpleNode
             descriptor = getTypeDescriptor(((DragonPrimitiveType) node).type);
         else {
             String clasName = ((DragonAmbiguousName) node).text;
-            DragonClassManager bcm = dragonBasicInterpreter.getClassManager();
+            DragonClassManager dcm = dragonBasicInterpreter.getClassManager();
             // Note: incorrect here - we are using the hack in dragon class
             // manager that allows lookup by base name.  We need to eliminate
             // this limitation by working through imports.  See notes in class
             // manager.
-            String definingClass = bcm.getClassBeingDefined(clasName);
+            String definingClass = dcm.getClassBeingDefined(clasName);
 
             Class clas = null;
             if (definingClass == null) {

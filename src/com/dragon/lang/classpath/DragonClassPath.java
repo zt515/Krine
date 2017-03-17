@@ -586,7 +586,7 @@ public class DragonClassPath
                 urls[i] = new File(
                         new File(paths[i]).getCanonicalPath()).toURI().toURL();
         } catch (IOException e) {
-            throw new ClassPathException("can't parse class path: " + e);
+            throw new ClassPathException("can't init class path: " + e);
         }
 
         userClassPathComp = urls;

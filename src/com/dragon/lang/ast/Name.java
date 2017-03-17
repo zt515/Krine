@@ -725,7 +725,7 @@ public class Name implements Serializable {
     )
             throws UtilEvalException, EvalError, ReflectException, InvocationTargetException {
         String methodName = Name.suffix(value, 1);
-        DragonClassManager bcm = dragonBasicInterpreter.getClassManager();
+        DragonClassManager dcm = dragonBasicInterpreter.getClassManager();
         NameSpace namespace = callstack.top();
 
         // Optimization - If classOfStaticMethod is set then we have already
@@ -733,7 +733,7 @@ public class Name implements Serializable {
         // Note: maybe factor this out with path below... clean up.
         if (classOfStaticMethod != null) {
             return Reflect.invokeStaticMethod(
-                    bcm, classOfStaticMethod, methodName, args);
+                    dcm, classOfStaticMethod, methodName, args);
         }
 
         if (!Name.isCompound(value))
@@ -757,7 +757,7 @@ public class Name implements Serializable {
             if (classNameSpace != null) {
                 Object instance = classNameSpace.getClassInstance();
                 return ClassGenerator.getClassGenerator()
-                        .invokeSuperclassMethod(bcm, instance, methodName, args);
+                        .invokeSuperclassMethod(dcm, instance, methodName, args);
             }
         }
 
@@ -805,7 +805,7 @@ public class Name implements Serializable {
         classOfStaticMethod = clas;
 
         if (clas != null)
-            return Reflect.invokeStaticMethod(bcm, clas, methodName, args);
+            return Reflect.invokeStaticMethod(dcm, clas, methodName, args);
 
         // return null; ???
         throw new UtilEvalException("invokeMethod: unknown target: " + targetName);
@@ -849,7 +849,7 @@ public class Name implements Serializable {
         if (meth != null)
             return meth.invoke(args, dragonBasicInterpreter, callstack, callerInfo);
 
-        DragonClassManager bcm = dragonBasicInterpreter.getClassManager();
+        DragonClassManager dcm = dragonBasicInterpreter.getClassManager();
 
         // Look for a Dragon command
 
@@ -919,7 +919,7 @@ public class Name implements Serializable {
 	{
         try {
             return (String)Reflect.invokeStaticMethod(
-				null/bcm/, commandClass, "usage", null );
+				null/dcm/, commandClass, "usage", null );
         } catch( Exception e )
 			return "usage: "+name;
 		}

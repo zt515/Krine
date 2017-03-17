@@ -17,10 +17,9 @@ public final class CollectionManager {
         return manager;
     }
 
-    /**
-     */
+
     public boolean isDragonIterable(Object obj) {
-        // This could be smarter...
+        // TODO Be smarter
         try {
             getDragonIterator(obj);
             return true;

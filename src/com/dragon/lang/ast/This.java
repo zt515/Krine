@@ -244,7 +244,7 @@ public final class This implements java.io.Serializable, Runnable {
      * <p>
      * Note: If you use this method outside of the dragon package and wish to
      * use variables with primitive values you will have to wrap them using
-     * dragon.Primitive.  Consider using This getInterface() to make a true Java
+     * dragon.Primitive.  Consider using This asInterface() to make a true Java
      * interface for invoking your scripted methods.
      * <p>
      * <p>
@@ -401,7 +401,7 @@ public final class This implements java.io.Serializable, Runnable {
         return
                 name.equals("getClass")
                         || name.equals("invokeMethod")
-                        || name.equals("getInterface")
+                        || name.equals("asInterface")
                         // These are necessary to let us test synchronization from scripts
                         || name.equals("wait")
                         || name.equals("notify")

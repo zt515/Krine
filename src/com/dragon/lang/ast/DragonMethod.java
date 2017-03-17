@@ -1,6 +1,8 @@
 package com.dragon.lang.ast;
 
-import com.dragon.lang.*;
+import com.dragon.lang.DragonBasicInterpreter;
+import com.dragon.lang.InterpreterException;
+import com.dragon.lang.UtilEvalException;
 import com.dragon.lang.reflect.Reflect;
 import com.dragon.lang.reflect.ReflectException;
 import com.dragon.lang.utils.CallStack;
@@ -97,7 +99,7 @@ public class DragonMethod
      * types.
      */
     /*
-		Note: dragonmethod needs to re-evaluate arg types here
+        Note: dragonmethod needs to re-evaluate arg types here
 		This is broken.
 	*/
     public Class[] getParameterTypes() {
@@ -260,20 +262,6 @@ public class DragonMethod
 
         // Cardinality (number of args) mismatch
         if (argValues.length != numArgs) {
-		/*
-			// look for help string
-			try {
-				// should check for null namespace here
-				String help = 
-					(String)declaringNameSpace.get(
-					"dragon.help."+name, dragonBasicInterpreter );
-
-				dragonBasicInterpreter.println(help);
-				return Primitive.VOID;
-			} catch ( Exception e ) {
-				throw eval error
-			}
-		*/
             throw new EvalError(
                     "Wrong number of arguments for local method: "
                             + name, callerInfo, callstack);

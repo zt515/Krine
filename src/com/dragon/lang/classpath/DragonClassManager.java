@@ -53,7 +53,7 @@ import java.util.*;
 */
 public class DragonClassManager {
     /**
-     * The dragonInterpreterInternal which created the class manager
+     * The dragonBasicInterpreter which created the class manager
      * This is used to load scripted classes from source files.
      */
     private DragonBasicInterpreter declaringDragonBasicInterpreter;

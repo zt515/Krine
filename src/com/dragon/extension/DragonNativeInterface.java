@@ -6,7 +6,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Created by kiva on 2017/2/24.
+ * @author kiva
+ * @date 2017/2/24
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)

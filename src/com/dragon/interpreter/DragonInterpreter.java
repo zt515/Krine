@@ -12,22 +12,28 @@ import java.io.Reader;
 import java.lang.reflect.Method;
 
 /**
- * Created by kiva on 2016/10/15.
+ * @author kiva
+ * @date 2016/10/15
  */
 public class DragonInterpreter extends com.dragon.lang.DragonBasicInterpreter {
 
-    public DragonInterpreter(Reader in, PrintStream out, PrintStream err, boolean interactive, NameSpace namespace, com.dragon.lang.DragonBasicInterpreter parent, String sourceFileInfo) {
-        super(in, out, err, interactive, namespace, parent, sourceFileInfo);
+    /**
+     * Dragon Version
+     */
+    public static final String VERSION = "1.1";
+
+    public DragonInterpreter(Reader in, PrintStream out, PrintStream err, NameSpace namespace, com.dragon.lang.DragonBasicInterpreter parent, String sourceFileInfo) {
+        super(in, out, err, namespace, parent, sourceFileInfo);
         init();
     }
 
-    public DragonInterpreter(Reader in, PrintStream out, PrintStream err, boolean interactive, NameSpace namespace) {
-        super(in, out, err, interactive, namespace);
+    public DragonInterpreter(Reader in, PrintStream out, PrintStream err, NameSpace namespace) {
+        super(in, out, err, namespace);
         init();
     }
 
-    public DragonInterpreter(Reader in, PrintStream out, PrintStream err, boolean interactive) {
-        super(in, out, err, interactive);
+    public DragonInterpreter(Reader in, PrintStream out, PrintStream err) {
+        super(in, out, err);
         init();
     }
 

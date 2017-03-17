@@ -205,7 +205,7 @@ public class NameSpace implements Serializable, DragonClassManager.Listener, Nam
 
     /**
      * Set the variable through this namespace.
-     * This method obeys the LOCALSCOPING property to determine how variables
+     * This method obeys the LOCAL_SCOPING property to determine how variables
      * are set.
      * <p>
      * Note: this method is primarily intended for use internally.  If you use
@@ -221,7 +221,7 @@ public class NameSpace implements Serializable, DragonClassManager.Listener, Nam
     public void setVariable(String name, Object value, boolean strictJava)
             throws UtilEvalException {
         // if localscoping switch follow strictJava, else recurse
-        boolean recurse = !DragonBasicInterpreter.LOCALSCOPING || strictJava;
+        boolean recurse = !DragonBasicInterpreter.LOCAL_SCOPING || strictJava;
         setVariable(name, value, strictJava, recurse);
     }
 
@@ -240,9 +240,9 @@ public class NameSpace implements Serializable, DragonClassManager.Listener, Nam
      * It may live in this namespace or in a parent namespace if recurse is
      * true.
      * <p>
-     * Note: This method is not public and does *not* know about LOCALSCOPING.
+     * Note: This method is not public and does *not* know about LOCAL_SCOPING.
      * Its caller methods must set recurse intelligently in all situations
-     * (perhaps based on LOCALSCOPING).
+     * (perhaps based on LOCAL_SCOPING).
      * <p>
      * <p>
      * Note: this method is primarily intended for use internally.  If you use
@@ -799,7 +799,7 @@ public class NameSpace implements Serializable, DragonClassManager.Listener, Nam
             String name, Class[] argTypes, DragonBasicInterpreter dragonBasicInterpreter)
             throws UtilEvalException {
         if (DragonBasicInterpreter.DEBUG) DragonBasicInterpreter.debug("getCommand: " + name);
-        DragonClassManager bcm = dragonBasicInterpreter.getClassManager();
+        DragonClassManager dcm = dragonBasicInterpreter.getClassManager();
 
         if (importedCommands != null) {
             // loop backwards for precedence
@@ -814,7 +814,7 @@ public class NameSpace implements Serializable, DragonClassManager.Listener, Nam
 
                 DragonBasicInterpreter.debug("searching for script: " + scriptPath);
 
-                InputStream in = bcm.getResourceAsStream(scriptPath);
+                InputStream in = dcm.getResourceAsStream(scriptPath);
 
                 if (in != null)
                     return loadScriptedCommand(
@@ -828,7 +828,7 @@ public class NameSpace implements Serializable, DragonClassManager.Listener, Nam
                     className = path.substring(1).replace('/', '.') + "." + name;
 
                 DragonBasicInterpreter.debug("searching for class: " + className);
-                Class clazz = bcm.classForName(className);
+                Class clazz = dcm.classForName(className);
                 if (clazz != null)
                     return clazz;
             }
@@ -1087,15 +1087,15 @@ public class NameSpace implements Serializable, DragonClassManager.Listener, Nam
                     return c;
             }
 
-        DragonClassManager bcm = getClassManager();
+        DragonClassManager dcm = getClassManager();
 		/*
 			Try super import if available
 			Note: we do this last to allow explicitly imported classes
 			and packages to take priority.  This method will also throw an
 			error indicating ambiguity if it exists...
 		*/
-        if (bcm.hasSuperImport()) {
-            String s = bcm.getClassNameByUnqName(name);
+        if (dcm.hasSuperImport()) {
+            String s = dcm.getClassNameByUnqName(name);
             if (s != null)
                 return classForName(s);
         }

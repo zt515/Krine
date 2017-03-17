@@ -20,11 +20,6 @@ import java.util.Hashtable;
 public class Capabilities {
     private static volatile boolean accessibility = false;
 
-    public static boolean haveSwing() {
-        // classExists caches info for us
-        return classExists("javax.swing.JButton");
-    }
-
     /**
      * If accessibility is enabled
      * determine if the accessibility mechanism exists and if we have
@@ -33,14 +28,14 @@ public class Capabilities {
      * have runtime permission to access the fields... Java security has
      * a say in it.
      *
-     * @see dragon.Reflect
+     * @see com.dragon.lang.reflect.Reflect
      */
     public static boolean haveAccessibility() {
         return accessibility;
     }
 
     public static void setAccessibility(boolean b) {
-        if (b == false) {
+        if (!b) {
             accessibility = false;
         } else {
             String.class.getDeclaredMethods(); // test basic access
@@ -56,14 +51,14 @@ public class Capabilities {
         DragonClassManager.clearResolveCache();
     }
 
-    private static Hashtable classes = new Hashtable();
+    private static Hashtable<Object, Object> classes = new Hashtable<>();
 
     /**
      * Use direct Class.forName() to test for the existence of a class.
      * We should not use DragonClassManager here because:
      * a) the systems using these tests would probably not load the
      * classes through it anyway.
-     * b) dragonclassmanager is heavy and touches other class files.
+     * b) dragonClassManager is heavy and touches other class files.
      * this capabilities code must be light enough to be used by any
      * system **including the remote applet**.
      */
@@ -72,13 +67,8 @@ public class Capabilities {
 
         if (c == null) {
             try {
-                /*
-                    Note: do *not* change this to
-					DragonClassManager plainClassForName() or equivalent.
-					This class must not touch any other dragon classes.
-				*/
                 c = Class.forName(name);
-            } catch (ClassNotFoundException e) {
+            } catch (ClassNotFoundException ignore) {
             }
 
             if (c != null)

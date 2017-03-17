@@ -1,7 +1,7 @@
 package com.dragon.lang;
 
 /**
- * An internal error in the dragonInterpreterInternal has occurred.
+ * An internal error in the dragonBasicInterpreter has occurred.
  */
 public class InterpreterException extends RuntimeException {
 

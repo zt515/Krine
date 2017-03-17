@@ -44,7 +44,7 @@ public class PreparsedScript {
         final ClassManagerImpl classManager = new ClassManagerImpl();
         classManager.setClassLoader(classLoader);
         final NameSpace nameSpace = new NameSpace(classManager, "global");
-        _Dragon_interpreter = new DragonBasicInterpreter(new StringReader(""), System.out, System.err, false, nameSpace, null, null);
+        _Dragon_interpreter = new DragonBasicInterpreter(new StringReader(""), System.out, System.err, nameSpace, null, null);
         try {
             final This callable = (This) _Dragon_interpreter.eval("__execute() { " + source + "\n" + "}\n" + "return this;");
             _method = callable.getNameSpace().getMethod("__execute", new Class[0], false);

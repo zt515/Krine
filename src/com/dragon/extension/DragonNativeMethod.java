@@ -5,13 +5,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by kiva on 2017/2/24.
+ * @author kiva
+ * @date 2017/2/24
  */
 public class DragonNativeMethod {
     private List<Method> methods;
     private Object object;
 
-    DragonNativeMethod(List<Method> methods, Object object) {
+    private DragonNativeMethod(List<Method> methods, Object object) {
         this.methods = methods;
         this.object = object;
     }
@@ -26,12 +27,11 @@ public class DragonNativeMethod {
 
     public static DragonNativeMethod wrapJavaMethod(Object object) {
         Class clazz = object.getClass();
-        DragonNativeInterface anno = null;
 
         List<Method> methods = new ArrayList<>(1);
 
         for (Method m : clazz.getDeclaredMethods()) {
-            if ((anno = m.getAnnotation(DragonNativeInterface.class)) != null) {
+            if (m.getAnnotation(DragonNativeInterface.class) != null) {
                 methods.add(m);
             }
         }
