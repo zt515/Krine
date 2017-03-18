@@ -1,14 +1,15 @@
 package com.dragon.interpreter;
 
-import com.dragon.lang.*;
+import com.dragon.extension.DragonNativeInterface;
+import com.dragon.lang.InterpreterException;
+import com.dragon.lang.UtilEvalException;
 import com.dragon.lang.ast.DragonMethod;
-import com.dragon.lang.ast.EvalError;
 import com.dragon.lang.ast.NameSpace;
 import com.dragon.lang.io.SystemIOBridge;
-import com.dragon.extension.DragonNativeInterface;
 
 import java.io.PrintStream;
 import java.io.Reader;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 /**
@@ -61,7 +62,8 @@ public class DragonInterpreter extends com.dragon.lang.DragonBasicInterpreter {
         }
     }
 
-    public void linkNativeInterface(DragonNativeInterface nativeInterface) throws UtilEvalException {
+    public void linkNativeInterface(DragonNativeInterface nativeInterface)
+            throws UtilEvalException, IllegalAccessException, InterpreterException {
         Object javaObject = nativeInterface.getObject();
         nativeInterface.getObject().bindInterpreter(this);
 
@@ -70,9 +72,13 @@ public class DragonInterpreter extends com.dragon.lang.DragonBasicInterpreter {
             method.makePublic();
             getNameSpace().setMethod(method);
         }
+
+        for (Field f : nativeInterface.getFields()) {
+            linkNativeObject(f.getName(), f.get(javaObject));
+        }
     }
 
-    public void linkNativeObject(String name, Object nativeObject) throws EvalError {
-        set(name, nativeObject);
+    public void linkNativeObject(String name, Object nativeObject) throws InterpreterException {
+        setUnchecked(name, nativeObject);
     }
 }

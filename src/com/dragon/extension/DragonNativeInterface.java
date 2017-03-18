@@ -1,7 +1,5 @@
 package com.dragon.extension;
 
-import com.dragon.interpreter.DragonInterpreter;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -21,14 +19,6 @@ public class DragonNativeInterface {
         this.fields = fields;
         this.methods = methods;
         this.object = object;
-    }
-
-    public List<Method> getMethods() {
-        return methods;
-    }
-
-    public IDragonLinkable getObject() {
-        return object;
     }
 
     public static DragonNativeInterface fromClass(Class<? extends IDragonLinkable> clazz)
@@ -51,5 +41,17 @@ public class DragonNativeInterface {
         }
 
         return new DragonNativeInterface(methods, fields, object);
+    }
+
+    public List<Method> getMethods() {
+        return methods;
+    }
+
+    public List<Field> getFields() {
+        return fields;
+    }
+
+    public IDragonLinkable getObject() {
+        return object;
     }
 }
