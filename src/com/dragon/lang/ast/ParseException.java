@@ -154,7 +154,7 @@ public final class ParseException extends EvalError {
             expected += eol + "    ";
         }
         // Begin Dragon Modification - added sourceFile info
-        String retval = "In file: " + sourceFile + " Encountered \"";
+        String retval = "In file: " + sourceFile + " got \"";
         // End Dragon Modification - added sourceFile info
         Token tok = currentToken.next;
         for (int i = 0; i < maxSize; i++) {

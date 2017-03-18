@@ -34,9 +34,11 @@
 
 package com.dragon.lang.ast;
 
-import com.dragon.lang.utils.CallStack;
 import com.dragon.lang.DragonBasicInterpreter;
 import com.dragon.lang.InterpreterException;
+import com.dragon.lang.debugger.BreakPoint;
+import com.dragon.lang.debugger.DragonDebugger;
+import com.dragon.lang.utils.CallStack;
 
 /*
     Note: great care (and lots of typing) were taken to insure that the
@@ -69,6 +71,9 @@ public class SimpleNode implements Node {
                     return "<Compiled Java Code>";
                 }
             };
+
+    protected DragonDebugger debugger = null;
+    private boolean isDebugging = false;
 
     protected Node parent;
     protected Node[] children;
@@ -159,7 +164,8 @@ public class SimpleNode implements Node {
     /**
      * Detach this node from its parent.
      * This is primarily useful in node serialization.
-     * (see DragonMethodDeclaration)
+     *
+     * @see DragonMethodDeclaration
      */
     public void prune() {
         jjtSetParent(null);
@@ -230,6 +236,20 @@ public class SimpleNode implements Node {
         }
 
         return text.toString();
+    }
+
+    public void setDebugger(DragonDebugger debugger) {
+        this.debugger = debugger;
+        isDebugging = debugger != null;
+    }
+
+    protected void waitForDebugger() {
+        if (!isDebugging) {
+            return;
+        }
+
+        BreakPoint breakPoint = new BreakPoint(getSourceFile(), getLineNumber(), getText());
+        debugger.onBreakPointReached(breakPoint);
     }
 }
 

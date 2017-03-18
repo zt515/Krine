@@ -15,6 +15,8 @@ public final class DragonLiteral extends SimpleNode {
 
     public Object eval(CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter)
             throws EvalError {
+        waitForDebugger();
+
         if (value == null)
             throw new InterpreterException("Null in dragon literal: " + value);
 

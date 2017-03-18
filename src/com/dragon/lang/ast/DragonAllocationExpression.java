@@ -1,11 +1,11 @@
 package com.dragon.lang.ast;
 
 import com.dragon.lang.DragonBasicInterpreter;
+import com.dragon.lang.classpath.ClassIdentifier;
+import com.dragon.lang.classpath.GeneratedClass;
 import com.dragon.lang.reflect.Reflect;
 import com.dragon.lang.reflect.ReflectException;
 import com.dragon.lang.utils.CallStack;
-import com.dragon.lang.classpath.ClassIdentifier;
-import com.dragon.lang.classpath.GeneratedClass;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
@@ -22,6 +22,8 @@ class DragonAllocationExpression extends SimpleNode {
 
     public Object eval(CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter)
             throws EvalError {
+        waitForDebugger();
+
         // type is either a class name or a primitive type
         SimpleNode type = (SimpleNode) jjtGetChild(0);
 
@@ -47,22 +49,21 @@ class DragonAllocationExpression extends SimpleNode {
             CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter
     )
             throws EvalError {
-        NameSpace namespace = callstack.top();
 
         Object[] args = argumentsNode.getArguments(callstack, dragonBasicInterpreter);
         if (args == null)
             throw new EvalError("Null args in new.", this, callstack);
 
         // Look for scripted class object
+        @SuppressWarnings("UnusedAssignment")
         Object obj = nameNode.toObject(
                 callstack, dragonBasicInterpreter, false/* force class*/);
 
         // Try regular class
-
         obj = nameNode.toObject(
                 callstack, dragonBasicInterpreter, true/*force class*/);
 
-        Class type = null;
+        Class type;
         if (obj instanceof ClassIdentifier)
             type = ((ClassIdentifier) obj).getTargetClass();
         else

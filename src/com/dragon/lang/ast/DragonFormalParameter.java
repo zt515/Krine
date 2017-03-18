@@ -32,6 +32,8 @@ class DragonFormalParameter extends SimpleNode {
      */
     public Object eval(CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter)
             throws EvalError {
+        waitForDebugger();
+
         if (jjtGetNumChildren() > 0)
             type = ((DragonType) jjtGetChild(0)).getType(callstack, dragonBasicInterpreter);
         else

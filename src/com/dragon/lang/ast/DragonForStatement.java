@@ -24,6 +24,7 @@ class DragonForStatement extends SimpleNode implements ParserConstants {
 
     public Object eval(CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter)
             throws EvalError {
+        waitForDebugger();
         int i = 0;
         if (hasForInit)
             forInit = ((SimpleNode) jjtGetChild(i++));

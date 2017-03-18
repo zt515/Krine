@@ -20,6 +20,8 @@ class DragonBinaryExpression extends SimpleNode
 
     public Object eval(CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter)
             throws EvalError {
+        waitForDebugger();
+
         Object lhs = ((SimpleNode) jjtGetChild(0)).eval(callstack, dragonBasicInterpreter);
 
 		/*

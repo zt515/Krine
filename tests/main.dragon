@@ -1,7 +1,9 @@
 class Main {
-    public void hello() {
-        println("hello world");
+    public void hello(int i) {
+        if (i == 0) {
+            println("hello world");
+        }
     }
 }
 
-new Main().hello();
+new Main().hello(0);

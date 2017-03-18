@@ -95,7 +95,7 @@ public class DragonTokenException extends Error {
     protected static String LexicalError(boolean EOFSeen, int lexState, int errorLine, int errorColumn, String errorAfter, char curChar) {
         return ("Lexical error at line " +
                 errorLine + ", column " +
-                errorColumn + ".  Encountered: " +
+                errorColumn + ".  got: " +
                 (EOFSeen ? "<EOF> " : ("\"" + addEscapes(String.valueOf(curChar)) + "\"") + " (" + (int) curChar + "), ") +
                 "after : \"" + addEscapes(errorAfter) + "\"");
     }

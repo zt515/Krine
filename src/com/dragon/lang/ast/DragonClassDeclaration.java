@@ -30,6 +30,8 @@ class DragonClassDeclaration extends SimpleNode {
     /**
      */
     public synchronized Object eval(final CallStack callstack, final DragonBasicInterpreter dragonBasicInterpreter) throws EvalError {
+        waitForDebugger();
+
         if (generatedClass == null) {
             generatedClass = generateClass(callstack, dragonBasicInterpreter);
         }

@@ -14,6 +14,8 @@ class DragonSwitchStatement
 
     public Object eval(CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter)
             throws EvalError {
+        waitForDebugger();
+
         int numchild = jjtGetNumChildren();
         int child = 0;
         SimpleNode switchExp = ((SimpleNode) jjtGetChild(child++));

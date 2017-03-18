@@ -24,6 +24,8 @@ class DragonEnhancedForStatement extends SimpleNode implements ParserConstants {
 
     public Object eval(CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter)
             throws EvalError {
+        waitForDebugger();
+
         Class elementType = null;
         SimpleNode expression, statement = null;
 

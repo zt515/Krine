@@ -15,6 +15,8 @@ class DragonAssignment extends SimpleNode implements ParserConstants {
     public Object eval(
             CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter)
             throws EvalError {
+        waitForDebugger();
+
         DragonPrimaryExpression lhsNode =
                 (DragonPrimaryExpression) jjtGetChild(0);
 

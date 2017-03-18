@@ -16,6 +16,8 @@ class DragonTernaryExpression extends SimpleNode {
 
     public Object eval(CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter)
             throws EvalError {
+        waitForDebugger();
+
         SimpleNode
                 cond = (SimpleNode) jjtGetChild(0),
                 evalTrue = (SimpleNode) jjtGetChild(1),

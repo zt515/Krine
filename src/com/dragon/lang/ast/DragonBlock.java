@@ -29,6 +29,8 @@ class DragonBlock extends SimpleNode {
             CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter,
             boolean overrideNamespace)
             throws EvalError {
+        waitForDebugger();
+
         Object syncValue = null;
         if (isSynchronized) {
             // First node is the expression on which to sync

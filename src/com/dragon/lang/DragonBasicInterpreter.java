@@ -2,13 +2,14 @@ package com.dragon.lang;
 
 import com.dragon.lang.ast.*;
 import com.dragon.lang.classpath.DragonClassManager;
+import com.dragon.lang.debugger.DragonDebugger;
 import com.dragon.lang.io.SystemIOBridge;
 import com.dragon.lang.reflect.Reflect;
 import com.dragon.lang.utils.CallStack;
 
 import java.io.*;
 import java.lang.reflect.Method;
-import java.util.Locale;
+import java.util.Set;
 
 /**
  * The Dragon script dragonBasicInterpreter.
@@ -102,8 +103,9 @@ public class DragonBasicInterpreter
      */
     private String sourceFileInfo;
 
-    private boolean
-            evalOnly;        // DragonInterpreter has no input stream, use eval() only
+    private boolean evalOnly;        // DragonInterpreter has no input stream, use eval() only
+
+    private DragonDebugger debugger;
 
 	/* --- End instance data --- */
 
@@ -324,17 +326,17 @@ public class DragonBasicInterpreter
      * @throws DragonTargetException on unhandled exceptions from the script
      */
     /*
-		Note: we need a form of eval that passes the callStack through...
+        Note: we need a form of eval that passes the callStack through...
 	*/
-	/*
-	Can't this be combined with run() ?
+    /*
+    Can't this be combined with run() ?
 	run seems to have stuff in it for interactive vs. non-interactive...
 	compare them side by side and see what they do differently, aside from the
 	exception handling.
 	*/
     public Object eval(
             Reader in, NameSpace nameSpace, String sourceFileInfo
-			/*, CallStack callStack */)
+            /*, CallStack callStack */)
             throws EvalError {
         Object retVal = null;
         if (DragonBasicInterpreter.DEBUG) debug("eval: nameSpace = " + nameSpace);
@@ -363,9 +365,12 @@ public class DragonBasicInterpreter
                     // nodes remember from where they were sourced
                     node.setSourceFile(sourceFileInfo);
 
-                    if (TRACE)
-                        println("// " + node.getText());
+                    // bind debugger if we are debugging
+                    if (debugger != null) {
+                        bindDebugger(node, debugger);
+                    }
 
+                    // evaluate the program
                     retVal = node.eval(callstack, localDragonBasicInterpreter);
 
                     // sanity check during development
@@ -398,14 +403,14 @@ public class DragonBasicInterpreter
                         "Sourced file: " + sourceFileInfo + " internal Error: "
                                 + e.getMessage(), node, callstack);
             } catch (DragonTargetException e) {
-                // failsafe, set the Line as the origin of the error.
+                // fail-safe, set the Line as the origin of the error.
                 if (e.getNode() == null)
                     e.setNode(node);
                 e.reThrow("Sourced file: " + sourceFileInfo);
             } catch (EvalError e) {
                 if (DEBUG)
                     e.printStackTrace();
-                // failsafe, set the Line as the origin of the error.
+                // fail-safe, set the Line as the origin of the error.
                 if (e.getNode() == null)
                     e.setNode(node);
                 e.reThrow("Sourced file: " + sourceFileInfo);
@@ -422,7 +427,7 @@ public class DragonBasicInterpreter
             } finally {
                 localDragonBasicInterpreter.get_jjtree().reset();
 
-                // reinit the callStack
+                // re-init the callStack
                 if (callstack.depth() > 1) {
                     callstack.clear();
                     callstack.push(nameSpace);
@@ -433,7 +438,34 @@ public class DragonBasicInterpreter
     }
 
     /**
-     * Evaluate the inputstream in this dragonBasicInterpreter's global namespace.
+     * Bind debugger for program
+     *
+     * @param node     node to debug
+     * @param debugger debugger
+     */
+    private void bindDebugger(SimpleNode node, DragonDebugger debugger) {
+        SimpleNode child;
+        Set<Integer> breakPoints = debugger.getFileBreakPoints(node.getSourceFile());
+
+
+        if (breakPoints == null) {
+            return;
+        }
+
+        for (int i = 0; i < node.jjtGetNumChildren(); ++i) {
+            child = node.getChild(i);
+
+            if (breakPoints.contains(child.getLineNumber()) && !child.getText().isEmpty()) {
+                child.setDebugger(debugger);
+                debug("Set breakpoint at " + child.getSourceFile() + ":" + child.getLineNumber() + ": " + child.getText());
+                continue;
+            }
+            bindDebugger(child, debugger);
+        }
+    }
+
+    /**
+     * Evaluate the InputStream in this dragonBasicInterpreter's global namespace.
      */
     public Object eval(Reader in) throws EvalError {
         return eval(in, globalNameSpace, "eval stream");
@@ -497,7 +529,7 @@ public class DragonBasicInterpreter
     }
 
     /**
-     * Get the outptut stream associated with this dragonBasicInterpreter.
+     * Get the output stream associated with this dragonBasicInterpreter.
      * This may be be stdout or the GUI console.
      */
     public PrintStream getOut() {
@@ -514,10 +546,6 @@ public class DragonBasicInterpreter
 
     public final void println(Object o) {
         print(String.valueOf(o) + "\n");
-    }
-
-    public final void printf(String format, Object... args) {
-        print(String.format(Locale.getDefault(), format, args));
     }
 
     public final void print(Object o) {
@@ -772,6 +800,10 @@ public class DragonBasicInterpreter
         return this.strictJava;
     }
 
+    public void setDebugger(DragonDebugger debugger) {
+        this.debugger = debugger;
+    }
+
     private static void staticInit() {
         try {
             debug = System.err;
@@ -788,22 +820,6 @@ public class DragonBasicInterpreter
         } catch (Throwable e) {
             System.err.println("Could not init static(level 3):" + e);
         }
-    }
-
-    /**
-     * @deprecated Since Dragon 1.1
-     * Specify the source of the text from which this dragonBasicInterpreter is reading.
-     * Note: there is a difference between what file the interpreter is
-     * sourcing and from what file a method was originally parsed.  One
-     * file may call a method sourced from another file.  See SimpleNode
-     * for origination file info.
-     * ß
-     */
-    public String getSourceFileInfo() {
-        if (sourceFileInfo != null)
-            return sourceFileInfo;
-        else
-            return "<unknown source>";
     }
 
     /**
@@ -826,24 +842,6 @@ public class DragonBasicInterpreter
     public void setErr(PrintStream err) {
         this.err = err;
     }
-
-    /**
-     * De-serialization setup.
-     * Default out and err streams to stdout, stderr if they are null.
-     */
-    /*private void readObject(ObjectInputStream stream)
-            throws IOException, ClassNotFoundException {
-        stream.defaultReadObject();
-
-        // set transient fields
-        if (console != null) {
-            setOut(console.getOut());
-            setErr(console.getErr());
-        } else {
-            setOut(System.out);
-            setErr(System.err);
-        }
-    }*/
 
     public NameSpace getGlobalNameSpace() {
         return globalNameSpace;

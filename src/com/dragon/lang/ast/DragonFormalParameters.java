@@ -61,6 +61,8 @@ class DragonFormalParameters extends SimpleNode {
      */
     public Object eval(CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter)
             throws EvalError {
+        waitForDebugger();
+
         if (paramTypes != null)
             return paramTypes;
 

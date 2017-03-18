@@ -2,6 +2,7 @@ package com.dragon.command;
 
 import com.dragon.interpreter.DragonInterpreter;
 import com.dragon.lang.ast.DragonTargetException;
+import com.dragon.lang.debugger.DragonDebugger;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -25,6 +26,12 @@ public class Main {
 
         DragonInterpreter dragon = new DragonInterpreter();
         dragon.setUnchecked("dragon.args", dragonArgs);
+
+        DragonDebugger debugger = new DragonDebugger(dragon);
+        debugger.addBreakPoint("/Users/kiva/Documents/Dragon/tests/main.dragon")
+                .add(3)
+                .add(9);
+        debugger.startDebugging();
 
         try {
             Object result = dragon.source(fileName, dragon.getGlobalNameSpace());

@@ -19,6 +19,8 @@ class DragonWhileStatement extends SimpleNode implements ParserConstants {
 
 
     public Object eval(CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter) throws EvalError {
+        waitForDebugger();
+
         int numChild = jjtGetNumChildren();
 
         // Order of body and condition is swapped for do / while

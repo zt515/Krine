@@ -16,6 +16,8 @@ class DragonTryStatement extends SimpleNode {
 
     public Object eval(CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter)
             throws EvalError {
+        waitForDebugger();
+
         DragonBlock tryBlock = ((DragonBlock) jjtGetChild(0));
 
         List<DragonFormalParameter> catchParams = new ArrayList<DragonFormalParameter>();

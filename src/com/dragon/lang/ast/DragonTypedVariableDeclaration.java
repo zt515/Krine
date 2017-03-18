@@ -37,6 +37,8 @@ class DragonTypedVariableDeclaration extends SimpleNode {
      */
     public Object eval(CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter)
             throws EvalError {
+        waitForDebugger();
+
         try {
             NameSpace namespace = callstack.top();
             DragonType typeNode = getTypeNode();

@@ -26,6 +26,8 @@ class DragonMethodInvocation extends SimpleNode {
      */
     public Object eval(CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter)
             throws EvalError {
+        waitForDebugger();
+
         NameSpace namespace = callstack.top();
         DragonAmbiguousName nameNode = getNameNode();
 

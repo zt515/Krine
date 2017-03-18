@@ -12,6 +12,8 @@ class DragonIfStatement extends SimpleNode {
             throws EvalError {
         Object ret = null;
 
+        waitForDebugger();
+
         if (evaluateCondition(
                 (SimpleNode) jjtGetChild(0), callstack, dragonBasicInterpreter))
             ret = ((SimpleNode) jjtGetChild(1)).eval(callstack, dragonBasicInterpreter);

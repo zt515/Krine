@@ -89,6 +89,8 @@ class DragonArrayDimensions extends SimpleNode {
      */
     public Object eval(CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter)
             throws EvalError {
+        waitForDebugger();
+
         SimpleNode child = (SimpleNode) jjtGetChild(0);
 
 		/*

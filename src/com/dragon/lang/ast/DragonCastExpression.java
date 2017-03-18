@@ -22,6 +22,8 @@ class DragonCastExpression extends SimpleNode {
      */
     public Object eval(
             CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter) throws EvalError {
+        waitForDebugger();
+
         NameSpace namespace = callstack.top();
         Class toType = ((DragonType) jjtGetChild(0)).getType(
                 callstack, dragonBasicInterpreter);

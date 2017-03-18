@@ -12,6 +12,8 @@ class DragonReturnStatement extends SimpleNode implements ParserConstants {
 
     public Object eval(CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter)
             throws EvalError {
+        waitForDebugger();
+
         Object value;
         if (jjtGetNumChildren() > 0)
             value = ((SimpleNode) jjtGetChild(0)).eval(callstack, dragonBasicInterpreter);

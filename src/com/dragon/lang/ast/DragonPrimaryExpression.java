@@ -41,6 +41,8 @@ class DragonPrimaryExpression extends SimpleNode {
     private Object eval(boolean toLHS,
                         CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter)
             throws EvalError {
+        waitForDebugger();
+
         Object obj = jjtGetChild(0);
         int numChildren = jjtGetNumChildren();
 

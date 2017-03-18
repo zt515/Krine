@@ -28,6 +28,8 @@ class DragonArrayInitializer extends SimpleNode {
     public Object eval(Class baseType, int dimensions,
                        CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter)
             throws EvalError {
+        waitForDebugger();
+
         int numInitializers = jjtGetNumChildren();
 
         // allocate the array to store the initializers

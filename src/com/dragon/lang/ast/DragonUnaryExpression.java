@@ -15,6 +15,8 @@ class DragonUnaryExpression extends SimpleNode implements ParserConstants {
 
     public Object eval(CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter)
             throws EvalError {
+        waitForDebugger();
+
         SimpleNode node = (SimpleNode) jjtGetChild(0);
 
         // If this is a unary increment of decrement (either pre or postfix)

@@ -32,6 +32,8 @@ class DragonVariableDeclarator extends SimpleNode {
     public Object eval(
             DragonType typeNode, CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter)
             throws EvalError {
+        waitForDebugger();
+
         // null value means no value
         Object value = null;
 

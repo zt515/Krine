@@ -84,6 +84,8 @@ class DragonMethodDeclaration extends SimpleNode {
      */
     public Object eval(CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter)
             throws EvalError {
+        waitForDebugger();
+
         returnType = evalReturnType(callstack, dragonBasicInterpreter);
         evalNodes(callstack, dragonBasicInterpreter);
 

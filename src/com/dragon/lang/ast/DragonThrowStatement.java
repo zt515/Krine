@@ -10,6 +10,8 @@ class DragonThrowStatement extends SimpleNode {
 
     public Object eval(CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter)
             throws EvalError {
+        waitForDebugger();
+
         Object obj = ((SimpleNode) jjtGetChild(0)).eval(callstack, dragonBasicInterpreter);
 
         // need to loosen this to any throwable... do we need to handle
