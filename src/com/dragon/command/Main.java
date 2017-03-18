@@ -28,7 +28,7 @@ public class Main {
         dragon.setUnchecked("dragon.args", dragonArgs);
 
         DragonDebugger debugger = new DragonDebugger(dragon);
-        debugger.addBreakPoint("/Users/kiva/Documents/Dragon/tests/main.dragon")
+        debugger.addBreakPoint(fileName)
                 .add(3)
                 .add(9);
         debugger.startDebugging();
