@@ -11,7 +11,7 @@ public class Main {
     public static void main(String[] args) {
         if (args.length < 1) {
             showUsage();
-            System.exit(0);
+            return;
         }
 
         String fileName = args[0];
