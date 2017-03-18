@@ -1,35 +1,32 @@
 package com.dragon.interpreter;
 
-import com.dragon.extension.DragonNativeInterface;
+import com.dragon.extension.DragonMethod;
+import com.dragon.extension.IDragonLinkable;
 
 /**
  * @author kiva
  * @date 2017/2/24
  */
-public class DragonBuiltinInterface {
+public class DragonBuiltinInterface implements IDragonLinkable {
     private DragonInterpreter interpreter;
 
-    public DragonBuiltinInterface(DragonInterpreter interpreter) {
-        this.interpreter = interpreter;
+    @DragonMethod
+    public void println(Object o) {
+        interpreter.println(o);
     }
 
-    @DragonNativeInterface
-    public void print(Object o) {
-        interpreter.print(o.toString());
-    }
-
-    @DragonNativeInterface
+    @DragonMethod
     public void exit(int retCode) {
         System.exit(retCode);
     }
 
-    @DragonNativeInterface
-    public void exit() {
-        exit(0);
+    @DragonMethod
+    public String getDragonVersion() {
+        return DragonInterpreter.VERSION;
     }
 
-    @DragonNativeInterface
-    public int getDragonVersion() {
-        return 19;
+    @Override
+    public void bindInterpreter(DragonInterpreter interpreter) {
+        this.interpreter = interpreter;
     }
 }

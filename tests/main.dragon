@@ -1,6 +1,6 @@
 class Main {
     public void hello() {
-        print("hello world");
+        println("hello world");
     }
 }
 

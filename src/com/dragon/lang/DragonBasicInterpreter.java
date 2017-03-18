@@ -8,6 +8,7 @@ import com.dragon.lang.utils.CallStack;
 
 import java.io.*;
 import java.lang.reflect.Method;
+import java.util.Locale;
 
 /**
  * The Dragon script dragonBasicInterpreter.
@@ -512,7 +513,11 @@ public class DragonBasicInterpreter
     }
 
     public final void println(Object o) {
-        print(String.valueOf(o) + File.separator);
+        print(String.valueOf(o) + "\n");
+    }
+
+    public final void printf(String format, Object... args) {
+        print(String.format(Locale.getDefault(), format, args));
     }
 
     public final void print(Object o) {

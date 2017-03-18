@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author kiva
  * @date 2017/03/17
  */
-public class DexConverter {
+class DexConverter {
     private AtomicInteger errors = new AtomicInteger(0);
     private final DexFile outputDex;
     private ExecutorService classTranslatorPool;
@@ -93,8 +93,7 @@ public class DexConverter {
             }
 
             return outArray;
-        } catch (Exception var6) {
-            DxConsole.err.println("\ntrouble writing output: " + var6.getMessage());
+        } catch (Exception e) {
             return null;
         }
     }
@@ -131,7 +130,6 @@ public class DexConverter {
     }
 
     private boolean addClassToDex(ClassDefItem clazz) {
-        System.out.println("adding classes: " + clazz.getThisClass().typeName());
         synchronized (outputDex) {
             outputDex.add(clazz);
             return true;
@@ -160,9 +158,9 @@ public class DexConverter {
                 if (ex != null) {
                     dexConverter.addClassToDex(ex);
                 }
-            } catch (ExecutionException var15) {
-                Throwable t = var15.getCause();
-                throw t instanceof Exception ? (Exception) t : var15;
+            } catch (ExecutionException e) {
+                Throwable t = e.getCause();
+                throw t instanceof Exception ? (Exception) t : e;
             }
             return true;
         }

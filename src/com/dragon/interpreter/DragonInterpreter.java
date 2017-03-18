@@ -5,7 +5,7 @@ import com.dragon.lang.ast.DragonMethod;
 import com.dragon.lang.ast.EvalError;
 import com.dragon.lang.ast.NameSpace;
 import com.dragon.lang.io.SystemIOBridge;
-import com.dragon.extension.DragonNativeMethod;
+import com.dragon.extension.DragonNativeInterface;
 
 import java.io.PrintStream;
 import java.io.Reader;
@@ -54,16 +54,18 @@ public class DragonInterpreter extends com.dragon.lang.DragonBasicInterpreter {
 
     private void init() {
         try {
-            linkNativeMethod(DragonNativeMethod.wrapJavaMethod(new DragonBuiltinInterface(this)));
+            linkNativeInterface(DragonNativeInterface.fromClass(DragonBuiltinInterface.class));
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void linkNativeMethod(DragonNativeMethod nativeMethodHolder) throws UtilEvalException {
-        Object javaObject = nativeMethodHolder.getObject();
-        for (Method m : nativeMethodHolder.getMethods()) {
+    public void linkNativeInterface(DragonNativeInterface nativeInterface) throws UtilEvalException {
+        Object javaObject = nativeInterface.getObject();
+        nativeInterface.getObject().bindInterpreter(this);
+
+        for (Method m : nativeInterface.getMethods()) {
             DragonMethod method = new DragonMethod(m, javaObject);
             method.makePublic();
             getNameSpace().setMethod(method);
