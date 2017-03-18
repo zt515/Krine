@@ -1,4 +1,4 @@
-package com.dragon.command;
+package com.dragon.lang.classgen;
 
 import com.android.dx.cf.direct.DirectClassFile;
 import com.android.dx.cf.direct.StdAttributeFactory;
@@ -11,7 +11,6 @@ import com.android.dx.dex.file.ClassDefItem;
 import com.android.dx.dex.file.DexFile;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -22,22 +21,36 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class DexConverter {
     private AtomicInteger errors = new AtomicInteger(0);
-    private DexConverter.Arguments args;
     private final DexFile outputDex;
     private ExecutorService classTranslatorPool;
     private ExecutorService classDefItemConsumer;
     private List<Future<Boolean>> addToDexFutures = new ArrayList<>();
 
+    private CfOptions cfOptions;
+    private DexOptions dexOptions;
+    private static final int numThreads = 1;
+
     public DexConverter() {
-        args = new Arguments();
-        outputDex = new DexFile(args.dexOptions);
-        if (args.dumpWidth != 0) {
-            outputDex.setDumpWidth(args.dumpWidth);
-        }
+        this.cfOptions = new CfOptions();
+        this.cfOptions.positionInfo = 2;
+        this.cfOptions.localInfo = true;
+        this.cfOptions.strictNameCheck = false;
+        this.cfOptions.optimize = true;
+        this.cfOptions.optimizeListFile = null;
+        this.cfOptions.dontOptimizeListFile = null;
+        this.cfOptions.statistics = false;
+        this.cfOptions.warn = DxConsole.noop;
+
+        this.dexOptions = new DexOptions();
+        this.dexOptions.forceJumbo = false;
+
+        outputDex = new DexFile(dexOptions);
     }
 
     public byte[] convertJavaClass(String fullClassName, byte[] bytes) {
-        classTranslatorPool = new ThreadPoolExecutor(args.numThreads, args.numThreads, 0L, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(2 * args.numThreads, true), new ThreadPoolExecutor.CallerRunsPolicy());
+        prepare();
+
+        classTranslatorPool = new ThreadPoolExecutor(numThreads, numThreads, 0L, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(2 * numThreads, true), new ThreadPoolExecutor.CallerRunsPolicy());
         classDefItemConsumer = Executors.newSingleThreadExecutor();
 
         processJavaClass(fullClassName, bytes);
@@ -64,6 +77,10 @@ public class DexConverter {
         }
 
         return null;
+    }
+
+    private void prepare() {
+        errors.set(0);
     }
 
     private byte[] writeDex(DexFile outputDex) {
@@ -97,7 +114,7 @@ public class DexConverter {
     }
 
     private DirectClassFile parseClass(String name, byte[] bytes) {
-        DirectClassFile cf = new DirectClassFile(bytes, name, args.cfOptions.strictNameCheck);
+        DirectClassFile cf = new DirectClassFile(bytes, name, cfOptions.strictNameCheck);
         cf.setAttributeFactory(StdAttributeFactory.THE_ONE);
         cf.getMagic();
         return cf;
@@ -105,7 +122,7 @@ public class DexConverter {
 
     private ClassDefItem translateClass(byte[] bytes, DirectClassFile cf) {
         try {
-            return CfTranslator.translate(cf, bytes, args.cfOptions, args.dexOptions, outputDex);
+            return CfTranslator.translate(cf, bytes, cfOptions, dexOptions, outputDex);
         } catch (ParseException e) {
             e.printStackTrace();
             errors.incrementAndGet();
@@ -213,33 +230,4 @@ public class DexConverter {
             return dexConverter.parseClass(this.name, this.bytes);
         }
     }
-
-    private static class Arguments {
-        int dumpWidth = 0;
-        boolean statistics;
-        CfOptions cfOptions;
-        DexOptions dexOptions;
-        int numThreads = 1;
-
-        Arguments() {
-            this.makeOptionsObjects();
-        }
-
-        private void makeOptionsObjects() {
-            this.cfOptions = new CfOptions();
-            this.cfOptions.positionInfo = 2;
-            this.cfOptions.localInfo = true;
-            this.cfOptions.strictNameCheck = false;
-            this.cfOptions.optimize = true;
-            this.cfOptions.optimizeListFile = null;
-            this.cfOptions.dontOptimizeListFile = null;
-            this.cfOptions.statistics = this.statistics;
-            this.cfOptions.warn = DxConsole.noop;
-
-            this.dexOptions = new DexOptions();
-            this.dexOptions.forceJumbo = false;
-        }
-
-    }
-
 }

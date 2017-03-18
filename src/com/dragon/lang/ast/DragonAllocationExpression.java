@@ -88,7 +88,7 @@ class DragonAllocationExpression extends SimpleNode {
     private Object constructObject(Class<?> type, Object[] args, CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter) throws EvalError {
         final boolean isGeneratedClass = GeneratedClass.class.isAssignableFrom(type);
         if (isGeneratedClass) {
-            ClassGeneratorUtil.registerConstructorContext(callstack, dragonBasicInterpreter);
+            ClassGenerator.registerConstructorContext(callstack, dragonBasicInterpreter);
         }
         Object obj;
         try {
@@ -101,7 +101,7 @@ class DragonAllocationExpression extends SimpleNode {
             throw new DragonTargetException("Object constructor", e.getTargetException(), this, callstack, true);
         } finally {
             if (isGeneratedClass) {
-                ClassGeneratorUtil.registerConstructorContext(null, null); // clean up, prevent memory leak
+                ClassGenerator.registerConstructorContext(null, null); // clean up, prevent memory leak
             }
         }
 

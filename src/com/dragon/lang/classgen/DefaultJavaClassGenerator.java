@@ -1,114 +1,44 @@
-package com.dragon.lang.ast;
+package com.dragon.lang.classgen;
 
-import com.dragon.lang.*;
+import com.dragon.lang.DragonBasicInterpreter;
+import com.dragon.lang.InterpreterException;
+import com.dragon.lang.UtilEvalException;
 import com.dragon.lang.asm.*;
+import com.dragon.lang.ast.*;
 import com.dragon.lang.classpath.GeneratedClass;
-import com.dragon.lang.reflect.Reflect;
 import com.dragon.lang.utils.CallStack;
 import com.dragon.lang.utils.Capabilities;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.dragon.lang.ast.ClassGenerator.*;
+
 /**
- * ClassGeneratorUtil utilizes the ASM (www.objectweb.org) bytecode generator
- * by Eric Bruneton in order to generate class "stubs" for Dragon at
- * runtime.
- * <p/>
- * <p/>
- * Stub classes contain all of the fields of a Dragon scripted class
- * as well as two "callback" references to Dragon namespaces: one for
- * static methods and one for instance methods.  Methods of the class are
- * delegators which invoke corresponding methods on either the static or
- * instance dragon object and then unpack and return the results.  The static
- * namespace utilizes a static import to delegate variable access to the
- * class' static fields.  The instance namespace utilizes a dynamic import
- * (i.e. mixin) to delegate variable access to the class' instance variables.
- * <p/>
- * <p/>
- * Constructors for the class delegate to the static initInstance() method of
- * ClassGeneratorUtil to initialize new instances of the object.  initInstance()
- * invokes the instance intializer code (init vars and instance blocks) and
- * then delegates to the corresponding scripted constructor method in the
- * instance namespace.  Constructors contain special switch logic which allows
- * the Dragon to control the calling of alternate constructors (this() or
- * super() references) at runtime.
- * <p/>
- * <p/>
- * Specially named superclass delegator methods are also generated in order to
- * allow Dragon to access overridden methods of the superclass (which
- * reflection does not normally allow).
- * <p/>
- *
- * @author Pat Niemeyer
+ * @author kiva
+ * @date 2017/3/18
  */
-/*
-    Notes:
-	It would not be hard to eliminate the use of org.objectweb.asm.Type from
-	this class, making the distribution a tiny bit smaller.
-*/
-public class ClassGeneratorUtil implements Constants {
-
-    /**
-     * The name of the static field holding the reference to the dragon
-     * static This (the callback namespace for static methods)
-     */
-    static final String DRAGONSTATIC = "_dragonStatic";
-
-    /**
-     * The name of the instance field holding the reference to the dragon
-     * instance This (the callback namespace for instance methods)
-     */
-    private static final String DRAGONTHIS = "_dragonThis";
-
-    /**
-     * The prefix for the name of the super delegate methods. e.g.
-     * _dragonSuperfoo() is equivalent to super.foo()
-     */
-    static final String DRAGONSUPER = "_dragonSuper";
-
-    /**
-     * The dragon static namespace variable name of the instance initializer
-     */
-    static final String DRAGONINIT = "_dragonInstanceInitializer";
-
-    /**
-     * The dragon static namespace variable that holds the constructor methods
-     */
-    private static final String DRAGONCONSTRUCTORS = "_dragonConstructors";
-
-    /**
-     * The switch branch number for the default constructor.
-     * The value -1 will cause the default branch to be taken.
-     */
-    private static final int DEFAULTCONSTRUCTOR = -1;
-
-    private static final String OBJECT = "Ljava/lang/Object;";
-
-    private final String className;
+class DefaultJavaClassGenerator implements IClassGenerator, Constants {
+    private String className;
     /**
      * fully qualified class name (with package) e.g. foo/bar/Blah
      */
-    private final String fqClassName;
-    private final Class superClass;
-    private final String superClassName;
-    private final Class[] interfaces;
-    private final Variable[] vars;
-    private final Constructor[] superConstructors;
-    private final DelayedEvalDragonMethod[] constructors;
-    private final DelayedEvalDragonMethod[] methods;
-    private final NameSpace classStaticNameSpace;
-    private final Modifiers classModifiers;
+    private String fqClassName;
+    private Class superClass;
+    private String superClassName;
+    private Class[] interfaces;
+    private Variable[] vars;
+    private Constructor[] superConstructors;
+    private DelayedEvalDragonMethod[] constructors;
+    private DelayedEvalDragonMethod[] methods;
+    private NameSpace classStaticNameSpace;
+    private Modifiers classModifiers;
     private boolean isInterface;
 
-
-    /**
-     * @param packageName e.g. "com.foo.bar"
-     */
-    public ClassGeneratorUtil(Modifiers classModifiers, String className, String packageName, Class superClass, Class[] interfaces, Variable[] vars, DelayedEvalDragonMethod[] dragonMethods, NameSpace classStaticNameSpace, boolean isInterface) {
+    @SuppressWarnings("SuspiciousToArrayCall")
+    private void prepare(Modifiers classModifiers, String className, String packageName, Class superClass, Class[] interfaces, Variable[] vars, DelayedEvalDragonMethod[] dragonMethods, NameSpace classStaticNameSpace, boolean isInterface) {
         this.classModifiers = classModifiers;
         this.className = className;
         if (packageName != null) {
@@ -129,39 +59,36 @@ public class ClassGeneratorUtil implements Constants {
         this.classStaticNameSpace = classStaticNameSpace;
         this.superConstructors = superClass.getDeclaredConstructors();
 
-        // Split the methods into constructors and regular method lists
-        List consl = new ArrayList();
-        List methodsl = new ArrayList();
-        String classBaseName = getBaseName(className); // for inner classes
+        // Split the methods into constructorList and regular methodList
+        List<DragonMethod> constructorList = new ArrayList<>();
+        List<DragonMethod> methodList = new ArrayList<>();
+        String classBaseName = ClassGenerator.getBaseName(className); // for inner classes
         for (DelayedEvalDragonMethod dragonMethod : dragonMethods) {
             if (dragonMethod.getName().equals(classBaseName)) {
-                consl.add(dragonMethod);
+                constructorList.add(dragonMethod);
                 if ((packageName == null) && !Capabilities.haveAccessibility()) {
                     dragonMethod.makePublic();
                 }
             } else {
-                methodsl.add(dragonMethod);
+                methodList.add(dragonMethod);
             }
         }
 
-        this.constructors = (DelayedEvalDragonMethod[]) consl.toArray(new DelayedEvalDragonMethod[consl.size()]);
-        this.methods = (DelayedEvalDragonMethod[]) methodsl.toArray(new DelayedEvalDragonMethod[methodsl.size()]);
+        this.constructors = constructorList.toArray(new DelayedEvalDragonMethod[constructorList.size()]);
+        this.methods = methodList.toArray(new DelayedEvalDragonMethod[methodList.size()]);
 
         try {
-            classStaticNameSpace.setLocalVariable(DRAGONCONSTRUCTORS, constructors, false/*strict*/);
+            ClassGenerator.setLocalVariable(classStaticNameSpace, DRAGONCONSTRUCTORS, this.constructors, false);
         } catch (UtilEvalException e) {
-            throw new InterpreterException("can't set cons var");
+            throw new InterpreterException("can't set constructorList var");
         }
 
         this.isInterface = isInterface;
     }
 
-
-    /**
-     * Generate the class bytecode for this class.
-     */
-    public byte[] generateClass() {
-        // Force the class public for now...
+    @Override
+    public byte[] generateClass(Modifiers classModifiers, String className, String packageName, Class superClass, Class[] interfaces, Variable[] vars, DelayedEvalDragonMethod[] dragonMethods, NameSpace classStaticNameSpace, boolean isInterface) {
+        prepare(classModifiers, className, packageName, superClass, interfaces, vars, dragonMethods, classStaticNameSpace, isInterface);
         int classMods = getASMModifiers(classModifiers) | ACC_PUBLIC;
         if (isInterface) {
             classMods |= ACC_INTERFACE;
@@ -250,7 +177,6 @@ public class ClassGeneratorUtil implements Constants {
 
         return cw.toByteArray();
     }
-
 
     /**
      * Translate dragon.Modifiers into ASM modifier bitflags.
@@ -387,7 +313,7 @@ public class ClassGeneratorUtil implements Constants {
         cv.visitVarInsn(ALOAD, argsVar);
 
         // invoke the initInstance() method
-        cv.visitMethodInsn(INVOKESTATIC, "com/dragon/lang/ast/ClassGeneratorUtil", "initInstance", "(L" + GeneratedClass.class.getName().replace('.', '/') + ";Ljava/lang/String;[Ljava/lang/Object;)V");
+        cv.visitMethodInsn(INVOKESTATIC, "com/dragon/lang/ast/ClassGenerator", "initInstance", "(L" + GeneratedClass.class.getName().replace('.', '/') + ";Ljava/lang/String;[Ljava/lang/Object;)V");
 
         cv.visitInsn(RETURN);
 
@@ -435,7 +361,7 @@ public class ClassGeneratorUtil implements Constants {
         cv.visitIntInsn(BIPUSH, consIndex);
 
         // invoke the ClassGeneratorUtil getConstructorsArgs() method
-        cv.visitMethodInsn(INVOKESTATIC, "com/dragon/lang/ast/ClassGeneratorUtil", "getConstructorArgs", "(Ljava/lang/String;Lcom/dragon/lang/ast/This;[Ljava/lang/Object;I)" + "Lcom/dragon/lang/ast/ClassGeneratorUtil$ConstructorArgs;");
+        cv.visitMethodInsn(INVOKESTATIC, "com/dragon/lang/ast/ClassGenerator", "getConstructorArgs", "(Ljava/lang/String;Lcom/dragon/lang/ast/This;[Ljava/lang/Object;I)" + "Lcom/dragon/lang/ast/ClassGenerator$ConstructorArgs;");
 
         // store ConstructorArgs in consArgsVar
         cv.visitVarInsn(ASTORE, consArgsVar);
@@ -444,7 +370,7 @@ public class ClassGeneratorUtil implements Constants {
 
         // push ConstructorArgs
         cv.visitVarInsn(ALOAD, consArgsVar);
-        cv.visitFieldInsn(GETFIELD, "com/dragon/lang/ast/ClassGeneratorUtil$ConstructorArgs", "selector", "I");
+        cv.visitFieldInsn(GETFIELD, "com/dragon/lang/ast/ClassGenerator$ConstructorArgs", "selector", "I");
 
         // start switch
         cv.visitTableSwitchInsn(0/*min*/, cases - 1/*max*/, defaultLabel, labels);
@@ -506,7 +432,7 @@ public class ClassGeneratorUtil implements Constants {
 
             // invoke the iterator method on the ConstructorArgs
             cv.visitVarInsn(ALOAD, consArgsVar); // push the ConstructorArgs
-            String className = "com/dragon/lang/ast/ClassGeneratorUtil$ConstructorArgs";
+            String className = "com/dragon/lang/ast/ClassGenerator$ConstructorArgs";
             String retType;
             if (method.equals("getObject")) {
                 retType = OBJECT;
@@ -738,278 +664,11 @@ public class ClassGeneratorUtil implements Constants {
 
 
     /**
-     * Evaluate the arguments (if any) for the constructor specified by
-     * the constructor index.  Return the ConstructorArgs object which
-     * contains the actual arguments to the alternate constructor and also the
-     * index of that constructor for the constructor switch.
-     *
-     * @param consArgs the arguments to the constructor.  These are necessary in
-     *                 the evaluation of the alt constructor args.  e.g. Foo(a) { super(a); }
-     * @return the ConstructorArgs object containing a constructor selector
-     * and evaluated arguments for the alternate constructor
+     * @see com.dragon.lang.ast.ClassGenerator#getConstructorArgs(String, This, Object[], int)
      */
-    public static ConstructorArgs getConstructorArgs(String superClassName, This classStaticThis, Object[] consArgs, int index) {
-        DelayedEvalDragonMethod[] constructors;
-        try {
-            constructors = (DelayedEvalDragonMethod[]) classStaticThis.getNameSpace().getVariable(DRAGONCONSTRUCTORS);
-        } catch (Exception e) {
-            throw new InterpreterException("unable to get instance initializer: " + e);
-        }
-
-        if (index == DEFAULTCONSTRUCTOR) // auto-gen default constructor
-        {
-            return ConstructorArgs.DEFAULT;
-        } // use default super constructor
-
-        DelayedEvalDragonMethod constructor = constructors[index];
-
-        if (constructor.methodBody.jjtGetNumChildren() == 0) {
-            return ConstructorArgs.DEFAULT;
-        } // use default super constructor
-
-        // Determine if the constructor calls this() or super()
-        String altConstructor = null;
-        DragonArguments argsNode = null;
-        SimpleNode firstStatement = (SimpleNode) constructor.methodBody.jjtGetChild(0);
-        if (firstStatement instanceof DragonPrimaryExpression) {
-            firstStatement = (SimpleNode) firstStatement.jjtGetChild(0);
-        }
-        if (firstStatement instanceof DragonMethodInvocation) {
-            DragonMethodInvocation methodNode = (DragonMethodInvocation) firstStatement;
-            DragonAmbiguousName methodName = methodNode.getNameNode();
-            if (methodName.text.equals("super") || methodName.text.equals("this")) {
-                altConstructor = methodName.text;
-                argsNode = methodNode.getArgsNode();
-            }
-        }
-
-        if (altConstructor == null) {
-            return ConstructorArgs.DEFAULT;
-        } // use default super constructor
-
-        // Make a tmp namespace to hold the original constructor args for
-        // use in eval of the parameters node
-        NameSpace consArgsNameSpace = new NameSpace(classStaticThis.getNameSpace(), "consArgs");
-        String[] consArgNames = constructor.getParameterNames();
-        Class[] consArgTypes = constructor.getParameterTypes();
-        for (int i = 0; i < consArgs.length; i++) {
-            try {
-                consArgsNameSpace.setTypedVariable(consArgNames[i], consArgTypes[i], consArgs[i], null/*modifiers*/);
-            } catch (UtilEvalException e) {
-                throw new InterpreterException("err setting local cons arg:" + e);
-            }
-        }
-
-        // evaluate the args
-
-        CallStack callstack = new CallStack();
-        callstack.push(consArgsNameSpace);
-        Object[] args;
-        DragonBasicInterpreter dragonBasicInterpreter = classStaticThis.declaringDragonBasicInterpreter;
-
-        try {
-            args = argsNode.getArguments(callstack, dragonBasicInterpreter);
-        } catch (EvalError e) {
-            throw new InterpreterException("Error evaluating constructor args: " + e);
-        }
-
-        Class[] argTypes = Types.getTypes(args);
-        args = Primitive.unwrap(args);
-        Class superClass = dragonBasicInterpreter.getClassManager().classForName(superClassName);
-        if (superClass == null) {
-            throw new InterpreterException("can't find superclass: " + superClassName);
-        }
-        Constructor[] superCons = superClass.getDeclaredConstructors();
-
-        // find the matching super() constructor for the args
-        if (altConstructor.equals("super")) {
-            int i = Reflect.findMostSpecificConstructorIndex(argTypes, superCons);
-            if (i == -1) {
-                throw new InterpreterException("can't find constructor for args!");
-            }
-            return new ConstructorArgs(i, args);
-        }
-
-        // find the matching this() constructor for the args
-        Class[][] candidates = new Class[constructors.length][];
-        for (int i = 0; i < candidates.length; i++) {
-            candidates[i] = constructors[i].getParameterTypes();
-        }
-        int i = Reflect.findMostSpecificSignature(argTypes, candidates);
-        if (i == -1) {
-            throw new InterpreterException("can't find constructor for args 2!");
-        }
-        // this() constructors come after super constructors in the table
-
-        int selector = i + superCons.length;
-        int ourSelector = index + superCons.length;
-
-        // Are we choosing ourselves recursively through a this() reference?
-        if (selector == ourSelector) {
-            throw new InterpreterException("Recusive constructor call.");
-        }
-
-        return new ConstructorArgs(selector, args);
+    public static ClassGenerator.ConstructorArgs getConstructorArgs(String superClassName, This classStaticThis, Object[] consArgs, int index) {
+        return ClassGenerator.getConstructorArgs(superClassName, classStaticThis, consArgs, index);
     }
-
-
-    private static final ThreadLocal<NameSpace> CONTEXT_NAMESPACE = new ThreadLocal<NameSpace>();
-    private static final ThreadLocal<DragonBasicInterpreter> CONTEXT_INTERPRETER = new ThreadLocal<DragonBasicInterpreter>();
-
-
-    /**
-     * Register actual context, used by generated class constructor, which calls
-     * {@link  #initInstance(GeneratedClass, String, Object[])}.
-     */
-    static void registerConstructorContext(CallStack callstack, DragonBasicInterpreter dragonBasicInterpreter) {
-        if (callstack != null) {
-            CONTEXT_NAMESPACE.set(callstack.top());
-        } else {
-            CONTEXT_NAMESPACE.remove();
-        }
-        if (dragonBasicInterpreter != null) {
-            CONTEXT_INTERPRETER.set(dragonBasicInterpreter);
-        } else {
-            CONTEXT_INTERPRETER.remove();
-        }
-    }
-
-
-    /**
-     * Initialize an instance of the class.
-     * This method is called from the generated class constructor to evaluate
-     * the instance initializer and scripted constructor in the instance
-     * namespace.
-     */
-    public static void initInstance(GeneratedClass instance, String className, Object[] args) {
-        Class[] sig = Types.getTypes(args);
-        CallStack callstack = new CallStack();
-        DragonBasicInterpreter dragonBasicInterpreter;
-        NameSpace instanceNameSpace;
-
-        // check to see if the instance has already been initialized
-        // (the case if using a this() alternate constuctor)
-        // todo PeJoBo70 write test for this
-        This instanceThis = getClassInstanceThis(instance, className);
-
-        // XXX clean up this conditional
-        if (instanceThis == null) {
-            // Create the instance 'This' namespace, set it on the object
-            // instance and invoke the instance initializer
-
-            // Get the static This reference from the proto-instance
-            This classStaticThis = getClassStaticThis(instance.getClass(), className);
-            dragonBasicInterpreter = CONTEXT_INTERPRETER.get();
-            if (dragonBasicInterpreter == null) {
-                dragonBasicInterpreter = classStaticThis.declaringDragonBasicInterpreter;
-            }
-
-
-            // Get the instance initializer block from the static This
-            DragonBlock instanceInitBlock;
-            try {
-                instanceInitBlock = (DragonBlock) classStaticThis.getNameSpace().getVariable(DRAGONINIT);
-            } catch (Exception e) {
-                throw new InterpreterException("unable to get instance initializer: " + e);
-            }
-
-            // Create the instance namespace
-            if (CONTEXT_NAMESPACE.get() != null) {
-                instanceNameSpace = classStaticThis.getNameSpace().copy();
-                instanceNameSpace.setParent(CONTEXT_NAMESPACE.get());
-            } else {
-                instanceNameSpace = new NameSpace(classStaticThis.getNameSpace(), className); // todo: old code
-            }
-            instanceNameSpace.isClass = true;
-
-            // Set the instance This reference on the instance
-            instanceThis = instanceNameSpace.getThis(dragonBasicInterpreter);
-            try {
-                LeftValue lhs = Reflect.getLHSObjectField(instance, DRAGONTHIS + className);
-                lhs.assign(instanceThis, false/*strict*/);
-            } catch (Exception e) {
-                throw new InterpreterException("Error in class gen setup: " + e);
-            }
-
-            // Give the instance space its object import
-            instanceNameSpace.setClassInstance(instance);
-
-            // should use try/finally here to pop ns
-            callstack.push(instanceNameSpace);
-
-            // evaluate the instance portion of the block in it
-            try { // Evaluate the initializer block
-                instanceInitBlock.evalBlock(callstack, dragonBasicInterpreter, true/*override*/, ClassGenerator.ClassNodeFilter.CLASSINSTANCE);
-            } catch (Exception e) {
-                throw new InterpreterException("Error in class initialization: " + e, e);
-            }
-
-            callstack.pop();
-
-        } else {
-            // The object instance has already been initialzed by another
-            // constructor.  Fall through to invoke the constructor body below.
-            dragonBasicInterpreter = instanceThis.declaringDragonBasicInterpreter;
-            instanceNameSpace = instanceThis.getNameSpace();
-        }
-
-        // invoke the constructor method from the instanceThis
-
-        String constructorName = getBaseName(className);
-        try {
-            // Find the constructor (now in the instance namespace)
-            DragonMethod constructor = instanceNameSpace.getMethod(constructorName, sig, true/*declaredOnly*/);
-
-            // if args, we must have constructor
-            if (args.length > 0 && constructor == null) {
-                throw new InterpreterException("Can't find constructor: " + className);
-            }
-
-            // Evaluate the constructor
-            if (constructor != null) {
-                constructor.invoke(args, dragonBasicInterpreter, callstack, null/*callerInfo*/, false/*overrideNameSpace*/);
-            }
-        } catch (Exception e) {
-            if (e instanceof DragonTargetException) {
-                e = (Exception) ((DragonTargetException) e).getTarget();
-            }
-            if (e instanceof InvocationTargetException) {
-                e = (Exception) ((InvocationTargetException) e).getTargetException();
-            }
-            throw new InterpreterException("Error in class initialization: " + e, e);
-        }
-    }
-
-
-    /**
-     * Get the static dragon namespace field from the class.
-     *
-     * @param className may be the name of clazz itself or a superclass of clazz.
-     */
-    private static This getClassStaticThis(Class clas, String className) {
-        try {
-            return (This) Reflect.getStaticFieldValue(clas, DRAGONSTATIC + className);
-        } catch (Exception e) {
-            throw new InterpreterException("Unable to get class static space: " + e);
-        }
-    }
-
-
-    /**
-     * Get the instance dragon namespace field from the object instance.
-     *
-     * @return the class instance This object or null if the object has not
-     * been initialized.
-     */
-    static This getClassInstanceThis(Object instance, String className) {
-        try {
-            Object o = Reflect.getObjectFieldValue(instance, DRAGONTHIS + className);
-            return (This) Primitive.unwrap(o); // unwrap Primitive.Null to null
-        } catch (Exception e) {
-            throw new InterpreterException("Generated class: Error getting This" + e);
-        }
-    }
-
 
     /**
      * Does the type descriptor string describe a primitive type?
@@ -1018,13 +677,8 @@ public class ClassGeneratorUtil implements Constants {
         return typeDescriptor.length() == 1; // right?
     }
 
-
-    private static String[] getTypeDescriptors(Class[] cparams) {
-        String[] sa = new String[cparams.length];
-        for (int i = 0; i < sa.length; i++) {
-            sa[i] = DragonType.getTypeDescriptor(cparams[i]);
-        }
-        return sa;
+    private static String[] getTypeDescriptors(Class[] paramClasses) {
+        return ClassGenerator.getTypeDescriptors(paramClasses);
     }
 
 
@@ -1039,100 +693,4 @@ public class ClassGeneratorUtil implements Constants {
         }
         return s.substring(1, s.length() - 1);
     }
-
-
-    private static String getBaseName(String className) {
-        int i = className.indexOf("$");
-        if (i == -1) {
-            return className;
-        }
-
-        return className.substring(i + 1);
-    }
-
-
-    /**
-     * A ConstructorArgs object holds evaluated arguments for a constructor
-     * call as well as the index of a possible alternate selector to invoke.
-     * This object is used by the constructor switch.
-     *
-     * @see dragon.ClassGeneratorUtil#generateConstructor(int, String[], int, dragon.org.objectweb.asm.ClassWriter)
-     */
-    public static class ConstructorArgs {
-
-        /**
-         * A ConstructorArgs which calls the default constructor
-         */
-        public static final ConstructorArgs DEFAULT = new ConstructorArgs();
-
-        public int selector = DEFAULTCONSTRUCTOR;
-        Object[] args;
-        int arg;
-
-
-        /**
-         * The index of the constructor to call.
-         */
-
-        ConstructorArgs() {
-        }
-
-
-        ConstructorArgs(int selector, Object[] args) {
-            this.selector = selector;
-            this.args = args;
-        }
-
-
-        Object next() {
-            return args[arg++];
-        }
-
-
-        public boolean getBoolean() {
-            return (Boolean) next();
-        }
-
-
-        public byte getByte() {
-            return (Byte) next();
-        }
-
-
-        public char getChar() {
-            return (Character) next();
-        }
-
-
-        public short getShort() {
-            return (Short) next();
-        }
-
-
-        public int getInt() {
-            return (Integer) next();
-        }
-
-
-        public long getLong() {
-            return (Long) next();
-        }
-
-
-        public double getDouble() {
-            return (Double) next();
-        }
-
-
-        public float getFloat() {
-            return (Float) next();
-        }
-
-
-        public Object getObject() {
-            return next();
-        }
-    }
-
-
 }
