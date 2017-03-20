@@ -248,8 +248,18 @@ public class SimpleNode implements Node {
             return;
         }
 
-        BreakPoint breakPoint = new BreakPoint(getSourceFile(), getLineNumber(), getText());
+        BreakPoint breakPoint = new BreakPoint(getSourceFile(), getLineNumber(), toCode());
         debugger.onBreakPointReached(breakPoint);
+    }
+    
+    public String toCode() {
+        Token t = firstToken;
+        StringBuilder s = new StringBuilder();
+        while (t != null && t.beginLine == getLineNumber()) {
+            s.append(t.image + " ");
+            t = t.next;
+        }
+        return s.toString();
     }
 }
 

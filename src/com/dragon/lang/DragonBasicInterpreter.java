@@ -367,6 +367,7 @@ public class DragonBasicInterpreter
 
                     // bind debugger if we are debugging
                     if (debugger != null) {
+                        debugger.bindCallStack(callstack);
                         bindDebugger(node, debugger);
                     }
 
@@ -458,6 +459,7 @@ public class DragonBasicInterpreter
             if (breakPoints.contains(child.getLineNumber()) && !child.getText().isEmpty()) {
                 child.setDebugger(debugger);
                 debug("Set breakpoint at " + child.getSourceFile() + ":" + child.getLineNumber() + ": " + child.getText());
+                // TODO Merge the same statement
                 continue;
             }
             bindDebugger(child, debugger);

@@ -1,9 +1,13 @@
-class Main {
+Main() {
     public void hello(int i) {
         if (i == 0) {
             println("hello world");
         }
     }
+    
+    return this;
 }
 
-new Main().hello(0);
+m = Main();
+m.hello(0);
+

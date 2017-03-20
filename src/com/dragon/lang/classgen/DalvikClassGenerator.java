@@ -4,6 +4,9 @@ import com.dragon.lang.ast.DelayedEvalDragonMethod;
 import com.dragon.lang.ast.Modifiers;
 import com.dragon.lang.ast.NameSpace;
 import com.dragon.lang.ast.Variable;
+import java.io.FileOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
 
 /**
  * @author kiva
@@ -26,6 +29,20 @@ class DalvikClassGenerator extends DefaultJavaClassGenerator implements IClassGe
         byte[] javaClass = super.generateClass(classModifiers, className, packageName, superClass, interfaces, vars, dragonMethods, classStaticNameSpace, isInterface);
 
         DexConverter dexConverter = getDexConverter();
-        return dexConverter.convertJavaClass(packageName + "." + className, javaClass);
+        byte[] out = dexConverter.convertJavaClass(packageName + "." + className, javaClass);
+        
+        if (System.getProperty("dragonDexDebugDir") != null) {
+            try
+            {
+                FileOutputStream os = new FileOutputStream(new File(System.getProperty("dragonDexDebugDir"), className + ".dex"));
+                os.write(out);
+                os.flush();
+                os.close();
+            }
+            catch (Exception ignore)
+            {}
+        }
+        
+        return out;
     }
 }

@@ -9,6 +9,7 @@ import java.lang.reflect.InvocationTargetException;
 public class Main {
 
     public static void main(String[] args) {
+        args = new String[] {"/sdcard/AppProjects/Dragon/tests/main.dragon"};
         if (args.length < 1) {
             showUsage();
             return;
@@ -30,7 +31,10 @@ public class Main {
         DragonDebugger debugger = new DragonDebugger(dragon);
         debugger.addBreakPoint(fileName)
                 .add(3)
-                .add(9);
+                .add(4)
+                .add(8)
+                .add(11)
+                .add(12);
         debugger.startDebugging();
 
         try {

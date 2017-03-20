@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
+import com.dragon.lang.utils.CallStack;
 
 /**
  * @author kiva
@@ -14,11 +15,17 @@ import java.util.Set;
  */
 public class DragonDebugger {
     private HashMap<String, Set<Integer>> breakPoints;
+    private CallStack callstack;
     private DragonInterpreter interpreter;
 
     public DragonDebugger(DragonInterpreter interpreter) {
         this.interpreter = interpreter;
         breakPoints = new HashMap<>(4);
+    }
+
+    public void bindCallStack(CallStack callstack)
+    {
+        this.callstack = callstack;
     }
 
     public void startDebugging() {
@@ -44,13 +51,57 @@ public class DragonDebugger {
     public Set<Integer> getFileBreakPoints(String file) {
         return breakPoints.get(absolutePath(file));
     }
+    
+    public void dumpCallingStack() {
+        System.err.println("CallStack Dump:");
+        for (int i = 0; i < callstack.depth(); ++i) {
+            System.err.printf("  #%2d    %s\n", i, callstack.get(i).getName());
+        }
+    }
+    
+    public void dumpCurrentNameSpace() {}
+    
+    public void dumpObject(String name) {}
 
     public void onBreakPointReached(BreakPoint breakPoint) {
-        System.out.println("\n\n" + breakPoint);
-        System.out.println("     " + breakPoint.getCode());
-        System.out.print("Debugger> ");
-        Scanner s = new Scanner(System.in);
-        s.next();
+        if (interpreter == null) {
+            return;
+        }
+        
+        System.err.println(breakPoint);
+        System.err.println("     " + breakPoint.getCode());
+        Scanner reader = new Scanner(System.in);
+        
+        String s;
+        for (;;) {
+            System.err.print("ddb> ");
+            if ((s = reader.next()) == null) {
+                break;
+            }
+                
+            String[] c = s.split(" ");
+            
+            if (c[0].equals("n") || c[0].equals("next")) {
+                break;
+            }
+            
+            if (c[0].equals("detach")) {
+                this.interpreter = null;
+                this.callstack = null;
+                break;
+            }
+            
+            
+            switch(s) {
+                case "dcs":
+                    dumpCallingStack();
+                    break;
+                case "dns":
+                    dumpCurrentNameSpace();
+                    break;
+                
+            }
+        }
     }
 
     public static class BreakPointAdder {
