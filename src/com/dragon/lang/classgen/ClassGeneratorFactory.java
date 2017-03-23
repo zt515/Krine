@@ -1,4 +1,5 @@
 package com.dragon.lang.classgen;
+import com.dragon.lang.utils.*;
 
 /**
  * @author kiva
@@ -16,18 +17,9 @@ public class ClassGeneratorFactory {
         return classGenerator;
     }
 
-    private static boolean isAndroid() {
-        // TODO Be Smarter
-        try {
-            Class.forName("android.app.Activity");
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
-    }
-
+    
     private static IClassGenerator createClassGenerator() {
-        if (isAndroid()) {
+        if (Capabilities.isAndroid()) {
             return new DalvikClassGenerator();
         }
         return new DefaultJavaClassGenerator();

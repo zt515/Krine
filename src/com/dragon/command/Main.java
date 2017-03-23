@@ -35,7 +35,7 @@ public class Main {
                 .add(8)
                 .add(11)
                 .add(12);
-        debugger.startDebugging();
+        //debugger.startDebugging();
 
         try {
             Object result = dragon.source(fileName, dragon.getGlobalNameSpace());

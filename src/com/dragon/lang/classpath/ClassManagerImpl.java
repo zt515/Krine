@@ -46,6 +46,7 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.util.*;
+import com.dragon.lang.utils.*;
 
 /**
  * <pre>
@@ -347,7 +348,11 @@ public class ClassManagerImpl extends DragonClassManager {
      * init the baseLoader from the baseClassPath
      */
     private void initBaseLoader() {
-        baseLoader = new DragonClassLoader(this, baseClassPath);
+        if (Capabilities.isAndroid()) {
+            baseLoader = new DragonDexClassLoader(this, baseClassPath);
+        } else {
+            baseLoader = new DragonJavaClassLoader(this, baseClassPath);
+        }
     }
 
     // class reloading
@@ -526,7 +531,7 @@ public class ClassManagerImpl extends DragonClassManager {
     }
 
     public ClassLoader getBaseLoader() {
-        return baseLoader;
+        return baseLoader.getClassLoader();
     }
 
     /**

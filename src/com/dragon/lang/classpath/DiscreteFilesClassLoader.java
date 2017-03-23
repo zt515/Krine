@@ -42,7 +42,7 @@ import java.util.HashMap;
  * Because the classes are loaded via a single classloader they change as a
  * group and any versioning cross dependencies can be managed.
  */
-public class DiscreteFilesClassLoader extends DragonClassLoader {
+public class DiscreteFilesClassLoader extends DragonJavaClassLoader {
     /**
      * Map of class sources which also implies our coverage space.
      */

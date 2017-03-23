@@ -11,3 +11,5 @@ Main() {
 m = Main();
 m.hello(0);
 
+class App {}
+
