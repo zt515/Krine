@@ -111,7 +111,7 @@ public final class Primitive implements ParserConstants, java.io.Serializable {
     public Primitive(Object value) {
         if (value == null)
             throw new InterpreterException(
-                    "Use Primitve.NULL instead of Primitive(null)");
+                    "Use Primitive.NULL instead of Primitive(null)");
 
         if (value != Special.NULL_VALUE
                 && value != Special.VOID_TYPE &&
@@ -123,7 +123,7 @@ public final class Primitive implements ParserConstants, java.io.Serializable {
     }
 
     public Primitive(boolean value) {
-        this(new Boolean(value));
+        this(Boolean.valueOf(value));
     }
 
     public Primitive(byte value) {
@@ -264,28 +264,28 @@ public final class Primitive implements ParserConstants, java.io.Serializable {
     }
 
     static Boolean booleanBinaryOperation(Boolean B1, Boolean B2, int kind) {
-        boolean lhs = B1.booleanValue();
-        boolean rhs = B2.booleanValue();
+        boolean lhs = B1;
+        boolean rhs = B2;
 
         switch (kind) {
             case EQ:
-                return new Boolean(lhs == rhs);
+                return lhs == rhs;
 
             case NE:
-                return new Boolean(lhs != rhs);
+                return lhs != rhs;
 
             case BOOL_OR:
             case BOOL_ORX:
             case BIT_OR:
-                return new Boolean(lhs || rhs);
+                return lhs || rhs;
 
             case BOOL_AND:
             case BOOL_ANDX:
             case BIT_AND:
-                return new Boolean(lhs && rhs);
+                return lhs && rhs;
 
             case XOR:
-                return new Boolean(lhs ^ rhs);
+                return lhs ^ rhs;
 
             default:
                 throw new InterpreterException("unimplemented binary operator");
@@ -294,72 +294,72 @@ public final class Primitive implements ParserConstants, java.io.Serializable {
 
     // returns Object covering both Long and Boolean return types
     static Object longBinaryOperation(Long L1, Long L2, int kind) {
-        long lhs = L1.longValue();
-        long rhs = L2.longValue();
+        long lhs = L1;
+        long rhs = L2;
 
         switch (kind) {
             // boolean
             case LT:
             case LTX:
-                return new Boolean(lhs < rhs);
+                return lhs < rhs;
 
             case GT:
             case GTX:
-                return new Boolean(lhs > rhs);
+                return lhs > rhs;
 
             case EQ:
-                return new Boolean(lhs == rhs);
+                return lhs == rhs;
 
             case LE:
             case LEX:
-                return new Boolean(lhs <= rhs);
+                return lhs <= rhs;
 
             case GE:
             case GEX:
-                return new Boolean(lhs >= rhs);
+                return lhs >= rhs;
 
             case NE:
-                return new Boolean(lhs != rhs);
+                return lhs != rhs;
 
             // arithmetic
             case PLUS:
-                return new Long(lhs + rhs);
+                return lhs + rhs;
 
             case MINUS:
-                return new Long(lhs - rhs);
+                return lhs - rhs;
 
             case STAR:
-                return new Long(lhs * rhs);
+                return lhs * rhs;
 
             case SLASH:
-                return new Long(lhs / rhs);
+                return lhs / rhs;
 
             case MOD:
-                return new Long(lhs % rhs);
+                return lhs % rhs;
 
             // bitwise
             case LSHIFT:
             case LSHIFTX:
-                return new Long(lhs << rhs);
+                return lhs << rhs;
 
             case RSIGNEDSHIFT:
             case RSIGNEDSHIFTX:
-                return new Long(lhs >> rhs);
+                return lhs >> rhs;
 
             case RUNSIGNEDSHIFT:
             case RUNSIGNEDSHIFTX:
-                return new Long(lhs >>> rhs);
+                return lhs >>> rhs;
 
             case BIT_AND:
             case BIT_ANDX:
-                return new Long(lhs & rhs);
+                return lhs & rhs;
 
             case BIT_OR:
             case BIT_ORX:
-                return new Long(lhs | rhs);
+                return lhs | rhs;
 
             case XOR:
-                return new Long(lhs ^ rhs);
+                return lhs ^ rhs;
 
             default:
                 throw new InterpreterException(
@@ -369,72 +369,72 @@ public final class Primitive implements ParserConstants, java.io.Serializable {
 
     // returns Object covering both Integer and Boolean return types
     static Object intBinaryOperation(Integer I1, Integer I2, int kind) {
-        int lhs = I1.intValue();
-        int rhs = I2.intValue();
+        int lhs = I1;
+        int rhs = I2;
 
         switch (kind) {
             // boolean
             case LT:
             case LTX:
-                return new Boolean(lhs < rhs);
+                return lhs < rhs;
 
             case GT:
             case GTX:
-                return new Boolean(lhs > rhs);
+                return lhs > rhs;
 
             case EQ:
-                return new Boolean(lhs == rhs);
+                return lhs == rhs;
 
             case LE:
             case LEX:
-                return new Boolean(lhs <= rhs);
+                return lhs <= rhs;
 
             case GE:
             case GEX:
-                return new Boolean(lhs >= rhs);
+                return lhs >= rhs;
 
             case NE:
-                return new Boolean(lhs != rhs);
+                return lhs != rhs;
 
             // arithmetic
             case PLUS:
-                return new Integer(lhs + rhs);
+                return lhs + rhs;
 
             case MINUS:
-                return new Integer(lhs - rhs);
+                return lhs - rhs;
 
             case STAR:
-                return new Integer(lhs * rhs);
+                return lhs * rhs;
 
             case SLASH:
-                return new Integer(lhs / rhs);
+                return lhs / rhs;
 
             case MOD:
-                return new Integer(lhs % rhs);
+                return lhs % rhs;
 
             // bitwise
             case LSHIFT:
             case LSHIFTX:
-                return new Integer(lhs << rhs);
+                return lhs << rhs;
 
             case RSIGNEDSHIFT:
             case RSIGNEDSHIFTX:
-                return new Integer(lhs >> rhs);
+                return lhs >> rhs;
 
             case RUNSIGNEDSHIFT:
             case RUNSIGNEDSHIFTX:
-                return new Integer(lhs >>> rhs);
+                return lhs >>> rhs;
 
             case BIT_AND:
             case BIT_ANDX:
-                return new Integer(lhs & rhs);
+                return lhs & rhs;
 
             case BIT_OR:
             case BIT_ORX:
-                return new Integer(lhs | rhs);
+                return lhs | rhs;
 
             case XOR:
-                return new Integer(lhs ^ rhs);
+                return lhs ^ rhs;
 
             default:
                 throw new InterpreterException(
@@ -445,48 +445,48 @@ public final class Primitive implements ParserConstants, java.io.Serializable {
     // returns Object covering both Double and Boolean return types
     static Object doubleBinaryOperation(Double D1, Double D2, int kind)
             throws UtilEvalException {
-        double lhs = D1.doubleValue();
-        double rhs = D2.doubleValue();
+        double lhs = D1;
+        double rhs = D2;
 
         switch (kind) {
             // boolean
             case LT:
             case LTX:
-                return new Boolean(lhs < rhs);
+                return lhs < rhs;
 
             case GT:
             case GTX:
-                return new Boolean(lhs > rhs);
+                return lhs > rhs;
 
             case EQ:
-                return new Boolean(lhs == rhs);
+                return lhs == rhs;
 
             case LE:
             case LEX:
-                return new Boolean(lhs <= rhs);
+                return lhs <= rhs;
 
             case GE:
             case GEX:
-                return new Boolean(lhs >= rhs);
+                return lhs >= rhs;
 
             case NE:
-                return new Boolean(lhs != rhs);
+                return lhs != rhs;
 
             // arithmetic
             case PLUS:
-                return new Double(lhs + rhs);
+                return lhs + rhs;
 
             case MINUS:
-                return new Double(lhs - rhs);
+                return lhs - rhs;
 
             case STAR:
-                return new Double(lhs * rhs);
+                return lhs * rhs;
 
             case SLASH:
-                return new Double(lhs / rhs);
+                return lhs / rhs;
 
             case MOD:
-                return new Double(lhs % rhs);
+                return lhs % rhs;
 
             // can't shift floating-point values
             case LSHIFT:
@@ -506,48 +506,48 @@ public final class Primitive implements ParserConstants, java.io.Serializable {
     // returns Object covering both Long and Boolean return types
     static Object floatBinaryOperation(Float F1, Float F2, int kind)
             throws UtilEvalException {
-        float lhs = F1.floatValue();
-        float rhs = F2.floatValue();
+        float lhs = F1;
+        float rhs = F2;
 
         switch (kind) {
             // boolean
             case LT:
             case LTX:
-                return new Boolean(lhs < rhs);
+                return lhs < rhs;
 
             case GT:
             case GTX:
-                return new Boolean(lhs > rhs);
+                return lhs > rhs;
 
             case EQ:
-                return new Boolean(lhs == rhs);
+                return lhs == rhs;
 
             case LE:
             case LEX:
-                return new Boolean(lhs <= rhs);
+                return lhs <= rhs;
 
             case GE:
             case GEX:
-                return new Boolean(lhs >= rhs);
+                return lhs >= rhs;
 
             case NE:
-                return new Boolean(lhs != rhs);
+                return lhs != rhs;
 
             // arithmetic
             case PLUS:
-                return new Float(lhs + rhs);
+                return lhs + rhs;
 
             case MINUS:
-                return new Float(lhs - rhs);
+                return lhs - rhs;
 
             case STAR:
-                return new Float(lhs * rhs);
+                return lhs * rhs;
 
             case SLASH:
-                return new Float(lhs / rhs);
+                return lhs / rhs;
 
             case MOD:
-                return new Float(lhs % rhs);
+                return lhs % rhs;
 
             // can't shift floats
             case LSHIFT:
@@ -569,9 +569,9 @@ public final class Primitive implements ParserConstants, java.io.Serializable {
      */
     static Object promoteToInteger(Object wrapper) {
         if (wrapper instanceof Character)
-            return new Integer(((Character) wrapper).charValue());
+            return (int) (Character) wrapper;
         else if ((wrapper instanceof Byte) || (wrapper instanceof Short))
-            return new Integer(((Number) wrapper).intValue());
+            return ((Number) wrapper).intValue();
 
         return wrapper;
     }
@@ -592,19 +592,19 @@ public final class Primitive implements ParserConstants, java.io.Serializable {
 
             if ((b = (lnum instanceof Double)) || (rnum instanceof Double)) {
                 if (b)
-                    rhs = new Double(rnum.doubleValue());
+                    rhs = rnum.doubleValue();
                 else
-                    lhs = new Double(lnum.doubleValue());
+                    lhs = lnum.doubleValue();
             } else if ((b = (lnum instanceof Float)) || (rnum instanceof Float)) {
                 if (b)
-                    rhs = new Float(rnum.floatValue());
+                    rhs = rnum.floatValue();
                 else
-                    lhs = new Float(lnum.floatValue());
+                    lhs = lnum.floatValue();
             } else if ((b = (lnum instanceof Long)) || (rnum instanceof Long)) {
                 if (b)
-                    rhs = new Long(rnum.longValue());
+                    rhs = rnum.longValue();
                 else
-                    lhs = new Long(lnum.longValue());
+                    lhs = lnum.longValue();
             }
         }
 
@@ -652,7 +652,7 @@ public final class Primitive implements ParserConstants, java.io.Serializable {
 
     static boolean booleanUnaryOperation(Boolean B, int kind)
             throws UtilEvalException {
-        boolean operand = B.booleanValue();
+        boolean operand = B;
         switch (kind) {
             case BANG:
                 return !operand;
@@ -662,7 +662,7 @@ public final class Primitive implements ParserConstants, java.io.Serializable {
     }
 
     static int intUnaryOperation(Integer I, int kind) {
-        int operand = I.intValue();
+        int operand = I;
 
         switch (kind) {
             case PLUS:
@@ -681,7 +681,7 @@ public final class Primitive implements ParserConstants, java.io.Serializable {
     }
 
     static long longUnaryOperation(Long L, int kind) {
-        long operand = L.longValue();
+        long operand = L;
 
         switch (kind) {
             case PLUS:
@@ -700,7 +700,7 @@ public final class Primitive implements ParserConstants, java.io.Serializable {
     }
 
     static float floatUnaryOperation(Float F, int kind) {
-        float operand = F.floatValue();
+        float operand = F;
 
         switch (kind) {
             case PLUS:
@@ -713,7 +713,7 @@ public final class Primitive implements ParserConstants, java.io.Serializable {
     }
 
     static double doubleUnaryOperation(Double D, int kind) {
-        double operand = D.doubleValue();
+        double operand = D;
 
         switch (kind) {
             case PLUS:
@@ -734,7 +734,7 @@ public final class Primitive implements ParserConstants, java.io.Serializable {
 
     public boolean booleanValue() throws UtilEvalException {
         if (value instanceof Boolean)
-            return ((Boolean) value).booleanValue();
+            return (Boolean) value;
         else
             throw new UtilEvalException("Primitive not a boolean");
     }
@@ -753,7 +753,7 @@ public final class Primitive implements ParserConstants, java.io.Serializable {
 
         // Promote character to Number type for these purposes
         if (value instanceof Character)
-            value = new Integer(((Character) value).charValue());
+            value = (int) (Character) value;
 
         if (value instanceof Number)
             return (Number) value;
@@ -1036,7 +1036,7 @@ public final class Primitive implements ParserConstants, java.io.Serializable {
 
         // first promote char to Number type to avoid duplicating code
         if (value instanceof Character)
-            value = new Integer(((Character) value).charValue());
+            value = (int) (Character) value;
 
         if (!(value instanceof Number))
             throw new InterpreterException("bad type in cast");
@@ -1044,19 +1044,19 @@ public final class Primitive implements ParserConstants, java.io.Serializable {
         Number number = (Number) value;
 
         if (toType == Byte.TYPE)
-            return new Byte(number.byteValue());
+            return number.byteValue();
         if (toType == Short.TYPE)
-            return new Short(number.shortValue());
+            return number.shortValue();
         if (toType == Character.TYPE)
-            return new Character((char) number.intValue());
+            return (char) number.intValue();
         if (toType == Integer.TYPE)
-            return new Integer(number.intValue());
+            return number.intValue();
         if (toType == Long.TYPE)
-            return new Long(number.longValue());
+            return number.longValue();
         if (toType == Float.TYPE)
-            return new Float(number.floatValue());
+            return number.floatValue();
         if (toType == Double.TYPE)
-            return new Double(number.doubleValue());
+            return number.doubleValue();
 
         throw new InterpreterException("error in wrapper cast");
     }

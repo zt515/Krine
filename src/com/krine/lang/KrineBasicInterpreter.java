@@ -2,7 +2,7 @@ package com.krine.lang;
 
 import com.krine.lang.ast.*;
 import com.krine.lang.classpath.KrineClassManager;
-import com.krine.lang.debugger.KrineDebugger;
+import com.krine.debugger.KrineDebugger;
 import com.krine.lang.io.SystemIOBridge;
 import com.krine.lang.reflect.Reflect;
 import com.krine.lang.utils.CallStack;
@@ -224,7 +224,7 @@ public class KrineBasicInterpreter
     private void initRootSystemObject() {
         KrineClassManager dcm = getClassManager();
 
-        setUnchecked("krine", new NameSpace(dcm, "KrineInterpreter_Object").getThis(this));
+        setUnchecked("krine", new NameSpace(dcm, "Krine_Language").getThis(this));
         setUnchecked("krine.system", SYSTEM_OBJECT);
 
         // save current working directory for dynamic loading
@@ -585,7 +585,7 @@ public class KrineBasicInterpreter
             Object ret = globalNameSpace.get(name, this);
             return Primitive.unwrap(ret);
         } catch (UtilEvalException e) {
-            throw e.toEvalError(SimpleNode.JAVACODE, new CallStack());
+            throw e.toEvalError(SimpleNode.JAVA_CODE, new CallStack());
         }
     }
 
@@ -621,7 +621,7 @@ public class KrineBasicInterpreter
                 globalNameSpace.setVariable(name, value, false);
             }
         } catch (UtilEvalException e) {
-            throw e.toEvalError(SimpleNode.JAVACODE, callstack);
+            throw e.toEvalError(SimpleNode.JAVA_CODE, callstack);
         }
     }
 
@@ -673,13 +673,13 @@ public class KrineBasicInterpreter
 
             if (lhs.type != LeftValue.VARIABLE)
                 throw new EvalError("Can't unset, not a variable: " + name,
-                        SimpleNode.JAVACODE, new CallStack());
+                        SimpleNode.JAVA_CODE, new CallStack());
 
             //lhs.assign( null, false );
             lhs.nameSpace.unsetVariable(name);
         } catch (UtilEvalException e) {
             throw new EvalError(e.getMessage(),
-                    SimpleNode.JAVACODE, new CallStack());
+                    SimpleNode.JAVA_CODE, new CallStack());
         }
     }
 

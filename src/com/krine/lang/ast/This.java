@@ -269,7 +269,7 @@ public final class This implements java.io.Serializable, Runnable {
 		invokeMethod() here is generally used by outside code to callback
 		into the krine krineBasicInterpreter. e.g. when we are acting as an interface
 		for a scripted listener, etc.  In this case there is no real call stack
-		so we make a default one starting with the special JAVACODE namespace
+		so we make a default one starting with the special JAVA_CODE namespace
 		and our namespace as the next.
 	*/
     public Object invokeMethod(
@@ -298,7 +298,7 @@ public final class This implements java.io.Serializable, Runnable {
         if (callstack == null)
             callstack = new CallStack(namespace);
         if (callerInfo == null)
-            callerInfo = SimpleNode.JAVACODE;
+            callerInfo = SimpleNode.JAVA_CODE;
 
         // Find the krine method
         Class[] types = Types.getTypes(args);
@@ -346,7 +346,7 @@ public final class This implements java.io.Serializable, Runnable {
                     ns.setMethod(method);
                 }
             } catch (UtilEvalException e) {
-                throw e.toEvalError(SimpleNode.JAVACODE, callstack);
+                throw e.toEvalError(SimpleNode.JAVA_CODE, callstack);
             }
             return ns.getThis(declaringKrineBasicInterpreter);
         }

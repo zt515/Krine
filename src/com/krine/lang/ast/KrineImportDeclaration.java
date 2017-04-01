@@ -27,9 +27,9 @@ class KrineImportDeclaration extends SimpleNode {
         else {
             if (staticImport) {
                 if (importPackage) {
-                    Class clas = ((KrineAmbiguousName) jjtGetChild(0)).toClass(
+                    Class clazz = ((KrineAmbiguousName) jjtGetChild(0)).toClass(
                             callstack, krineBasicInterpreter);
-                    namespace.importStatic(clas);
+                    namespace.importStatic(clazz);
                 } else
                     throw new EvalError(
                             "static field imports not supported yet",

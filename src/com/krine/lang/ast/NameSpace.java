@@ -1276,7 +1276,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
      */
     public Name getNameResolver(String ambigname) {
         if (names == null)
-            names = new HashMap<String, Name>();
+            names = new HashMap<>();
 
         Name name = names.get(ambigname);
 

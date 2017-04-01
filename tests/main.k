@@ -1,3 +1,5 @@
+class App {}
+
 Main() {
     public void hello(int i) {
         if (i == 0) {
@@ -8,8 +10,8 @@ Main() {
     return this;
 }
 
+int i = 0;
+String s = "hello";
 m = Main();
 m.hello(0);
-
-class App {}
 

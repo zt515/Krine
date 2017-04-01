@@ -2,7 +2,6 @@ package com.krine.command;
 
 import com.krine.interpreter.KrineInterpreter;
 import com.krine.lang.ast.KrineTargetException;
-import com.krine.lang.debugger.KrineDebugger;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -15,33 +14,24 @@ public class Main {
         }
 
         String fileName = args[0];
-        String[] dragonArgs;
+        String[] krineArgs;
 
         if (args.length > 1) {
-            dragonArgs = new String[args.length - 1];
-            System.arraycopy(args, 1, dragonArgs, 0, args.length - 1);
+            krineArgs = new String[args.length - 1];
+            System.arraycopy(args, 1, krineArgs, 0, args.length - 1);
         } else {
-            dragonArgs = new String[0];
+            krineArgs = new String[0];
         }
 
-        KrineInterpreter dragon = new KrineInterpreter();
-        dragon.setUnchecked("krine.args", dragonArgs);
-
-        KrineDebugger debugger = new KrineDebugger(dragon);
-        debugger.addBreakPoint(fileName)
-                .add(3)
-                .add(4)
-                .add(8)
-                .add(11)
-                .add(12);
-        debugger.startDebugging();
+        KrineInterpreter interpreter = new KrineInterpreter();
+        interpreter.setUnchecked("krine.args", krineArgs);
 
         try {
-            Object result = dragon.source(fileName, dragon.getGlobalNameSpace());
+            Object result = interpreter.source(fileName, interpreter.getGlobalNameSpace());
 
             if (result instanceof Class) {
                 try {
-                    KrineInterpreter.invokeMain((Class) result, dragonArgs);
+                    KrineInterpreter.invokeMain((Class) result, krineArgs);
                 } catch (Exception e) {
                     Object o = e;
                     if (e instanceof InvocationTargetException) {

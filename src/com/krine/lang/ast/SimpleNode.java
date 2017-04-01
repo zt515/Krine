@@ -36,8 +36,8 @@ package com.krine.lang.ast;
 
 import com.krine.lang.KrineBasicInterpreter;
 import com.krine.lang.InterpreterException;
-import com.krine.lang.debugger.BreakPoint;
-import com.krine.lang.debugger.KrineDebugger;
+import com.krine.debugger.BreakPoint;
+import com.krine.debugger.KrineDebugger;
 import com.krine.lang.utils.CallStack;
 
 /*
@@ -57,7 +57,7 @@ import com.krine.lang.utils.CallStack;
 
 */
 public class SimpleNode implements Node {
-    public static SimpleNode JAVACODE =
+    public static SimpleNode JAVA_CODE =
             new SimpleNode(-1) {
                 public String getSourceFile() {
                     return "<Called from Java Code>";

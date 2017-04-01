@@ -1,4 +1,4 @@
-package com.krine.lang.debugger;
+package com.krine.debugger;
 
 import java.util.Locale;
 
