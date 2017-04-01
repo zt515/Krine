@@ -1,6 +1,6 @@
-Dragon
+Krine
 ======
-The Dragon Programming Language. <br/>
+The Krine Programming Language. <br/>
 Based on JVM. <br/>
 
 
