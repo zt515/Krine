@@ -31,11 +31,11 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
 
     private static final long serialVersionUID = 5004976946651004751L;
 
-    public static final NameSpace JAVACODE =
+    public static final NameSpace JAVA_CODE =
             new NameSpace((KrineClassManager) null, "Called from compiled Java code.");
 
     static {
-        JAVACODE.isMethod = true;
+        JAVA_CODE.isMethod = true;
     }
 
     // Begin instance data
@@ -90,9 +90,9 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     Class classStatic;
     Object classInstance;
 
-    void setClassStatic(Class clas) {
-        this.classStatic = clas;
-        importStatic(clas);
+    void setClassStatic(Class clazz) {
+        this.classStatic = clazz;
+        importStatic(clazz);
     }
 
     void setClassInstance(Object instance) {
@@ -198,8 +198,8 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
      */
     public Object get(String name, KrineBasicInterpreter krineBasicInterpreter)
             throws UtilEvalException {
-        CallStack callstack = new CallStack(this);
-        return getNameResolver(name).toObject(callstack, krineBasicInterpreter);
+        CallStack callStack = new CallStack(this);
+        return getNameResolver(name).toObject(callStack, krineBasicInterpreter);
     }
 
     /**
@@ -219,7 +219,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
      */
     public void setVariable(String name, Object value, boolean strictJava)
             throws UtilEvalException {
-        // if localscoping switch follow strictJava, else recurse
+        // if localScoping switch follow strictJava, else recurse
         boolean recurse = !KrineBasicInterpreter.LOCAL_SCOPING || strictJava;
         setVariable(name, value, strictJava, recurse);
     }
@@ -293,7 +293,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
 
     private void ensureVariables() {
         if (variables == null)
-            variables = new HashMap<String, Variable>();
+            variables = new HashMap<>();
     }
 
     /**
@@ -337,7 +337,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
         if (methods == null) {
             return new KrineMethod[0];
         } else {
-            List<KrineMethod> ret = new ArrayList<KrineMethod>();
+            List<KrineMethod> ret = new ArrayList<>();
             for (List<KrineMethod> list : methods.values()) {
                 ret.addAll(list);
             }
@@ -417,7 +417,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     public KrineClassManager getClassManager() {
         if (classManager != null)
             return classManager;
-        if (parent != null && parent != JAVACODE)
+        if (parent != null && parent != JAVA_CODE)
             return parent.getClassManager();
 
         classManager = KrineClassManager.createClassManager(null/*interp*/);
@@ -572,7 +572,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
 
         // Null value is just a declaration
         // Note: we might want to keep any existing value here instead of reset
-	/*
+    /*
 	// Moved to Variable
 		if ( value == null )
 			value = Primitive.getDefaultValue( type );
@@ -695,7 +695,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
      * Subsequent imports override earlier ones
      */
     public void importClass(String name) {
-        if ( name.startsWith("java")) {
+        if (name.startsWith("java")) {
             return;
         }
         if (importedClasses == null)
@@ -723,21 +723,19 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
             throws UtilEvalException {
         // Try object imports
         if (importedObjects != null)
-            for (int i = 0; i < importedObjects.size(); i++) {
-                Object object = importedObjects.get(i);
-                Class clas = object.getClass();
+            for (Object object : importedObjects) {
+                Class clazz = object.getClass();
                 Method method = Reflect.resolveJavaMethod(
-                        getClassManager(), clas, name, sig, false/*onlyStatic*/);
+                        getClassManager(), clazz, name, sig, false/*onlyStatic*/);
                 if (method != null)
                     return new KrineMethod(method, object);
             }
 
         // Try static imports
         if (importedStatic != null)
-            for (int i = 0; i < importedStatic.size(); i++) {
-                Class clas = importedStatic.get(i);
+            for (Class clazz : importedStatic) {
                 Method method = Reflect.resolveJavaMethod(
-                        getClassManager(), clas, name, sig, true/*onlyStatic*/);
+                        getClassManager(), clazz, name, sig, true/*onlyStatic*/);
                 if (method != null)
                     return new KrineMethod(method, null/*object*/);
             }
@@ -749,11 +747,10 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
             throws UtilEvalException {
         // Try object imports
         if (importedObjects != null)
-            for (int i = 0; i < importedObjects.size(); i++) {
-                Object object = importedObjects.get(i);
-                Class clas = object.getClass();
+            for (Object object : importedObjects) {
+                Class clazz = object.getClass();
                 Field field = Reflect.resolveJavaField(
-                        clas, name, false/*onlyStatic*/);
+                        clazz, name, false/*onlyStatic*/);
                 if (field != null)
                     return new Variable(
                             name, field.getType(), new LeftValue(object, field));
@@ -761,10 +758,9 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
 
         // Try static imports
         if (importedStatic != null)
-            for (int i = 0; i < importedStatic.size(); i++) {
-                Class clas = importedStatic.get(i);
+            for (Class clazz : importedStatic) {
                 Field field = Reflect.resolveJavaField(
-                        clas, name, true/*onlyStatic*/);
+                        clazz, name, true/*onlyStatic*/);
                 if (field != null)
                     return new Variable(name, field.getType(), new LeftValue(field));
             }
@@ -884,10 +880,10 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
 				Found the full name in imported classes.
 			*/
             // Try to make the full imported name
-            Class clas = classForName(fullname);
+            Class clazz = classForName(fullname);
 
-            if (clas != null)
-                return clas;
+            if (clazz != null)
+                return clazz;
 
             // Handle imported inner class case
             // Imported full name wasn't found as an absolute class
@@ -896,16 +892,16 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
 
             if (Name.isCompound(fullname))
                 try {
-                    clas = getNameResolver(fullname).toClass();
+                    clazz = getNameResolver(fullname).toClass();
                 } catch (ClassNotFoundException e) { /* not a class */ }
             else if (KrineBasicInterpreter.DEBUG) KrineBasicInterpreter.debug(
                     "imported unpackaged name not found:" + fullname);
 
             // If found cache the full name in the KrineClassManager
-            if (clas != null) {
+            if (clazz != null) {
                 // (should we cache info in not a class case too?)
-                getClassManager().cacheClassInfo(fullname, clas);
-                return clas;
+                getClassManager().cacheClassInfo(fullname, clazz);
+                return clazz;
             }
 
             // It was explicitly imported, but we don't know what it is.
@@ -953,7 +949,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
      * namespaces
      */
     public String[] getAllNames() {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         getAllNamesAux(list);
         return list.toArray(new String[0]);
     }
@@ -976,7 +972,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
      */
     public void addNameSourceListener(NameSource.Listener listener) {
         if (nameSourceListeners == null)
-            nameSourceListeners = new ArrayList<Listener>();
+            nameSourceListeners = new ArrayList<>();
         nameSourceListeners.add(listener);
     }
 
@@ -1035,10 +1031,10 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
      */
     public Object invokeMethod(
             String methodName, Object[] args, KrineBasicInterpreter krineBasicInterpreter,
-            CallStack callstack, SimpleNode callerInfo)
+            CallStack callStack, SimpleNode callerInfo)
             throws EvalError {
         return getThis(krineBasicInterpreter).invokeMethod(
-                methodName, args, krineBasicInterpreter, callstack, callerInfo,
+                methodName, args, krineBasicInterpreter, callStack, callerInfo,
                 false/*declaredOnly*/);
     }
 
@@ -1094,15 +1090,15 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
      * This method was public for a time, which was a mistake.
      * Use get() instead.
      */
-    public Name getNameResolver(String ambigname) {
+    public Name getNameResolver(String ambiguousName) {
         if (names == null)
             names = new HashMap<>();
 
-        Name name = names.get(ambigname);
+        Name name = names.get(ambiguousName);
 
         if (name == null) {
-            name = new Name(this, ambigname);
-            names.put(ambigname, name);
+            name = new Name(this, ambiguousName);
+            names.put(ambiguousName, name);
         }
 
         return name;
@@ -1171,7 +1167,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
 	*/
     public void importObject(Object obj) {
         if (importedObjects == null)
-            importedObjects = new ArrayList<Object>();
+            importedObjects = new ArrayList<>();
 
         // If it exists, remove it and add it at the end (avoid memory leak)
         importedObjects.remove(obj);
@@ -1183,14 +1179,14 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
 
     /**
      */
-    public void importStatic(Class clas) {
+    public void importStatic(Class clazz) {
         if (importedStatic == null)
-            importedStatic = new ArrayList<Class>();
+            importedStatic = new ArrayList<>();
 
         // If it exists, remove it and add it at the end (avoid memory leak)
-        importedStatic.remove(clas);
+        importedStatic.remove(clazz);
 
-        importedStatic.add(clas);
+        importedStatic.add(clazz);
         nameSpaceChanged();
     }
 

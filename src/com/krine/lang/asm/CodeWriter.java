@@ -861,8 +861,8 @@ public class CodeWriter implements CodeVisitor {
             if (currentBlock != null) {
                 currentBlock.maxStackSize = maxStackSize;
                 addSuccessor(stackSize, dflt);
-                for (int i = 0; i < labels.length; ++i) {
-                    addSuccessor(stackSize, labels[i]);
+                for (Label label : labels) {
+                    addSuccessor(stackSize, label);
                 }
                 currentBlock = null;
             }
@@ -875,8 +875,8 @@ public class CodeWriter implements CodeVisitor {
         }
         dflt.put(this, code, source, true);
         code.put4(min).put4(max);
-        for (int i = 0; i < labels.length; ++i) {
-            labels[i].put(this, code, source, true);
+        for (Label label : labels) {
+            label.put(this, code, source, true);
         }
     }
 
@@ -891,8 +891,8 @@ public class CodeWriter implements CodeVisitor {
             if (currentBlock != null) {
                 currentBlock.maxStackSize = maxStackSize;
                 addSuccessor(stackSize, dflt);
-                for (int i = 0; i < labels.length; ++i) {
-                    addSuccessor(stackSize, labels[i]);
+                for (Label label : labels) {
+                    addSuccessor(stackSize, label);
                 }
                 currentBlock = null;
             }

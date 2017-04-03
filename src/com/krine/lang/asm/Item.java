@@ -211,7 +211,6 @@ final class Item {
             //case ClassWriter.IMETH:
             default:
                 hashCode = type + strVal1.hashCode() * strVal2.hashCode() * strVal3.hashCode();
-                return;
         }
     }
 

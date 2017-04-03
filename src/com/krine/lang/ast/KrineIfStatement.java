@@ -8,17 +8,17 @@ class KrineIfStatement extends SimpleNode {
         super(id);
     }
 
-    public Object eval(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public Object eval(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         Object ret = null;
 
         waitForDebugger();
 
         if (evaluateCondition(
-                (SimpleNode) jjtGetChild(0), callstack, krineBasicInterpreter))
-            ret = ((SimpleNode) jjtGetChild(1)).eval(callstack, krineBasicInterpreter);
+                (SimpleNode) jjtGetChild(0), callStack, krineBasicInterpreter))
+            ret = ((SimpleNode) jjtGetChild(1)).eval(callStack, krineBasicInterpreter);
         else if (jjtGetNumChildren() > 2)
-            ret = ((SimpleNode) jjtGetChild(2)).eval(callstack, krineBasicInterpreter);
+            ret = ((SimpleNode) jjtGetChild(2)).eval(callStack, krineBasicInterpreter);
 
         if (ret instanceof ReturnControl)
             return ret;
@@ -27,21 +27,21 @@ class KrineIfStatement extends SimpleNode {
     }
 
     public static boolean evaluateCondition(
-            SimpleNode condExp, CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+            SimpleNode condExp, CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
-        Object obj = condExp.eval(callstack, krineBasicInterpreter);
+        Object obj = condExp.eval(callStack, krineBasicInterpreter);
         if (obj instanceof Primitive) {
             if (obj == Primitive.VOID)
                 throw new EvalError("Condition evaluates to void type",
-                        condExp, callstack);
+                        condExp, callStack);
             obj = ((Primitive) obj).getValue();
         }
 
         if (obj instanceof Boolean)
-            return ((Boolean) obj).booleanValue();
+            return (Boolean) obj;
         else
             throw new EvalError(
                     "Condition must evaluate to a Boolean or boolean.",
-                    condExp, callstack);
+                    condExp, callStack);
     }
 }

@@ -15,20 +15,20 @@ class KrineReturnType extends SimpleNode {
     }
 
     public String getTypeDescriptor(
-            CallStack callstack, KrineBasicInterpreter krineBasicInterpreter, String defaultPackage) {
+            CallStack callStack, KrineBasicInterpreter krineBasicInterpreter, String defaultPackage) {
         if (isVoid)
             return "V";
         else
             return getTypeNode().getTypeDescriptor(
-                    callstack, krineBasicInterpreter, defaultPackage);
+                    callStack, krineBasicInterpreter, defaultPackage);
     }
 
     public Class evalReturnType(
-            CallStack callstack, KrineBasicInterpreter krineBasicInterpreter) throws EvalError {
+            CallStack callStack, KrineBasicInterpreter krineBasicInterpreter) throws EvalError {
         if (isVoid)
             return Void.TYPE;
         else
-            return getTypeNode().getType(callstack, krineBasicInterpreter);
+            return getTypeNode().getType(callStack, krineBasicInterpreter);
     }
 }
 

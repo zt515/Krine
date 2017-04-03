@@ -9,10 +9,10 @@ public class KrinePackageDeclaration extends SimpleNode {
         super(id);
     }
 
-    public Object eval(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public Object eval(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         KrineAmbiguousName name = (KrineAmbiguousName) jjtGetChild(0);
-        NameSpace namespace = callstack.top();
+        NameSpace namespace = callStack.top();
         namespace.setPackage(name.text);
         // import the package we're in by default...
         namespace.importPackage(name.text);

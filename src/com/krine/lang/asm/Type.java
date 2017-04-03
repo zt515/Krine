@@ -492,8 +492,8 @@ public class Type {
             final Type[] argumentTypes) {
         StringBuffer buf = new StringBuffer();
         buf.append('(');
-        for (int i = 0; i < argumentTypes.length; ++i) {
-            argumentTypes[i].getDescriptor(buf);
+        for (Type argumentType : argumentTypes) {
+            argumentType.getDescriptor(buf);
         }
         buf.append(')');
         returnType.getDescriptor(buf);
@@ -584,8 +584,8 @@ public class Type {
         Class[] parameters = m.getParameterTypes();
         StringBuffer buf = new StringBuffer();
         buf.append('(');
-        for (int i = 0; i < parameters.length; ++i) {
-            getDescriptor(buf, parameters[i]);
+        for (Class parameter : parameters) {
+            getDescriptor(buf, parameter);
         }
         buf.append(')');
         getDescriptor(buf, m.getReturnType());

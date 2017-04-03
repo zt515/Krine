@@ -19,7 +19,7 @@ import java.util.Hashtable;
  */
 public class Capabilities {
     private static volatile boolean accessibility = false;
-    
+
 
     /**
      * If accessibility is enabled
@@ -78,7 +78,7 @@ public class Capabilities {
 
         return c != null;
     }
-    
+
     public static boolean isAndroid() {
         // TODO Be Smarter
         try {

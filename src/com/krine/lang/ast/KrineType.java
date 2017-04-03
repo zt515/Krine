@@ -1,8 +1,8 @@
 package com.krine.lang.ast;
 
 import com.krine.lang.KrineBasicInterpreter;
-import com.krine.lang.utils.CallStack;
 import com.krine.lang.classpath.KrineClassManager;
+import com.krine.lang.utils.CallStack;
 
 import java.lang.reflect.Array;
 
@@ -51,7 +51,7 @@ class KrineType extends SimpleNode
      * package for the name.
      */
     public String getTypeDescriptor(
-            CallStack callstack, KrineBasicInterpreter krineBasicInterpreter, String defaultPackage) {
+            CallStack callStack, KrineBasicInterpreter krineBasicInterpreter, String defaultPackage) {
         // return cached type if available
         if (descriptor != null)
             return descriptor;
@@ -62,36 +62,36 @@ class KrineType extends SimpleNode
         if (node instanceof KrinePrimitiveType)
             descriptor = getTypeDescriptor(((KrinePrimitiveType) node).type);
         else {
-            String clasName = ((KrineAmbiguousName) node).text;
+            String className = ((KrineAmbiguousName) node).text;
             KrineClassManager dcm = krineBasicInterpreter.getClassManager();
             // Note: incorrect here - we are using the hack in krine class
             // manager that allows lookup by base name.  We need to eliminate
             // this limitation by working through imports.  See notes in class
             // manager.
-            String definingClass = dcm.getClassBeingDefined(clasName);
+            String definingClass = dcm.getClassBeingDefined(className);
 
-            Class clas = null;
+            Class clazz = null;
             if (definingClass == null) {
                 try {
-                    clas = ((KrineAmbiguousName) node).toClass(
-                            callstack, krineBasicInterpreter);
+                    clazz = ((KrineAmbiguousName) node).toClass(
+                            callStack, krineBasicInterpreter);
                 } catch (EvalError e) {
                     //throw new InterpreterException("unable to resolve type: "+e);
                     // ignore and try default package
                     //System.out.println("KrineType: "+node+" class not found");
                 }
             } else
-                clasName = definingClass;
+                className = definingClass;
 
-            if (clas != null) {
+            if (clazz != null) {
                 //System.out.println("found clazz: "+clazz);
-                descriptor = getTypeDescriptor(clas);
+                descriptor = getTypeDescriptor(clazz);
             } else {
-                if (defaultPackage == null || Name.isCompound(clasName))
-                    descriptor = "L" + clasName.replace('.', '/') + ";";
+                if (defaultPackage == null || Name.isCompound(className))
+                    descriptor = "L" + className.replace('.', '/') + ";";
                 else
                     descriptor =
-                            "L" + defaultPackage.replace('.', '/') + "/" + clasName + ";";
+                            "L" + defaultPackage.replace('.', '/') + "/" + className + ";";
             }
         }
 
@@ -103,7 +103,7 @@ class KrineType extends SimpleNode
         return descriptor;
     }
 
-    public Class getType(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public Class getType(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         // return cached type if available
         if (type != null)
@@ -115,7 +115,7 @@ class KrineType extends SimpleNode
             baseType = ((KrinePrimitiveType) node).getType();
         else
             baseType = ((KrineAmbiguousName) node).toClass(
-                    callstack, krineBasicInterpreter);
+                    callStack, krineBasicInterpreter);
 
         if (arrayDims > 0) {
             try {
@@ -126,7 +126,7 @@ class KrineType extends SimpleNode
                 type = obj.getClass();
             } catch (Exception e) {
                 throw new EvalError("Couldn't construct array type",
-                        this, callstack);
+                        this, callStack);
             }
         } else
             type = baseType;
@@ -160,18 +160,18 @@ class KrineType extends SimpleNode
         baseType = null;
     }
 
-    public static String getTypeDescriptor(Class clas) {
-        if (clas == Boolean.TYPE) return "Z";
-        if (clas == Character.TYPE) return "C";
-        if (clas == Byte.TYPE) return "B";
-        if (clas == Short.TYPE) return "S";
-        if (clas == Integer.TYPE) return "I";
-        if (clas == Long.TYPE) return "J";
-        if (clas == Float.TYPE) return "F";
-        if (clas == Double.TYPE) return "D";
-        if (clas == Void.TYPE) return "V";
+    public static String getTypeDescriptor(Class clazz) {
+        if (clazz == Boolean.TYPE) return "Z";
+        if (clazz == Character.TYPE) return "C";
+        if (clazz == Byte.TYPE) return "B";
+        if (clazz == Short.TYPE) return "S";
+        if (clazz == Integer.TYPE) return "I";
+        if (clazz == Long.TYPE) return "J";
+        if (clazz == Float.TYPE) return "F";
+        if (clazz == Double.TYPE) return "D";
+        if (clazz == Void.TYPE) return "V";
         // Is getName() ok?  test with 1.1
-        String name = clas.getName().replace('.', '/');
+        String name = clazz.getName().replace('.', '/');
 
         if (name.startsWith("[") || name.endsWith(";"))
             return name;

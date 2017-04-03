@@ -20,7 +20,7 @@ import com.krine.lang.utils.CallStack;
  * toEvalError( Node ).
  * <p>
  * <p>
- * Philosophically, EvalError and UtilEvalException corrospond to
+ * Philosophically, EvalError and UtilEvalException correspond to
  * RuntimeException.  However they are constrained in this way in order to
  * add the context for error reporting.
  *
@@ -47,7 +47,7 @@ public class UtilEvalException extends Exception {
      * <p>
      */
     public EvalError toEvalError(
-            String msg, SimpleNode node, CallStack callstack) {
+            String msg, SimpleNode node, CallStack callStack) {
         if (KrineBasicInterpreter.DEBUG)
             printStackTrace();
 
@@ -55,11 +55,11 @@ public class UtilEvalException extends Exception {
             msg = "";
         else
             msg = msg + ": ";
-        return new EvalError(msg + getMessage(), node, callstack, this);
+        return new EvalError(msg + getMessage(), node, callStack, this);
     }
 
-    public EvalError toEvalError(SimpleNode node, CallStack callstack) {
-        return toEvalError(null, node, callstack);
+    public EvalError toEvalError(SimpleNode node, CallStack callStack) {
+        return toEvalError(null, node, callStack);
     }
 
 }

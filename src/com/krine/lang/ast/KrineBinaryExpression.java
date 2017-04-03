@@ -1,8 +1,8 @@
 package com.krine.lang.ast;
 
 import com.krine.lang.KrineBasicInterpreter;
-import com.krine.lang.utils.CallStack;
 import com.krine.lang.UtilEvalException;
+import com.krine.lang.utils.CallStack;
 
 /**
  * Implement binary expressions...
@@ -18,11 +18,11 @@ class KrineBinaryExpression extends SimpleNode
         super(id);
     }
 
-    public Object eval(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public Object eval(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         waitForDebugger();
 
-        Object lhs = ((SimpleNode) jjtGetChild(0)).eval(callstack, krineBasicInterpreter);
+        Object lhs = ((SimpleNode) jjtGetChild(0)).eval(callStack, krineBasicInterpreter);
 
 		/*
             Doing instanceof?  Next node is a type.
@@ -33,9 +33,9 @@ class KrineBinaryExpression extends SimpleNode
                 return new Primitive(false);
 
             Class rhs = ((KrineType) jjtGetChild(1)).getType(
-                    callstack, krineBasicInterpreter);
+                    callStack, krineBasicInterpreter);
         /*
-			// primitive (number or void) cannot be tested for instanceof
+            // primitive (number or void) cannot be tested for instanceof
             if (lhs instanceof Primitive)
 				throw new EvalError("Cannot be instance of primitive type." );
 		*/
@@ -51,7 +51,7 @@ class KrineBinaryExpression extends SimpleNode
                 else
                     return new Primitive(false);
 
-            // General case - performe the instanceof based on assignability
+            // General case - perform the instanceof based on assignability
             boolean ret = Types.isJavaBaseAssignable(rhs, lhs.getClass());
             return new Primitive(ret);
         }
@@ -69,7 +69,7 @@ class KrineBinaryExpression extends SimpleNode
             if (isPrimitiveValue(lhs))
                 obj = ((Primitive) lhs).getValue();
             if (obj instanceof Boolean &&
-                    (((Boolean) obj).booleanValue() == false))
+                    (!((Boolean) obj)))
                 return new Primitive(false);
         }
 		/*
@@ -81,7 +81,7 @@ class KrineBinaryExpression extends SimpleNode
             if (isPrimitiveValue(lhs))
                 obj = ((Primitive) lhs).getValue();
             if (obj instanceof Boolean &&
-                    (((Boolean) obj).booleanValue() == true))
+                    ((Boolean) obj))
                 return new Primitive(true);
         }
 
@@ -92,7 +92,7 @@ class KrineBinaryExpression extends SimpleNode
 			do binary op
 		*/
         boolean isLhsWrapper = isWrapper(lhs);
-        Object rhs = ((SimpleNode) jjtGetChild(1)).eval(callstack, krineBasicInterpreter);
+        Object rhs = ((SimpleNode) jjtGetChild(1)).eval(callStack, krineBasicInterpreter);
         boolean isRhsWrapper = isWrapper(rhs);
         if (
                 (isLhsWrapper || isPrimitiveValue(lhs))
@@ -108,7 +108,7 @@ class KrineBinaryExpression extends SimpleNode
                 try {
                     return Primitive.binaryOperation(lhs, rhs, kind);
                 } catch (UtilEvalException e) {
-                    throw e.toEvalError(this, callstack);
+                    throw e.toEvalError(this, callStack);
                 }
         }
 	/*
@@ -167,13 +167,13 @@ class KrineBinaryExpression extends SimpleNode
                     if (lhs == Primitive.VOID || rhs == Primitive.VOID)
                         throw new EvalError(
                                 "illegal use of undefined variable, class, or 'void' literal",
-                                this, callstack);
+                                this, callStack);
                     else if (lhs == Primitive.NULL || rhs == Primitive.NULL)
                         throw new EvalError(
-                                "illegal use of null value or 'null' literal", this, callstack);
+                                "illegal use of null value or 'null' literal", this, callStack);
 
                 throw new EvalError("Operator: '" + tokenImage[kind] +
-                        "' inappropriate for objects", this, callstack);
+                        "' inappropriate for objects", this, callStack);
         }
     }
 

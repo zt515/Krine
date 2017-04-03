@@ -36,7 +36,7 @@ class BlockNameSpace extends NameSpace {
      * assignments are delegated to the enclosing context.
      */
     /*
-		Note: it may see like with the new 1.3 scoping this test could be
+        Note: it may see like with the new 1.3 scoping this test could be
 		removed, but it cannot.  When recurse is false we still need to set the
 		variable in our parent, not here.
 	*/
@@ -97,7 +97,7 @@ class BlockNameSpace extends NameSpace {
     //
 
     /**
-     This method recurses to find the nearest non-BlockNameSpace parent.
+     This method recurse to find the nearest non-BlockNameSpace parent.
 
      public NameSpace getParent()
      {
@@ -124,8 +124,6 @@ class BlockNameSpace extends NameSpace {
      * e.g. Normally a 'this' reference to a BlockNameSpace (e.g. if () { } )
      * resolves to the parent namespace (e.g. the namespace containing the
      * "if" statement).
-     *
-     * @see #getBlockThis(KrineBasicInterpreter)
      */
     public This getThis(KrineBasicInterpreter declaringKrineBasicInterpreter) {
         return getNonBlockParent().getThis(declaringKrineBasicInterpreter);

@@ -1,7 +1,7 @@
 package com.krine.lang.ast;
 
-import com.krine.lang.utils.CallStack;
 import com.krine.lang.KrineBasicInterpreter;
+import com.krine.lang.utils.CallStack;
 
 /**
  * A formal parameter declaration.
@@ -18,10 +18,10 @@ class krineFormalParameter extends SimpleNode {
     }
 
     public String getTypeDescriptor(
-            CallStack callstack, KrineBasicInterpreter krineBasicInterpreter, String defaultPackage) {
+            CallStack callStack, KrineBasicInterpreter krineBasicInterpreter, String defaultPackage) {
         if (jjtGetNumChildren() > 0)
             return ((KrineType) jjtGetChild(0)).getTypeDescriptor(
-                    callstack, krineBasicInterpreter, defaultPackage);
+                    callStack, krineBasicInterpreter, defaultPackage);
         else
             // this will probably not get used
             return "Ljava/lang/Object;";  // Object type
@@ -30,12 +30,12 @@ class krineFormalParameter extends SimpleNode {
     /**
      * Evaluate the type.
      */
-    public Object eval(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public Object eval(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         waitForDebugger();
 
         if (jjtGetNumChildren() > 0)
-            type = ((KrineType) jjtGetChild(0)).getType(callstack, krineBasicInterpreter);
+            type = ((KrineType) jjtGetChild(0)).getType(callStack, krineBasicInterpreter);
         else
             type = UNTYPED;
 

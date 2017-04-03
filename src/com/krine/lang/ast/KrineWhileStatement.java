@@ -18,7 +18,7 @@ class KrineWhileStatement extends SimpleNode implements ParserConstants {
     }
 
 
-    public Object eval(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter) throws EvalError {
+    public Object eval(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter) throws EvalError {
         waitForDebugger();
 
         int numChild = jjtGetNumChildren();
@@ -41,13 +41,13 @@ class KrineWhileStatement extends SimpleNode implements ParserConstants {
 
         boolean doOnceFlag = isDoStatement;
 
-        while (doOnceFlag || KrineIfStatement.evaluateCondition(condExp, callstack, krineBasicInterpreter)) {
+        while (doOnceFlag || KrineIfStatement.evaluateCondition(condExp, callStack, krineBasicInterpreter)) {
             doOnceFlag = false;
             // no body?
             if (body == null) {
                 continue;
             }
-            Object ret = body.eval(callstack, krineBasicInterpreter);
+            Object ret = body.eval(callStack, krineBasicInterpreter);
             if (ret instanceof ReturnControl) {
                 switch (((ReturnControl) ret).kind) {
                     case RETURN:

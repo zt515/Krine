@@ -25,11 +25,11 @@ class KrineMethodInvocation extends SimpleNode {
      * Evaluate the method invocation with the specified callStack and
      * krineBasicInterpreter
      */
-    public Object eval(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public Object eval(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         waitForDebugger();
 
-        NameSpace namespace = callstack.top();
+        NameSpace namespace = callStack.top();
         KrineAmbiguousName nameNode = getNameNode();
 
         // Do not evaluate methods this() or super() in class instance space
@@ -40,19 +40,19 @@ class KrineMethodInvocation extends SimpleNode {
             return Primitive.VOID;
 
         Name name = nameNode.getName(namespace);
-        Object[] args = getArgsNode().getArguments(callstack, krineBasicInterpreter);
+        Object[] args = getArgsNode().getArguments(callStack, krineBasicInterpreter);
 
         try {
-            return name.invokeMethod(krineBasicInterpreter, args, callstack, this);
+            return name.invokeMethod(krineBasicInterpreter, args, callStack, this);
         } catch (ReflectException e) {
             throw new EvalError(
                     "Error in method invocation: " + e.getMessage(),
-                    this, callstack, e);
+                    this, callStack, e);
         } catch (InvocationTargetException e) {
-            throw InvocationUtil.newTargetException("Method Invocation " + name, this, callstack, e);
+            throw InvocationUtil.newTargetException("Method Invocation " + name, this, callStack, e);
 
         } catch (UtilEvalException e) {
-            throw e.toEvalError(this, callstack);
+            throw e.toEvalError(this, callStack);
         }
     }
 }

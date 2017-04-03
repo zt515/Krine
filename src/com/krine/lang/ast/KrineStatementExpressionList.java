@@ -8,12 +8,12 @@ class KrineStatementExpressionList extends SimpleNode {
         super(id);
     }
 
-    public Object eval(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public Object eval(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         int n = jjtGetNumChildren();
         for (int i = 0; i < n; i++) {
             SimpleNode node = ((SimpleNode) jjtGetChild(i));
-            node.eval(callstack, krineBasicInterpreter);
+            node.eval(callStack, krineBasicInterpreter);
         }
         return Primitive.VOID;
     }

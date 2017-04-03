@@ -1,7 +1,7 @@
 package com.krine.lang.ast;
 
-import com.krine.lang.utils.CallStack;
 import com.krine.lang.KrineBasicInterpreter;
+import com.krine.lang.utils.CallStack;
 
 class KrineFormalParameters extends SimpleNode {
     private String[] paramNames;
@@ -38,7 +38,7 @@ class KrineFormalParameters extends SimpleNode {
     }
 
     public String[] getTypeDescriptors(
-            CallStack callstack, KrineBasicInterpreter krineBasicInterpreter, String defaultPackage) {
+            CallStack callStack, KrineBasicInterpreter krineBasicInterpreter, String defaultPackage) {
         if (typeDescriptors != null)
             return typeDescriptors;
 
@@ -48,7 +48,7 @@ class KrineFormalParameters extends SimpleNode {
         for (int i = 0; i < numArgs; i++) {
             krineFormalParameter param = (krineFormalParameter) jjtGetChild(i);
             typeDesc[i] = param.getTypeDescriptor(
-                    callstack, krineBasicInterpreter, defaultPackage);
+                    callStack, krineBasicInterpreter, defaultPackage);
         }
 
         this.typeDescriptors = typeDesc;
@@ -59,7 +59,7 @@ class KrineFormalParameters extends SimpleNode {
      * Evaluate the types.
      * Note that type resolution does not require the krineBasicInterpreter instance.
      */
-    public Object eval(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public Object eval(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         waitForDebugger();
 
@@ -71,7 +71,7 @@ class KrineFormalParameters extends SimpleNode {
 
         for (int i = 0; i < numArgs; i++) {
             krineFormalParameter param = (krineFormalParameter) jjtGetChild(i);
-            paramTypes[i] = (Class) param.eval(callstack, krineBasicInterpreter);
+            paramTypes[i] = (Class) param.eval(callStack, krineBasicInterpreter);
         }
 
         this.paramTypes = paramTypes;

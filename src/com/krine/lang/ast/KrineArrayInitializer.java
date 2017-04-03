@@ -1,9 +1,9 @@
 package com.krine.lang.ast;
 
 import com.krine.lang.KrineBasicInterpreter;
+import com.krine.lang.UtilEvalException;
 import com.krine.lang.reflect.Reflect;
 import com.krine.lang.utils.CallStack;
-import com.krine.lang.UtilEvalException;
 
 import java.lang.reflect.Array;
 
@@ -12,10 +12,10 @@ class KrineArrayInitializer extends SimpleNode {
         super(id);
     }
 
-    public Object eval(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public Object eval(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         throw new EvalError("Array initializer has no base type.",
-                this, callstack);
+                this, callStack);
     }
 
     /**
@@ -26,7 +26,7 @@ class KrineArrayInitializer extends SimpleNode {
      *                   e.g. 2 for a String [][];
      */
     public Object eval(Class baseType, int dimensions,
-                       CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+                       CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         waitForDebugger();
 
@@ -47,16 +47,16 @@ class KrineArrayInitializer extends SimpleNode {
                 if (dimensions < 2)
                     throw new EvalError(
                             "Invalid Location for Intializer, position: " + i,
-                            this, callstack);
+                            this, callStack);
                 currentInitializer =
                         ((KrineArrayInitializer) node).eval(
-                                baseType, dimensions - 1, callstack, krineBasicInterpreter);
+                                baseType, dimensions - 1, callStack, krineBasicInterpreter);
             } else
-                currentInitializer = node.eval(callstack, krineBasicInterpreter);
+                currentInitializer = node.eval(callStack, krineBasicInterpreter);
 
             if (currentInitializer == Primitive.VOID)
                 throw new EvalError(
-                        "Void in array initializer, position" + i, this, callstack);
+                        "Void in array initializer, position" + i, this, callStack);
 
             // Determine if any conversion is necessary on the initializers.
             //
@@ -76,7 +76,7 @@ class KrineArrayInitializer extends SimpleNode {
                             currentInitializer, baseType, Types.CAST);
                 } catch (UtilEvalException e) {
                     throw e.toEvalError(
-                            "Error in array initializer", this, callstack);
+                            "Error in array initializer", this, callStack);
                 }
                 // unwrap any primitive, map voids to null, etc.
                 value = Primitive.unwrap(value);
@@ -87,10 +87,10 @@ class KrineArrayInitializer extends SimpleNode {
                 Array.set(initializers, i, value);
             } catch (IllegalArgumentException e) {
                 KrineBasicInterpreter.debug("illegal arg" + e);
-                throwTypeError(baseType, currentInitializer, i, callstack);
+                throwTypeError(baseType, currentInitializer, i, callStack);
             } catch (ArrayStoreException e) { // I think this can happen
-                KrineBasicInterpreter.debug("arraystore" + e);
-                throwTypeError(baseType, currentInitializer, i, callstack);
+                KrineBasicInterpreter.debug("arrayStore" + e);
+                throwTypeError(baseType, currentInitializer, i, callStack);
             }
         }
 
@@ -98,7 +98,7 @@ class KrineArrayInitializer extends SimpleNode {
     }
 
     private void throwTypeError(
-            Class baseType, Object initializer, int argNum, CallStack callstack)
+            Class baseType, Object initializer, int argNum, CallStack callStack)
             throws EvalError {
         String rhsType;
         if (initializer instanceof Primitive)
@@ -110,7 +110,7 @@ class KrineArrayInitializer extends SimpleNode {
 
         throw new EvalError("Incompatible type: " + rhsType
                 + " in initializer of array type: " + baseType
-                + " at position: " + argNum, this, callstack);
+                + " at position: " + argNum, this, callStack);
     }
 
 }

@@ -1,6 +1,9 @@
 package com.krine.lang.ast;
 
-import com.krine.lang.*;
+import com.krine.lang.InterpreterException;
+import com.krine.lang.KrineBasicInterpreter;
+import com.krine.lang.UtilEvalException;
+import com.krine.lang.UtilTargetException;
 import com.krine.lang.reflect.Reflect;
 import com.krine.lang.reflect.ReflectException;
 import com.krine.lang.utils.CollectionManager;
@@ -176,10 +179,6 @@ public class LeftValue implements ParserConstants, java.io.Serializable {
                                 + " not assignable to leftValue " + leftValue.getName());
             }
         } else if (type == PROPERTY) {
-            /*
-			if ( object instanceof Hashtable )
-				((Hashtable)object).put(propName, val);
-			*/
             CollectionManager cm = CollectionManager.getCollectionManager();
             if (cm.isMap(object))
                 cm.putInMap(object/*map*/, propName, val);

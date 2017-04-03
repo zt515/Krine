@@ -92,6 +92,7 @@ public class Label {
      * beginStackSize} + {@link #maxStackSize maxStackSize}.
      */
 
+    @SuppressWarnings("JavaDoc")
     int maxStackSize;
 
     /**

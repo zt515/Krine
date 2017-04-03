@@ -1,7 +1,7 @@
 /*****************************************************************************
  *                                                                           *
  *  This file is part of the Krine Java Scripting distribution.          *
- *  Documentation and updates may be found at http://www.beanshell.org/      *
+ *        *
  *                                                                           *
  *  Sun Public License Notice:                                               *
  *                                                                           *
@@ -34,10 +34,13 @@
 package com.krine.lang.classpath;
 
 import com.krine.kar.KarFile;
-import com.krine.lang.*;
+import com.krine.lang.InterpreterException;
+import com.krine.lang.KrineBasicInterpreter;
+import com.krine.lang.UtilEvalException;
 import com.krine.lang.classpath.KrineClassPath.ClassSource;
 import com.krine.lang.classpath.KrineClassPath.GeneratedClassSource;
 import com.krine.lang.classpath.KrineClassPath.JarClassSource;
+import com.krine.lang.utils.Capabilities;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,7 +50,6 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.util.*;
-import com.krine.lang.utils.*;
 
 /**
  * <pre>
@@ -61,9 +63,6 @@ import com.krine.lang.utils.*;
  * Is there a workaround for weak refs?  If so we could make this work
  * with 1.1 by supplying our own classloader code...
  *
- * See "http://www.beanshell.org/manual/classloading.html" for details
- * on the com.krine.lang classloader architecture.
- *
  * Krine has a multi-tiered class loading architecture.  No class loader is
  * created unless/until a class is generated, the classpath is modified,
  * or a class is reloaded.
@@ -72,7 +71,7 @@ import com.krine.lang.utils.*;
  *
  * Note on jdk1.2 dependency:
  *
- * We are forced to use weak references here to accomodate all of the
+ * We are forced to use weak references here to accommodate all of the
  * fleeting namespace listeners.  (NameSpaces must be informed if the class
  * space changes so that they can un-cache names).  I had the interesting
  * thought that a way around this would be to implement Krine's own
@@ -111,7 +110,7 @@ public class ClassManagerImpl extends KrineClassManager {
      * user path, and java bootstrap path (rt.jar)
      * <p>
      * This is lazily constructed and further (and more importantly) lazily
-     * intialized in components because mapping the full path could be
+     * initialized in components because mapping the full path could be
      * expensive.
      * <p>
      * The full class path is a composite of:
@@ -177,7 +176,7 @@ public class ClassManagerImpl extends KrineClassManager {
 
         // insure that lang classes are loaded from the same loader
         if ((c == null) && name.startsWith(KRINE_PACKAGE)) {
-            final ClassLoader myClassLoader = KrineBasicInterpreter.class.getClassLoader(); // is null if located in bootclasspath
+            final ClassLoader myClassLoader = KrineBasicInterpreter.class.getClassLoader(); // is null if located in bootClassPath
             if (myClassLoader != null) {
                 try {
                     c = myClassLoader.loadClass(name);
@@ -331,7 +330,7 @@ public class ClassManagerImpl extends KrineClassManager {
      * Overlay the entire path with a new class loader.
      * Set the base path to the user path + base path.
      * <p>
-     * No point in including the boot class path (can't reload thos).
+     * No point in including the boot class path (can't reload thus).
      */
     @Override
     public void reloadAllClasses() throws ClassPathException {
@@ -371,9 +370,7 @@ public class ClassManagerImpl extends KrineClassManager {
         DiscreteFilesClassLoader.ClassSourceMap map =
                 new DiscreteFilesClassLoader.ClassSourceMap();
 
-        for (int i = 0; i < classNames.length; i++) {
-            String name = classNames[i];
-
+        for (String name : classNames) {
             // look in baseLoader class path
             ClassSource classSource = baseClassPath.getClassSource(name);
 
@@ -405,9 +402,7 @@ public class ClassManagerImpl extends KrineClassManager {
         ClassLoader cl = new DiscreteFilesClassLoader(this, map);
 
         // map those classes the loader in the overlay map
-        Iterator it = map.keySet().iterator();
-        while (it.hasNext())
-            loaderMap.put(it.next(), cl);
+        for (Object o : map.keySet()) loaderMap.put(o, cl);
 
         classLoaderChanged();
     }
@@ -415,8 +410,8 @@ public class ClassManagerImpl extends KrineClassManager {
     /**
      * Reload all classes in the specified package: e.g. "com.sun.tools"
      * <p>
-     * The special package name "<unpackaged>" can be used to refer
-     * to unpackaged classes.
+     * The special package name "<un-packaged>" can be used to refer
+     * to un-packaged classes.
      */
     @Override
     public void reloadPackage(String pack)
@@ -497,7 +492,7 @@ public class ClassManagerImpl extends KrineClassManager {
 
     /**
      * Return the name or null if none is found,
-     * Throw an ClassPathException containing detail if name is ambigous.
+     * Throw an ClassPathException containing detail if name is ambiguous.
      */
     @Override
     public String getClassNameByUnqName(String name)

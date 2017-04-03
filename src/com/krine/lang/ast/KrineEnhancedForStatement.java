@@ -1,9 +1,9 @@
 package com.krine.lang.ast;
 
 import com.krine.lang.KrineBasicInterpreter;
+import com.krine.lang.UtilEvalException;
 import com.krine.lang.utils.CallStack;
 import com.krine.lang.utils.CollectionManager;
-import com.krine.lang.UtilEvalException;
 
 import java.util.Iterator;
 
@@ -22,19 +22,19 @@ class KrineEnhancedForStatement extends SimpleNode implements ParserConstants {
         super(id);
     }
 
-    public Object eval(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public Object eval(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         waitForDebugger();
 
         Class elementType = null;
         SimpleNode expression, statement = null;
 
-        NameSpace enclosingNameSpace = callstack.top();
+        NameSpace enclosingNameSpace = callStack.top();
         SimpleNode firstNode = ((SimpleNode) jjtGetChild(0));
         int nodeCount = jjtGetNumChildren();
 
         if (firstNode instanceof KrineType) {
-            elementType = ((KrineType) firstNode).getType(callstack, krineBasicInterpreter);
+            elementType = ((KrineType) firstNode).getType(callStack, krineBasicInterpreter);
             expression = ((SimpleNode) jjtGetChild(1));
             if (nodeCount > 2)
                 statement = ((SimpleNode) jjtGetChild(2));
@@ -45,19 +45,19 @@ class KrineEnhancedForStatement extends SimpleNode implements ParserConstants {
         }
 
         BlockNameSpace eachNameSpace = new BlockNameSpace(enclosingNameSpace);
-        callstack.swap(eachNameSpace);
+        callStack.swap(eachNameSpace);
 
-        final Object iteratee = expression.eval(callstack, krineBasicInterpreter);
+        final Object iteratee = expression.eval(callStack, krineBasicInterpreter);
 
         if (iteratee == Primitive.NULL)
             throw new EvalError("The collection, array, map, iterator, or " +
                     "enumeration portion of a for statement cannot be null.",
-                    this, callstack);
+                    this, callStack);
 
         CollectionManager cm = CollectionManager.getCollectionManager();
         if (!cm.isKrineIterable(iteratee))
             throw new EvalError("Can't iterate over type: "
-                    + iteratee.getClass(), this, callstack);
+                    + iteratee.getClass(), this, callStack);
         Iterator iterator = cm.getKrineIterator(iteratee);
 
         Object returnControl = Primitive.VOID;
@@ -74,13 +74,13 @@ class KrineEnhancedForStatement extends SimpleNode implements ParserConstants {
                     eachNameSpace.setVariable(varName, value, false);
             } catch (UtilEvalException e) {
                 throw e.toEvalError(
-                        "for loop iterator variable:" + varName, this, callstack);
+                        "for loop iterator variable:" + varName, this, callStack);
             }
 
             boolean breakout = false; // switch eats a multi-level break here?
             if (statement != null) // not empty statement
             {
-                Object ret = statement.eval(callstack, krineBasicInterpreter);
+                Object ret = statement.eval(callStack, krineBasicInterpreter);
 
                 if (ret instanceof ReturnControl) {
                     switch (((ReturnControl) ret).kind) {
@@ -103,7 +103,7 @@ class KrineEnhancedForStatement extends SimpleNode implements ParserConstants {
                 break;
         }
 
-        callstack.swap(enclosingNameSpace);
+        callStack.swap(enclosingNameSpace);
         return returnControl;
     }
 }

@@ -1,8 +1,8 @@
 package com.krine.lang;
 
+import com.krine.debugger.KrineDebugger;
 import com.krine.lang.ast.*;
 import com.krine.lang.classpath.KrineClassManager;
-import com.krine.debugger.KrineDebugger;
 import com.krine.lang.io.SystemIOBridge;
 import com.krine.lang.reflect.Reflect;
 import com.krine.lang.utils.CallStack;
@@ -16,32 +16,6 @@ import java.util.Set;
  * <p>
  * An instance of KrineInterpreter can be used to source scripts and evaluate
  * statements or expressions.
- * <p>
- * Here are some examples:
- * <p>
- * <p><blockquote><pre>
- * Interpeter krine = new KrineInterpreter();
- * <p>
- * // Evaluate statements and expressions
- * krine.eval("foo=Math.sin(0.5)");
- * krine.eval("bar=foo*5; bar=Math.cos(bar);");
- * krine.eval("for(i=0; i<10; i++) { print(\"hello\"); }");
- * // same as above using java syntax and apis only
- * krine.eval("for(int i=0; i<10; i++) { System.out.println(\"hello\"); }");
- * <p>
- * // Source from files or streams
- * krine.source("myscript.krine");  // or krine.eval("source(\"myscript.krine\")");
- * <p>
- * // Use set() and get() to pass objects in and out of variables
- * krine.set( "date", new Date() );
- * Date date = (Date)krine.get( "date" );
- * // This would also work:
- * Date date = (Date)krine.eval( "date" );
- * <p>
- * krine.eval("year = date.getYear()");
- * Integer year = (Integer)krine.get("year");  // primitives use wrappers
- * <p>
- * </pre></blockquote>
  * <p>
  * In the above examples we showed a single krineBasicInterpreter instance, however
  * you may wish to use many instances, depending on the application and how
@@ -60,7 +34,7 @@ public class KrineBasicInterpreter
     /*
         Debug utils are static so that they are reachable by code that doesn't
         necessarily have an krineBasicInterpreter reference (e.g. tracing in utils).
-        In the future we may want to allow debugStream/trace to be turned on on
+        In the future we may want to allow debug/trace to be turned on on
         a per krineBasicInterpreter basis, in which case we'll need to use the parent
         reference in some way to determine the scope of the command that
         turns it on or off.
@@ -101,7 +75,7 @@ public class KrineBasicInterpreter
     private SystemIOBridge console;
 
     /**
-     * If this interpeter is a child of another, the parent
+     * If this interpreter is a child of another, the parent
      */
     private KrineBasicInterpreter parent;
 
@@ -145,7 +119,7 @@ public class KrineBasicInterpreter
         debugStream = err;
         this.parent = parent;
         if (parent != null)
-            setStrictJava(parent.getStrictJava());
+            setStrictJava(parent.isStrictJava());
         this.sourceFileInfo = sourceFileInfo;
 
         KrineClassManager dcm = KrineClassManager.createClassManager(this);
@@ -302,11 +276,8 @@ public class KrineBasicInterpreter
             throws IOException, EvalError {
         File file = convertToPath(filename);
         if (KrineBasicInterpreter.DEBUG) debug("Sourcing file: " + file);
-        Reader sourceIn = new BufferedReader(new FileReader(file));
-        try {
+        try (Reader sourceIn = new BufferedReader(new FileReader(file))) {
             return eval(sourceIn, nameSpace, filename);
-        } finally {
-            sourceIn.close();
         }
     }
 
@@ -329,7 +300,7 @@ public class KrineBasicInterpreter
      * @param sourceFileInfo is for information purposes only.  It is used to
      *                       display error messages (and in the future may be made available to
      *                       the script).
-     * @throws EvalError             on script problems
+     * @throws EvalError            on script problems
      * @throws KrineTargetException on unhandled exceptions from the script
      */
     /*
@@ -349,7 +320,7 @@ public class KrineBasicInterpreter
         if (KrineBasicInterpreter.DEBUG) debug("eval: nameSpace = " + nameSpace);
 
 		/* 
-			Create non-interactive local krineBasicInterpreter for this namespace
+            Create non-interactive local krineBasicInterpreter for this namespace
 			with source from the input stream and out/err same as 
 			this krineBasicInterpreter.
 		*/
@@ -357,7 +328,7 @@ public class KrineBasicInterpreter
                 new KrineBasicInterpreter(
                         in, out, err, nameSpace, this, sourceFileInfo);
 
-        CallStack callstack = new CallStack(nameSpace);
+        CallStack callStack = new CallStack(nameSpace);
 
         SimpleNode node = null;
         boolean eof = false;
@@ -374,17 +345,17 @@ public class KrineBasicInterpreter
 
                     // bind debugger if we are debugging
                     if (debugger != null) {
-                        debugger.bindCallStack(callstack);
+                        debugger.bindCallStack(callStack);
                         bindDebugger(node, debugger);
                     }
 
                     // evaluate the program
-                    retVal = node.eval(callstack, localKrineBasicInterpreter);
+                    retVal = node.eval(callStack, localKrineBasicInterpreter);
 
                     // sanity check during development
-                    if (callstack.depth() > 1)
+                    if (callStack.depth() > 1)
                         throw new InterpreterException(
-                                "CallStack growing: " + callstack);
+                                "CallStack growing: " + callStack);
 
                     if (retVal instanceof ReturnControl) {
                         retVal = ((ReturnControl) retVal).value;
@@ -409,7 +380,7 @@ public class KrineBasicInterpreter
                 e.printStackTrace();
                 throw new EvalError(
                         "Sourced file: " + sourceFileInfo + " internal Error: "
-                                + e.getMessage(), node, callstack);
+                                + e.getMessage(), node, callStack);
             } catch (KrineTargetException e) {
                 // fail-safe, set the Line as the origin of the error.
                 if (e.getNode() == null)
@@ -427,18 +398,18 @@ public class KrineBasicInterpreter
                     e.printStackTrace();
                 throw new EvalError(
                         "Sourced file: " + sourceFileInfo + " unknown error: "
-                                + e.getMessage(), node, callstack, e);
+                                + e.getMessage(), node, callStack, e);
             } catch (KrineTokenException e) {
                 throw new EvalError(
                         "Sourced file: " + sourceFileInfo + " Token Parsing Error: "
-                                + e.getMessage(), node, callstack, e);
+                                + e.getMessage(), node, callStack, e);
             } finally {
                 localKrineBasicInterpreter.get_jjtree().reset();
 
                 // re-init the callStack
-                if (callstack.depth() > 1) {
-                    callstack.clear();
-                    callstack.push(nameSpace);
+                if (callStack.depth() > 1) {
+                    callStack.clear();
+                    callStack.push(nameSpace);
                 }
             }
         }
@@ -580,7 +551,7 @@ public class KrineBasicInterpreter
 
 	/* 
 		Primary krineBasicInterpreter set and get variable methods
-		Note: These are squeltching errors... should they?
+		Note: These are squelching errors... should they?
 	*/
 
     /**
@@ -617,18 +588,18 @@ public class KrineBasicInterpreter
         if (value == null)
             value = Primitive.NULL;
 
-        CallStack callstack = new CallStack();
+        CallStack callStack = new CallStack();
         try {
             if (Name.isCompound(name)) {
                 LeftValue lhs = globalNameSpace.getNameResolver(name).toLeftValue(
-                        callstack, this);
+                        callStack, this);
                 lhs.assign(value, false);
             } else {
                 // optimization for common case
                 globalNameSpace.setVariable(name, value, false);
             }
         } catch (UtilEvalException e) {
-            throw e.toEvalError(SimpleNode.JAVA_CODE, callstack);
+            throw e.toEvalError(SimpleNode.JAVA_CODE, callStack);
         }
     }
 
@@ -791,7 +762,7 @@ public class KrineBasicInterpreter
      * This mode attempts to make Krine syntax behave as Java
      * syntax, eliminating conveniences like loose variables, etc.
      * When enabled, variables are required to be declared or initialized
-     * before use and method arguments are reqired to have types.
+     * before use and method arguments are required to have types.
      * <p>
      * <p>
      * This mode will become more strict in a future release when
@@ -799,6 +770,7 @@ public class KrineBasicInterpreter
      * objects as method closures.
      *
      * @param b Strict Java
+     * @see #isStrictJava()
      */
     public void setStrictJava(boolean b) {
         this.strictJava = b;
@@ -806,17 +778,28 @@ public class KrineBasicInterpreter
 
     /**
      * Allow KrineInterpreter to load Java classes or not.
+     *
      * @param b Allow Java classes
+     * @see #isAllowJavaClass()
      */
     public void setAllowJavaClass(boolean b) {
         this.allowJavaClass = b;
     }
 
     /**
+     * @return Strict Java
      * @see #setStrictJava(boolean)
      */
-    public boolean getStrictJava() {
+    public boolean isStrictJava() {
         return this.strictJava;
+    }
+
+    /**
+     * @return allow Java classes
+     * @see #setAllowJavaClass(boolean)
+     */
+    public boolean isAllowJavaClass() {
+        return allowJavaClass;
     }
 
     public void setDebugger(KrineDebugger debugger) {
@@ -826,7 +809,7 @@ public class KrineBasicInterpreter
     private static void staticInit() {
         try {
             debugStream = System.err;
-            DEBUG = Boolean.getBoolean("debugStream");
+            DEBUG = Boolean.getBoolean("debug");
             TRACE = Boolean.getBoolean("trace");
             LOCAL_SCOPING = Boolean.getBoolean("local_scoping");
             String outFile = System.getProperty("outfile");

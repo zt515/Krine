@@ -1,11 +1,11 @@
 package com.krine.lang.classpath;
 
 import com.krine.kar.KarFile;
-import com.krine.lang.KrineBasicInterpreter;
-import com.krine.lang.utils.Capabilities;
 import com.krine.lang.InterpreterException;
+import com.krine.lang.KrineBasicInterpreter;
 import com.krine.lang.UtilEvalException;
 import com.krine.lang.ast.Name;
+import com.krine.lang.utils.Capabilities;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,10 +22,6 @@ import java.util.*;
  * <p>
  * Currently the extension relies on 1.2 for KrineClassLoader and weak
  * references.
- * <p>
- * See http://www.beanshell.org/manual/classloading.html for details
- * on the krine classloader architecture.
- * <p>
  * <p>
  * Krine has a multi-tiered class loading architecture.  No class loader is
  * used unless/until the classpath is modified or a class is reloaded.
@@ -69,7 +65,7 @@ public class KrineClassManager {
      * Note: these should probably be re-implemented with Soft references.
      * (as opposed to strong or Weak)
      */
-    protected transient Map<String, Class> absoluteClassCache = new Hashtable<String, Class>();
+    protected transient Map<String, Class> absoluteClassCache = new Hashtable<>();
     /**
      * Global cache for things we know are *not* classes.
      * Note: these should probably be re-implemented with Soft references.
@@ -82,11 +78,11 @@ public class KrineClassManager {
      * We keep these maps separate to support fast lookup in the general case
      * where the method may be either.
      */
-    protected transient volatile Map<SignatureKey, Method> resolvedObjectMethods = new Hashtable<SignatureKey, Method>();
-    protected transient volatile Map<SignatureKey, Method> resolvedStaticMethods = new Hashtable<SignatureKey, Method>();
+    protected transient volatile Map<SignatureKey, Method> resolvedObjectMethods = new Hashtable<>();
+    protected transient volatile Map<SignatureKey, Method> resolvedStaticMethods = new Hashtable<>();
 
     private transient Set<String> definingClasses = Collections.synchronizedSet(new HashSet<String>());
-    protected transient Map<String, String> definingClassesBaseNames = new Hashtable<String, String>();
+    protected transient Map<String, String> definingClassesBaseNames = new Hashtable<>();
 
     private static final Map<KrineClassManager, Object> classManagers = Collections.synchronizedMap(new WeakHashMap<KrineClassManager, Object>());
 
@@ -100,7 +96,7 @@ public class KrineClassManager {
 
     /**
      * Create a new instance of the class manager.
-     * Class manager instnaces are now associated with the krineBasicInterpreter.
+     * Class manager instances are now associated with the krineBasicInterpreter.
      *
      * @see KrineBasicInterpreter#getClassManager()
      * @see KrineBasicInterpreter#setClassLoader(ClassLoader)
@@ -147,12 +143,12 @@ public class KrineClassManager {
                     "Attempting to load class in the process of being defined: "
                             + name);
 
-        Class clas = null;
+        Class clazz = null;
         try {
-            clas = plainClassForName(name);
+            clazz = plainClassForName(name);
         } catch (ClassNotFoundException e) { /*ignore*/ }
 
-        return clas;
+        return clazz;
     }
 
     /**
@@ -238,12 +234,12 @@ public class KrineClassManager {
      * in the general case where either will do.
      */
     public void cacheResolvedMethod(
-            Class clas, Class[] types, Method method) {
+            Class clazz, Class[] types, Method method) {
         if (KrineBasicInterpreter.DEBUG)
             KrineBasicInterpreter.debug(
-                    "cacheResolvedMethod putting: " + clas + " " + method);
+                    "cacheResolvedMethod putting: " + clazz + " " + method);
 
-        SignatureKey sk = new SignatureKey(clas, method.getName(), types);
+        SignatureKey sk = new SignatureKey(clazz, method.getName(), types);
         if (Modifier.isStatic(method.getModifiers()))
             resolvedStaticMethods.put(sk, method);
         else
@@ -257,8 +253,8 @@ public class KrineClassManager {
      * @return the Method or null
      */
     public Method getResolvedMethod(
-            Class clas, String methodName, Class[] types, boolean onlyStatic) {
-        SignatureKey sk = new SignatureKey(clas, methodName, types);
+            Class clazz, String methodName, Class[] types, boolean onlyStatic) {
+        SignatureKey sk = new SignatureKey(clazz, methodName, types);
 
         // Try static and then object, if allowed
         // Note that the Java compiler should not allow both.
@@ -269,10 +265,10 @@ public class KrineClassManager {
         if (KrineBasicInterpreter.DEBUG) {
             if (method == null)
                 KrineBasicInterpreter.debug(
-                        "getResolvedMethod cache MISS: " + clas + " - " + methodName);
+                        "getResolvedMethod cache MISS: " + clazz + " - " + methodName);
             else
                 KrineBasicInterpreter.debug(
-                        "getResolvedMethod cache HIT: " + clas + " - " + method);
+                        "getResolvedMethod cache HIT: " + clazz + " - " + method);
         }
         return method;
     }
@@ -333,7 +329,7 @@ public class KrineClassManager {
      * Overlay the entire path with a new class loader.
      * Set the base path to the user path + base path.
      * <p>
-     * No point in including the boot class path (can't reload thos).
+     * No point in including the boot class path (can't reload those).
      */
     public void reloadAllClasses() throws UtilEvalException {
         throw cmUnavailable();
@@ -352,8 +348,8 @@ public class KrineClassManager {
     /**
      * Reload all classes in the specified package: e.g. "com.sun.tools"
      * <p>
-     * The special package name "<unpackaged>" can be used to refer
-     * to unpackaged classes.
+     * The special package name "<un-packaged>" can be used to refer
+     * to un-packaged classes.
      */
     public void reloadPackage(String pack)
             throws UtilEvalException {
@@ -363,7 +359,7 @@ public class KrineClassManager {
     /**
      This has been removed from the interface to shield the lang from the
      rest of the classpath package. If you need the classpath you will have
-     to cast the classmanager to its impl.
+     to cast the ClassManager to its impl.
 
      public KrineClassPath getClassPath() throws ClassPathException;
      */
@@ -386,7 +382,7 @@ public class KrineClassManager {
 
     /**
      * Return the name or null if none is found,
-     * Throw an ClassPathException containing detail if name is ambigous.
+     * Throw an ClassPathException containing detail if name is ambiguous.
      */
     public String getClassNameByUnqName(String name)
             throws UtilEvalException {
@@ -408,7 +404,7 @@ public class KrineClassManager {
      * The class manager will not attempt to load it.
      */
     /*
-		Note: this implementation is temporary. We currently keep a flat
+        Note: this implementation is temporary. We currently keep a flat
 		namespace of the base name of classes.  i.e. Krine cannot be in the
 		process of defining two classes in different packages with the same
 		base name.  To remove this limitation requires that we work through
@@ -517,20 +513,20 @@ public class KrineClassManager {
 		dispatched.  What is the alternative?
 	*/
     static class SignatureKey {
-        Class clas;
+        Class clazz;
         Class[] types;
         String methodName;
         int hashCode = 0;
 
-        SignatureKey(Class clas, String methodName, Class[] types) {
-            this.clas = clas;
+        SignatureKey(Class clazz, String methodName, Class[] types) {
+            this.clazz = clazz;
             this.methodName = methodName;
             this.types = types;
         }
 
         public int hashCode() {
             if (hashCode == 0) {
-                hashCode = clas.hashCode() * methodName.hashCode();
+                hashCode = clazz.hashCode() * methodName.hashCode();
                 if (types == null) // no args method
                     return hashCode;
                 for (int i = 0; i < types.length; i++) {
@@ -542,10 +538,14 @@ public class KrineClassManager {
         }
 
         public boolean equals(Object o) {
+            if (!(o instanceof SignatureKey)) {
+                return false;
+            }
+
             SignatureKey target = (SignatureKey) o;
             if (types == null)
                 return target.types == null;
-            if (clas != target.clas)
+            if (clazz != target.clazz)
                 return false;
             if (!methodName.equals(target.methodName))
                 return false;

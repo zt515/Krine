@@ -21,7 +21,7 @@ public class ParserTokenManager implements ParserConstants {
         debugStream = ds;
     }
 
-    private final int jjStopStringLiteralDfa_0(int pos, long active0, long active1, long active2) {
+    private int jjStopStringLiteralDfa_0(int pos, long active0, long active1, long active2) {
         switch (pos) {
             case 0:
                 if ((active0 & 0x3eL) != 0L)
@@ -142,7 +142,7 @@ public class ParserTokenManager implements ParserConstants {
         }
     }
 
-    private final int jjStartNfa_0(int pos, long active0, long active1, long active2) {
+    private int jjStartNfa_0(int pos, long active0, long active1, long active2) {
         return jjMoveNfa_0(jjStopStringLiteralDfa_0(pos, active0, active1, active2), pos + 1);
     }
 
@@ -1863,7 +1863,7 @@ public class ParserTokenManager implements ParserConstants {
             81, 13, 14, 20, 21, 23, 28, 30, 32, 50, 51, 54, 55, 58, 59,
     };
 
-    private static final boolean jjCanMove_0(int hiByte, int i1, int i2, long l1, long l2) {
+    private static boolean jjCanMove_0(int hiByte, int i1, int i2, long l1, long l2) {
         switch (hiByte) {
             case 0:
                 return ((jjbitVec0[i2] & l2) != 0L);
@@ -1872,7 +1872,7 @@ public class ParserTokenManager implements ParserConstants {
         }
     }
 
-    private static final boolean jjCanMove_1(int hiByte, int i1, int i2, long l1, long l2) {
+    private static boolean jjCanMove_1(int hiByte, int i1, int i2, long l1, long l2) {
         switch (hiByte) {
             case 0:
                 return ((jjbitVec0[i2] & l2) != 0L);
@@ -1881,7 +1881,7 @@ public class ParserTokenManager implements ParserConstants {
         }
     }
 
-    private static final boolean jjCanMove_2(int hiByte, int i1, int i2, long l1, long l2) {
+    private static boolean jjCanMove_2(int hiByte, int i1, int i2, long l1, long l2) {
         switch (hiByte) {
             case 0:
                 return ((jjbitVec4[i2] & l2) != 0L);

@@ -20,18 +20,18 @@ public class EvalError extends Exception {
     // Note: no way to mutate the Throwable message, must maintain our own
     private String message;
 
-    private final CallStack callstack;
+    private final CallStack callStack;
 
-    public EvalError(String s, SimpleNode node, CallStack callstack, Throwable cause) {
-        this(s, node, callstack);
+    public EvalError(String s, SimpleNode node, CallStack callStack, Throwable cause) {
+        this(s, node, callStack);
         initCause(cause);
     }
 
-    public EvalError(String s, SimpleNode node, CallStack callstack) {
+    public EvalError(String s, SimpleNode node, CallStack callStack) {
         this.message = s;
         this.node = node;
         // freeze the callStack for the stack trace.
-        this.callstack = callstack == null ? null : callstack.copy();
+        this.callStack = callStack == null ? null : callStack.copy();
     }
 
     /**
@@ -50,7 +50,7 @@ public class EvalError extends Exception {
         traceBuilder.append(getRawMessage())
                 .append(String.format(Locale.getDefault(), "\n\tcode: %s\n", node.getText()));
 
-        if (callstack != null) {
+        if (callStack != null) {
             traceBuilder.append(getScriptStackTrace());
         }
 
@@ -100,12 +100,12 @@ public class EvalError extends Exception {
     }
 
     public String getScriptStackTrace() {
-        if (callstack == null)
+        if (callStack == null)
             return "<Unknown>";
 
         StringBuilder traceBuilder = new StringBuilder();
 
-        CallStack stack = callstack.copy();
+        CallStack stack = callStack.copy();
         while (stack.depth() > 0) {
             NameSpace ns = stack.pop();
             SimpleNode node = ns.getNode();

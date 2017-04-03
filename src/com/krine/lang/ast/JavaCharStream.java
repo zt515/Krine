@@ -9,7 +9,7 @@ package com.krine.lang.ast;
 public class JavaCharStream {
     public static final boolean staticFlag = false;
 
-    static final int hexval(char c) throws java.io.IOException {
+    static int hexValue(char c) throws java.io.IOException {
         switch (c) {
             case '0':
                 return 0;
@@ -129,7 +129,6 @@ public class JavaCharStream {
                 throw new java.io.IOException();
             } else
                 maxNextCharInd += i;
-            return;
         } catch (java.io.IOException e) {
             if (bufpos != 0) {
                 --bufpos;
@@ -269,10 +268,10 @@ public class JavaCharStream {
                 while ((c = ReadByte()) == 'u')
                     ++column;
 
-                buffer[bufpos] = c = (char) (hexval(c) << 12 |
-                        hexval(ReadByte()) << 8 |
-                        hexval(ReadByte()) << 4 |
-                        hexval(ReadByte()));
+                buffer[bufpos] = c = (char) (hexValue(c) << 12 |
+                        hexValue(ReadByte()) << 8 |
+                        hexValue(ReadByte()) << 4 |
+                        hexValue(ReadByte()));
 
                 column += 4;
             } catch (java.io.IOException e) {

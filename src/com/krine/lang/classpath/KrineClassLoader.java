@@ -1,23 +1,23 @@
 package com.krine.lang.classpath;
-import java.net.*;
-import java.io.*;
 
-public interface KrineClassLoader
-{
+import java.io.InputStream;
+import java.net.URL;
 
-    public ClassLoader getClassLoader();
+public interface KrineClassLoader {
 
-
-    public void addURL(URL path);
+    ClassLoader getClassLoader();
 
 
-    public InputStream getResourceAsStream(String substring);
+    void addURL(URL path);
 
 
-    public URL getResource(String substring);
+    InputStream getResourceAsStream(String substring);
 
 
-    public Class loadClass(String name) throws ClassNotFoundException;
+    URL getResource(String substring);
 
-    
+
+    Class loadClass(String name) throws ClassNotFoundException;
+
+
 }

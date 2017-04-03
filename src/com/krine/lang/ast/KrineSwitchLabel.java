@@ -11,12 +11,12 @@ class KrineSwitchLabel extends SimpleNode {
     }
 
     public Object eval(
-            CallStack callstack, KrineBasicInterpreter krineBasicInterpreter) throws EvalError {
+            CallStack callStack, KrineBasicInterpreter krineBasicInterpreter) throws EvalError {
         waitForDebugger();
 
         if (isDefault)
             return null; // should probably error
         SimpleNode label = ((SimpleNode) jjtGetChild(0));
-        return label.eval(callstack, krineBasicInterpreter);
+        return label.eval(callStack, krineBasicInterpreter);
     }
 }

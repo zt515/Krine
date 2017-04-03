@@ -1,7 +1,7 @@
 /*****************************************************************************
  *                                                                           *
  *  This file is part of the Krine Java Scripting distribution.          *
- *  Documentation and updates may be found at http://www.beanshell.org/      *
+ *        *
  *                                                                           *
  *  Sun Public License Notice:                                               *
  *                                                                           *
@@ -34,10 +34,10 @@
 
 package com.krine.lang.ast;
 
-import com.krine.lang.KrineBasicInterpreter;
-import com.krine.lang.InterpreterException;
 import com.krine.debugger.BreakPoint;
 import com.krine.debugger.KrineDebugger;
+import com.krine.lang.InterpreterException;
+import com.krine.lang.KrineBasicInterpreter;
 import com.krine.lang.utils.CallStack;
 
 /*
@@ -150,8 +150,8 @@ public class SimpleNode implements Node {
     public void dump(String prefix) {
         System.out.println(toString(prefix));
         if (children != null) {
-            for (int i = 0; i < children.length; ++i) {
-                SimpleNode n = (SimpleNode) children[i];
+            for (Node aChildren : children) {
+                SimpleNode n = (SimpleNode) aChildren;
                 if (n != null) {
                     n.dump(prefix + " ");
                 }
@@ -174,7 +174,7 @@ public class SimpleNode implements Node {
     /**
      * This is the general signature for evaluation of a node.
      */
-    public Object eval(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public Object eval(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         throw new InterpreterException(
                 "Unimplemented or inappropriate for " + getClass().getName());
@@ -251,12 +251,12 @@ public class SimpleNode implements Node {
         BreakPoint breakPoint = new BreakPoint(getSourceFile(), getLineNumber(), toCode());
         debugger.onBreakPointReached(breakPoint);
     }
-    
+
     public String toCode() {
         Token t = firstToken;
         StringBuilder s = new StringBuilder();
         while (t != null && t.beginLine == getLineNumber()) {
-            s.append(t.image + " ");
+            s.append(t.image).append(" ");
             t = t.next;
         }
         return s.toString();

@@ -1,12 +1,12 @@
 package com.krine.lang.ast;
 
-import com.krine.lang.KrineBasicInterpreter;
 import com.krine.lang.InterpreterException;
+import com.krine.lang.KrineBasicInterpreter;
 import com.krine.lang.UtilEvalException;
 import com.krine.lang.classgen.ClassGeneratorFactory;
 import com.krine.lang.classgen.IClassGenerator;
-import com.krine.lang.classpath.KrineClassManager;
 import com.krine.lang.classpath.GeneratedClass;
+import com.krine.lang.classpath.KrineClassManager;
 import com.krine.lang.reflect.Reflect;
 import com.krine.lang.reflect.ReflectException;
 import com.krine.lang.utils.CallStack;
@@ -59,7 +59,7 @@ public final class ClassGenerator {
     public static final String OBJECT = "Ljava/lang/Object;";
 
     private static ClassGenerator cg;
-    private static final String DEBUG_DIR = System.getProperty("krine.debugClassssDir");
+    private static final String DEBUG_DIR = System.getProperty("krine.debugClassesDir");
 
     private static final ThreadLocal<NameSpace> CONTEXT_NAMESPACE = new ThreadLocal<>();
     private static final ThreadLocal<KrineBasicInterpreter> CONTEXT_INTERPRETER = new ThreadLocal<>();
@@ -69,9 +69,9 @@ public final class ClassGenerator {
      * Register actual context, used by generated class constructor, which calls
      * {@link  #initInstance(GeneratedClass, String, Object[])}.
      */
-    static void registerConstructorContext(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter) {
-        if (callstack != null) {
-            CONTEXT_NAMESPACE.set(callstack.top());
+    static void registerConstructorContext(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter) {
+        if (callStack != null) {
+            CONTEXT_NAMESPACE.set(callStack.top());
         } else {
             CONTEXT_NAMESPACE.remove();
         }
@@ -94,9 +94,9 @@ public final class ClassGenerator {
     /**
      * Parse the KrineBlock for the class definition and generate the class.
      */
-    public Class generateClass(String name, Modifiers modifiers, Class[] interfaces, Class superClass, KrineBlock block, boolean isInterface, CallStack callstack, KrineBasicInterpreter krineBasicInterpreter) throws EvalError {
+    public Class generateClass(String name, Modifiers modifiers, Class[] interfaces, Class superClass, KrineBlock block, boolean isInterface, CallStack callStack, KrineBasicInterpreter krineBasicInterpreter) throws EvalError {
         // Delegate to the static method
-        return generateClassImpl(name, modifiers, interfaces, superClass, block, isInterface, callstack, krineBasicInterpreter);
+        return generateClassImpl(name, modifiers, interfaces, superClass, block, isInterface, callStack, krineBasicInterpreter);
     }
 
 
@@ -127,8 +127,8 @@ public final class ClassGenerator {
      * Parse the KrineBlock for for the class definition and generate the class
      * using ClassGenerator.
      */
-    public static Class generateClassImpl(String name, Modifiers modifiers, Class[] interfaces, Class superClass, KrineBlock block, boolean isInterface, CallStack callstack, KrineBasicInterpreter krineBasicInterpreter) throws EvalError {
-        NameSpace enclosingNameSpace = callstack.top();
+    public static Class generateClassImpl(String name, Modifiers modifiers, Class[] interfaces, Class superClass, KrineBlock block, boolean isInterface, CallStack callStack, KrineBasicInterpreter krineBasicInterpreter) throws EvalError {
+        NameSpace enclosingNameSpace = callStack.top();
         String packageName = enclosingNameSpace.getPackage();
         String className = enclosingNameSpace.isClass ? (enclosingNameSpace.getName() + "$" + name) : name;
         String fqClassName = packageName == null ? className : packageName + "." + className;
@@ -141,15 +141,15 @@ public final class ClassGenerator {
         NameSpace classStaticNameSpace = new NameSpace(enclosingNameSpace, className);
         classStaticNameSpace.isClass = true;
 
-        callstack.push(classStaticNameSpace);
+        callStack.push(classStaticNameSpace);
 
         // Evaluate any inner class class definitions in the block
         // effectively recursively call this method for contained classes first
-        block.evalBlock(callstack, krineBasicInterpreter, true/*override*/, ClassNodeFilter.CLASSCLASSES);
+        block.evalBlock(callStack, krineBasicInterpreter, true/*override*/, ClassNodeFilter.CLASSCLASSES);
 
         // Generate the type for our class
-        Variable[] variables = getDeclaredVariables(block, callstack, krineBasicInterpreter, packageName);
-        KrineMethodDelayEvaluated[] methods = getDeclaredMethods(block, callstack, krineBasicInterpreter, packageName);
+        Variable[] variables = getDeclaredVariables(block, callStack, krineBasicInterpreter, packageName);
+        KrineMethodDelayEvaluated[] methods = getDeclaredMethods(block, callStack, krineBasicInterpreter, packageName);
 
         // Generate class both for Java and Android
         IClassGenerator classGenerator = ClassGeneratorFactory.getClassGenerator();
@@ -181,9 +181,9 @@ public final class ClassGenerator {
         classStaticNameSpace.setClassStatic(genClass);
 
         // evaluate the static portion of the block in the static space
-        block.evalBlock(callstack, krineBasicInterpreter, true/*override*/, ClassNodeFilter.CLASSSTATIC);
+        block.evalBlock(callStack, krineBasicInterpreter, true/*override*/, ClassNodeFilter.CLASSSTATIC);
 
-        callstack.pop();
+        callStack.pop();
 
         if (!genClass.isInterface()) {
             // Set the static krine This callback
@@ -201,14 +201,14 @@ public final class ClassGenerator {
     }
 
 
-    static Variable[] getDeclaredVariables(KrineBlock body, CallStack callstack, KrineBasicInterpreter krineBasicInterpreter, String defaultPackage) {
-        List<Variable> vars = new ArrayList<Variable>();
+    static Variable[] getDeclaredVariables(KrineBlock body, CallStack callStack, KrineBasicInterpreter krineBasicInterpreter, String defaultPackage) {
+        List<Variable> vars = new ArrayList<>();
         for (int child = 0; child < body.jjtGetNumChildren(); child++) {
             SimpleNode node = (SimpleNode) body.jjtGetChild(child);
             if (node instanceof KrineTypedVariableDeclaration) {
                 KrineTypedVariableDeclaration tvd = (KrineTypedVariableDeclaration) node;
                 Modifiers modifiers = tvd.modifiers;
-                String type = tvd.getTypeDescriptor(callstack, krineBasicInterpreter, defaultPackage);
+                String type = tvd.getTypeDescriptor(callStack, krineBasicInterpreter, defaultPackage);
                 KrineVariableDeclarator[] vardec = tvd.getDeclarators();
                 for (KrineVariableDeclarator aVardec : vardec) {
                     String name = aVardec.name;
@@ -226,8 +226,8 @@ public final class ClassGenerator {
     }
 
 
-    static KrineMethodDelayEvaluated[] getDeclaredMethods(KrineBlock body, CallStack callstack, KrineBasicInterpreter krineBasicInterpreter, String defaultPackage) throws EvalError {
-        List<KrineMethodDelayEvaluated> methods = new ArrayList<KrineMethodDelayEvaluated>();
+    static KrineMethodDelayEvaluated[] getDeclaredMethods(KrineBlock body, CallStack callStack, KrineBasicInterpreter krineBasicInterpreter, String defaultPackage) throws EvalError {
+        List<KrineMethodDelayEvaluated> methods = new ArrayList<>();
         for (int child = 0; child < body.jjtGetNumChildren(); child++) {
             SimpleNode node = (SimpleNode) body.jjtGetChild(child);
             if (node instanceof KrineMethodDeclaration) {
@@ -235,12 +235,12 @@ public final class ClassGenerator {
                 md.insureNodesParsed();
                 Modifiers modifiers = md.modifiers;
                 String name = md.name;
-                String returnType = md.getReturnTypeDescriptor(callstack, krineBasicInterpreter, defaultPackage);
+                String returnType = md.getReturnTypeDescriptor(callStack, krineBasicInterpreter, defaultPackage);
                 KrineReturnType returnTypeNode = md.getReturnTypeNode();
                 KrineFormalParameters paramTypesNode = md.paramsNode;
-                String[] paramTypes = paramTypesNode.getTypeDescriptors(callstack, krineBasicInterpreter, defaultPackage);
+                String[] paramTypes = paramTypesNode.getTypeDescriptors(callStack, krineBasicInterpreter, defaultPackage);
 
-                KrineMethodDelayEvaluated bm = new KrineMethodDelayEvaluated(name, returnType, returnTypeNode, md.paramsNode.getParamNames(), paramTypes, paramTypesNode, md.blockNode, null/*declaringNameSpace*/, modifiers, callstack, krineBasicInterpreter);
+                KrineMethodDelayEvaluated bm = new KrineMethodDelayEvaluated(name, returnType, returnTypeNode, md.paramsNode.getParamNames(), paramTypes, paramTypesNode, md.blockNode, null/*declaringNameSpace*/, modifiers, callStack, krineBasicInterpreter);
 
                 methods.add(bm);
             }
@@ -303,13 +303,13 @@ public final class ClassGenerator {
         String superName = KRINE_SUPER + methodName;
 
         // look for the specially named super delegate method
-        Class clas = instance.getClass();
-        Method superMethod = Reflect.resolveJavaMethod(dcm, clas, superName, Types.getTypes(args), false/*onlyStatic*/);
+        Class clazz = instance.getClass();
+        Method superMethod = Reflect.resolveJavaMethod(dcm, clazz, superName, Types.getTypes(args), false/*onlyStatic*/);
         if (superMethod != null) return Reflect.invokeMethod(superMethod, instance, args);
 
         // No super method, try to invoke regular method
         // could be a superfluous "super." which is legal.
-        Class superClass = clas.getSuperclass();
+        Class superClass = clazz.getSuperclass();
         superMethod = Reflect.resolveExpectedJavaMethod(dcm, superClass, instance, methodName, args, false/*onlyStatic*/);
         return Reflect.invokeMethod(superMethod, instance, args);
     }
@@ -385,13 +385,13 @@ public final class ClassGenerator {
 
         // evaluate the args
 
-        CallStack callstack = new CallStack();
-        callstack.push(consArgsNameSpace);
+        CallStack callStack = new CallStack();
+        callStack.push(consArgsNameSpace);
         Object[] args;
         KrineBasicInterpreter krineBasicInterpreter = classStaticThis.declaringKrineBasicInterpreter;
 
         try {
-            args = argsNode.getArguments(callstack, krineBasicInterpreter);
+            args = argsNode.getArguments(callStack, krineBasicInterpreter);
         } catch (EvalError e) {
             throw new InterpreterException("Error evaluating constructor args: " + e);
         }
@@ -429,7 +429,7 @@ public final class ClassGenerator {
 
         // Are we choosing ourselves recursively through a this() reference?
         if (selector == ourSelector) {
-            throw new InterpreterException("Recusive constructor call.");
+            throw new InterpreterException("Recursive constructor call.");
         }
 
         return new ConstructorArgs(selector, args);
@@ -443,7 +443,7 @@ public final class ClassGenerator {
      */
     public static void initInstance(GeneratedClass instance, String className, Object[] args) {
         Class[] sig = Types.getTypes(args);
-        CallStack callstack = new CallStack();
+        CallStack callStack = new CallStack();
         KrineBasicInterpreter krineBasicInterpreter;
         NameSpace instanceNameSpace;
 
@@ -494,19 +494,19 @@ public final class ClassGenerator {
             instanceNameSpace.setClassInstance(instance);
 
             // should use try/finally here to pop ns
-            callstack.push(instanceNameSpace);
+            callStack.push(instanceNameSpace);
 
             // evaluate the instance portion of the block in it
             try { // Evaluate the initializer block
-                instanceInitBlock.evalBlock(callstack, krineBasicInterpreter, true/*override*/, ClassGenerator.ClassNodeFilter.CLASSINSTANCE);
+                instanceInitBlock.evalBlock(callStack, krineBasicInterpreter, true/*override*/, ClassGenerator.ClassNodeFilter.CLASSINSTANCE);
             } catch (Exception e) {
                 throw new InterpreterException("Error in class initialization: " + e, e);
             }
 
-            callstack.pop();
+            callStack.pop();
 
         } else {
-            // The object instance has already been initialzed by another
+            // The object instance has already been initialized by another
             // constructor.  Fall through to invoke the constructor body below.
             krineBasicInterpreter = instanceThis.declaringKrineBasicInterpreter;
             instanceNameSpace = instanceThis.getNameSpace();
@@ -526,7 +526,7 @@ public final class ClassGenerator {
 
             // Evaluate the constructor
             if (constructor != null) {
-                constructor.invoke(args, krineBasicInterpreter, callstack, null/*callerInfo*/, false/*overrideNameSpace*/);
+                constructor.invoke(args, krineBasicInterpreter, callStack, null/*callerInfo*/, false/*overrideNameSpace*/);
             }
         } catch (Exception e) {
             if (e instanceof KrineTargetException) {
@@ -576,9 +576,9 @@ public final class ClassGenerator {
      *
      * @param className may be the name of clazz itself or a superclass of clazz.
      */
-    private static This getClassStaticThis(Class clas, String className) {
+    private static This getClassStaticThis(Class clazz, String className) {
         try {
-            return (This) Reflect.getStaticFieldValue(clas, KRINE_STATIC + className);
+            return (This) Reflect.getStaticFieldValue(clazz, KRINE_STATIC + className);
         } catch (Exception e) {
             throw new InterpreterException("Unable to get class static space: " + e);
         }

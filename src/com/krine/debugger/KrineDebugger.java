@@ -16,7 +16,7 @@ import java.util.Set;
  */
 public class KrineDebugger {
     private HashMap<String, Set<Integer>> breakPoints;
-    private CallStack callstack;
+    private CallStack callStack;
     private KrineInterpreter interpreter;
 
     public KrineDebugger(KrineInterpreter interpreter) {
@@ -24,8 +24,8 @@ public class KrineDebugger {
         breakPoints = new HashMap<>(4);
     }
 
-    public void bindCallStack(CallStack callstack) {
-        this.callstack = callstack;
+    public void bindCallStack(CallStack callStack) {
+        this.callStack = callStack;
     }
 
     public void startDebugging() {
@@ -54,8 +54,8 @@ public class KrineDebugger {
 
     public void dumpCallingStack() {
         System.err.println("CallStack Dump:");
-        for (int i = 0; i < callstack.depth(); ++i) {
-            System.err.printf("  #%2d    %s\n", i, callstack.get(i).getName());
+        for (int i = 0; i < callStack.depth(); ++i) {
+            System.err.printf("  #%2d    %s\n", i, callStack.get(i).getName());
         }
     }
 
@@ -114,7 +114,7 @@ public class KrineDebugger {
 
             if (c[0].equals("detach")) {
                 this.interpreter = null;
-                this.callstack = null;
+                this.callStack = null;
                 break;
             }
 

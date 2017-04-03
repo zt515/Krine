@@ -28,7 +28,7 @@ package com.krine.lang.asm;
  * A {@link ClassVisitor ClassVisitor} that generates Java class files. More
  * precisely this visitor generates a byte array conforming to the Java class
  * file format. It can be used alone, to generate a Java class "from scratch",
- * or with one or more {@link ClassReader ClassReader} and adapter class
+ * or with one or more {@link ClassWriter} and adapter class
  * visitor to generate a modified class from one or more existing Java classes.
  */
 
@@ -633,16 +633,16 @@ public class ClassWriter implements ClassVisitor {
 
     Item newCst(final Object cst) {
         if (cst instanceof Integer) {
-            int val = ((Integer) cst).intValue();
+            int val = (Integer) cst;
             return newInteger(val);
         } else if (cst instanceof Float) {
-            float val = ((Float) cst).floatValue();
+            float val = (Float) cst;
             return newFloat(val);
         } else if (cst instanceof Long) {
-            long val = ((Long) cst).longValue();
+            long val = (Long) cst;
             return newLong(val);
         } else if (cst instanceof Double) {
-            double val = ((Double) cst).doubleValue();
+            double val = (Double) cst;
             return newDouble(val);
         } else if (cst instanceof String) {
             return newString((String) cst);

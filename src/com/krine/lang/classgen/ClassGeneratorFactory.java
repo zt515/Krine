@@ -1,5 +1,6 @@
 package com.krine.lang.classgen;
-import com.krine.lang.utils.*;
+
+import com.krine.lang.utils.Capabilities;
 
 /**
  * @author kiva
@@ -17,7 +18,7 @@ public class ClassGeneratorFactory {
         return classGenerator;
     }
 
-    
+
     private static IClassGenerator createClassGenerator() {
         if (Capabilities.isAndroid()) {
             return new DalvikClassGenerator();

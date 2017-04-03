@@ -1,7 +1,7 @@
 /*****************************************************************************
  *                                                                           *
  *  This file is part of the Krine Java Scripting distribution.          *
- *  Documentation and updates may be found at http://www.beanshell.org/      *
+ *        *
  *                                                                           *
  *  Sun Public License Notice:                                               *
  *                                                                           *
@@ -43,8 +43,7 @@ import java.net.URLClassLoader;
  * URLClassLoader that prevents us from specifying individual classes
  * via URLs.
  */
-public class KrineJavaClassLoader extends URLClassLoader implements KrineClassLoader
-{
+public class KrineJavaClassLoader extends URLClassLoader implements KrineClassLoader {
     KrineClassManager classManager;
 
     /**
@@ -173,7 +172,7 @@ public class KrineJavaClassLoader extends URLClassLoader implements KrineClassLo
         if (cl != null && cl != this)
             try {
                 return cl.loadClass(name);
-            } catch (ClassNotFoundException e) {
+            } catch (ClassNotFoundException ignored) {
             }
 
         // Try system loader
@@ -197,10 +196,9 @@ public class KrineJavaClassLoader extends URLClassLoader implements KrineClassLo
     KrineClassManager getClassManager() {
         return classManager;
     }
-    
+
     @Override
-    public ClassLoader getClassLoader()
-    {
+    public ClassLoader getClassLoader() {
         return this;
     }
 

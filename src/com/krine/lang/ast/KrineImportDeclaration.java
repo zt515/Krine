@@ -1,8 +1,8 @@
 package com.krine.lang.ast;
 
 import com.krine.lang.KrineBasicInterpreter;
-import com.krine.lang.utils.CallStack;
 import com.krine.lang.UtilEvalException;
+import com.krine.lang.utils.CallStack;
 
 class KrineImportDeclaration extends SimpleNode {
     public boolean importPackage;
@@ -13,27 +13,27 @@ class KrineImportDeclaration extends SimpleNode {
         super(id);
     }
 
-    public Object eval(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public Object eval(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         waitForDebugger();
 
-        NameSpace namespace = callstack.top();
+        NameSpace namespace = callStack.top();
         if (superImport)
             try {
                 namespace.doSuperImport();
             } catch (UtilEvalException e) {
-                throw e.toEvalError(this, callstack);
+                throw e.toEvalError(this, callStack);
             }
         else {
             if (staticImport) {
                 if (importPackage) {
                     Class clazz = ((KrineAmbiguousName) jjtGetChild(0)).toClass(
-                            callstack, krineBasicInterpreter);
+                            callStack, krineBasicInterpreter);
                     namespace.importStatic(clazz);
                 } else
                     throw new EvalError(
                             "static leftValue imports not supported yet",
-                            this, callstack);
+                            this, callStack);
             } else {
                 String name = ((KrineAmbiguousName) jjtGetChild(0)).text;
                 if (importPackage)

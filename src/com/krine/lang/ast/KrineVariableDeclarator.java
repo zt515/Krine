@@ -24,13 +24,13 @@ class KrineVariableDeclarator extends SimpleNode {
      * initializers in the case where there is no explicitly declared type.
      *
      * @param typeNode is the KrineType node.  Its info is passed through to any
-     *                 variable intializer children for the case where the array initializer
+     *                 variable initializer children for the case where the array initializer
      *                 does not declare the type explicitly. e.g.
      *                 int [] a = { 1, 2 };
      *                 typeNode may be null to indicate no type information available.
      */
     public Object eval(
-            KrineType typeNode, CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+            KrineType typeNode, CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         waitForDebugger();
 
@@ -51,13 +51,13 @@ class KrineVariableDeclarator extends SimpleNode {
                     )
                 value = ((KrineArrayInitializer) initializer).eval(
                         typeNode.getBaseType(), typeNode.getArrayDims(),
-                        callstack, krineBasicInterpreter);
+                        callStack, krineBasicInterpreter);
             else
-                value = initializer.eval(callstack, krineBasicInterpreter);
+                value = initializer.eval(callStack, krineBasicInterpreter);
         }
 
         if (value == Primitive.VOID)
-            throw new EvalError("Void initializer.", this, callstack);
+            throw new EvalError("Void initializer.", this, callStack);
 
         return value;
     }

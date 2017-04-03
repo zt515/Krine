@@ -21,7 +21,7 @@ import java.util.*;
  * shadow any previously defined variables in the scope.
  * <p/>
  * <p>
- * Note: this class is inherentely dependent on Java 1.2, however it is not
+ * Note: this class is inherently dependent on Java 1.2, however it is not
  * used directly by the lang as other than type NameSpace, so no dependency is
  * introduced.
  */
@@ -44,7 +44,7 @@ public class ExternalNameSpace extends NameSpace {
         super(parent, name);
 
         if (externalMap == null)
-            externalMap = new HashMap<String, Object>();
+            externalMap = new HashMap<>();
 
         this.externalMap = externalMap;
 
@@ -91,7 +91,7 @@ public class ExternalNameSpace extends NameSpace {
      */
     public String[] getVariableNames() {
         // union of the names in the internal namespace and external map
-        Set<String> nameSet = new HashSet<String>();
+        Set<String> nameSet = new HashSet<>();
         String[] nsNames = super.getVariableNames();
         nameSet.addAll(Arrays.asList(nsNames));
         nameSet.addAll(externalMap.keySet());
@@ -101,7 +101,7 @@ public class ExternalNameSpace extends NameSpace {
     /**
      */
     /*
-		Notes: This implmenetation of getVariableImpl handles the following
+        Notes: This implementation of getVariableImpl handles the following
 		cases:
 		1) var in map not in local scope - var was added through map
 		2) var in map and in local scope - var was added through namespace
@@ -120,7 +120,7 @@ public class ExternalNameSpace extends NameSpace {
         if (value == null) {
             // The var is not in external map and it should therefore not be
             // found in local scope (it may have been removed via the map).
-            // Clear it prophalactically.
+            // Clear it prophylactically.
             super.unsetVariable(name);
 
             // Search parent for var if applicable.
@@ -147,7 +147,7 @@ public class ExternalNameSpace extends NameSpace {
 	/*
 		Note: the meaning of getDeclaredVariables() is not entirely clear, but
 		the name (and current usage in class generation support) suggests that
-		untyped variables should not be inclueded.  Therefore we do not
+		untyped variables should not be included.  Therefore we do not
 		currently have to add the external names here.
 	*/
     public Variable[] getDeclaredVariables() {

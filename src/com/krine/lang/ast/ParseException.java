@@ -101,7 +101,7 @@ public final class ParseException extends EvalError {
     /**
      * This is the last token that has been consumed successfully.  If
      * this object has been created due to a parse error, the token
-     * followng this token will (therefore) be the first error token.
+     * following this token will (therefore) be the first error token.
      */
     public Token currentToken;
 
@@ -143,14 +143,14 @@ public final class ParseException extends EvalError {
         }
         String expected = "";
         int maxSize = 0;
-        for (int i = 0; i < expectedTokenSequences.length; i++) {
-            if (maxSize < expectedTokenSequences[i].length) {
-                maxSize = expectedTokenSequences[i].length;
+        for (int[] expectedTokenSequence : expectedTokenSequences) {
+            if (maxSize < expectedTokenSequence.length) {
+                maxSize = expectedTokenSequence.length;
             }
-            for (int j = 0; j < expectedTokenSequences[i].length; j++) {
-                expected += tokenImage[expectedTokenSequences[i][j]] + " ";
+            for (int j = 0; j < expectedTokenSequence.length; j++) {
+                expected += tokenImage[expectedTokenSequence[j]] + " ";
             }
-            if (expectedTokenSequences[i][expectedTokenSequences[i].length - 1] != 0) {
+            if (expectedTokenSequence[expectedTokenSequence.length - 1] != 0) {
                 expected += "...";
             }
             expected += eol + "    ";
@@ -199,9 +199,9 @@ public final class ParseException extends EvalError {
     public String getErrorText() {
         // copied from generated getMessage()
         int maxSize = 0;
-        for (int i = 0; i < expectedTokenSequences.length; i++) {
-            if (maxSize < expectedTokenSequences[i].length)
-                maxSize = expectedTokenSequences[i].length;
+        for (int[] expectedTokenSequence : expectedTokenSequences) {
+            if (maxSize < expectedTokenSequence.length)
+                maxSize = expectedTokenSequence.length;
         }
 
         String result = "";

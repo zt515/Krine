@@ -9,12 +9,9 @@ package com.krine.lang.ast;
  * NameSource is the lightest weight mechanism for sources which wish to
  * support name completion.  In the future it might be better for NameSpace
  * to implement NameCompletion directly in a more native and efficient
- * fasion.  However in general name competion is used for human interaction
+ * fashion.  However in general name competition is used for human interaction
  * and therefore does not require high performance.
  * <p>
- *
- * @see krine.util.NameCompletion
- * @see krine.util.NameCompletionTable
  */
 public interface NameSource {
     String[] getAllNames();

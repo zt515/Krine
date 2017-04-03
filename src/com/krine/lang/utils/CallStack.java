@@ -1,7 +1,7 @@
 /*****************************************************************************
  *                                                                           *
  *  This file is part of the Krine Java Scripting distribution.          *
- *  Documentation and updates may be found at http://www.beanshell.org/      *
+ *        *
  *                                                                           *
  *  Sun Public License Notice:                                               *
  *                                                                           *
@@ -51,7 +51,7 @@ import java.util.Stack;
  * <p>
  * <p>
  * Note: How can this be thread safe, you might ask?  Wouldn't a thread
- * executing various beanshell methods be mutating the callStack?  Don't we
+ * executing various krine methods be mutating the callStack?  Don't we
  * need one CallStack per Thread in the krineBasicInterpreter?  The answer is that we do.
  * Any java.lang.Thread enters our script via an external (hard) Java
  * reference via a This type interface, e.g.  the Runnable interface
@@ -64,7 +64,7 @@ public final class CallStack implements Serializable {
 
     private static final long serialVersionUID = 0L;
 
-    private final Stack<NameSpace> stack = new Stack<NameSpace>();
+    private final Stack<NameSpace> stack = new Stack<>();
 
 
     public CallStack() {
@@ -92,7 +92,7 @@ public final class CallStack implements Serializable {
     public NameSpace get(int depth) {
         int size = stack.size();
         if (depth >= size)
-            return NameSpace.JAVACODE;
+            return NameSpace.JAVA_CODE;
         else
             return stack.get(size - 1 - depth);
     }
@@ -139,7 +139,7 @@ public final class CallStack implements Serializable {
         StringBuilder sb = new StringBuilder();
         sb.append("CallStack:\n");
         for (int i = stack.size() - 1; i >= 0; i--)
-            sb.append("\t" + stack.get(i) + "\n");
+            sb.append("\t").append(stack.get(i)).append("\n");
 
         return sb.toString();
     }

@@ -1,9 +1,9 @@
 package com.krine.lang.ast;
 
 import com.krine.lang.KrineBasicInterpreter;
+import com.krine.lang.UtilEvalException;
 import com.krine.lang.utils.CallStack;
 import com.krine.lang.utils.StringUtil;
-import com.krine.lang.UtilEvalException;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -71,8 +71,8 @@ public final class This implements java.io.Serializable, Runnable {
     /**
      * Get dynamic proxy for interface, caching those it creates.
      */
-    public Object getInterface(Class clas) {
-        return getInterface(new Class[]{clas});
+    public Object getInterface(Class clazz) {
+        return getInterface(new Class[]{clazz});
     }
 
     /**
@@ -80,13 +80,12 @@ public final class This implements java.io.Serializable, Runnable {
      */
     public Object getInterface(Class[] ca) {
         if (interfaces == null)
-            interfaces = new HashMap<Integer, Object>();
+            interfaces = new HashMap<>();
 
-        // Make a hash of the interface hashcodes in order to cache them
+        // Make a hash of the interface hashcode in order to cache them
         int hash = 21;
-        for (int i = 0; i < ca.length; i++)
-            hash *= ca[i].hashCode() + 3;
-        Integer hashKey = new Integer(hash);
+        for (Class aCa : ca) hash *= aCa.hashCode() + 3;
+        Integer hashKey = hash;
 
         Object interf = interfaces.get(hashKey);
 
@@ -149,7 +148,7 @@ public final class This implements java.io.Serializable, Runnable {
         public Object invokeImpl(Object proxy, Method method, Object[] args)
                 throws EvalError {
             String methodName = method.getName();
-            CallStack callstack = new CallStack(namespace);
+            CallStack callStack = new CallStack(namespace);
 
 			/*
                 If equals() is not explicitly defined we must override the
@@ -184,8 +183,8 @@ public final class This implements java.io.Serializable, Runnable {
                 // XThis.this refers to the enclosing class instance
                 StringBuilder sb = new StringBuilder(
                         This.this.toString() + "\nimplements:");
-                for (int i = 0; i < ints.length; i++)
-                    sb.append(" " + ints[i].getName()
+                for (Class anInt : ints)
+                    sb.append(" " + anInt.getName()
                             + ((ints.length > 1) ? "," : ""));
                 return sb.toString();
             }
@@ -258,14 +257,14 @@ public final class This implements java.io.Serializable, Runnable {
      * have to script them directly.
      * <p>
      *
-     * @param callstack    if callStack is null a new CallStack will be created and
+     * @param callStack    if callStack is null a new CallStack will be created and
      *                     initialized with this namespace.
      * @param declaredOnly if true then only methods declared directly in the
      *                     namespace will be visible - no inherited or imported methods will
      *                     be visible.
      * @see Primitive
      */
-	/*
+    /*
 		invokeMethod() here is generally used by outside code to callback
 		into the krine krineBasicInterpreter. e.g. when we are acting as an interface
 		for a scripted listener, etc.  In this case there is no real call stack
@@ -274,7 +273,7 @@ public final class This implements java.io.Serializable, Runnable {
 	*/
     public Object invokeMethod(
             String methodName, Object[] args,
-            KrineBasicInterpreter krineBasicInterpreter, CallStack callstack, SimpleNode callerInfo,
+            KrineBasicInterpreter krineBasicInterpreter, CallStack callStack, SimpleNode callerInfo,
             boolean declaredOnly)
             throws EvalError {
 		/*
@@ -295,8 +294,8 @@ public final class This implements java.io.Serializable, Runnable {
 
         if (krineBasicInterpreter == null)
             krineBasicInterpreter = declaringKrineBasicInterpreter;
-        if (callstack == null)
-            callstack = new CallStack(namespace);
+        if (callStack == null)
+            callStack = new CallStack(namespace);
         if (callerInfo == null)
             callerInfo = SimpleNode.JAVA_CODE;
 
@@ -310,7 +309,7 @@ public final class This implements java.io.Serializable, Runnable {
         }
 
         if (krineMethod != null)
-            return krineMethod.invoke(args, krineBasicInterpreter, callstack, callerInfo);
+            return krineMethod.invoke(args, krineBasicInterpreter, callStack, callerInfo);
 
 		/*
 			No scripted method of that name.
@@ -327,12 +326,12 @@ public final class This implements java.io.Serializable, Runnable {
 
         // a default hashCode()
         if (methodName.equals("hashCode") && args.length == 0)
-            return new Integer(this.hashCode());
+            return this.hashCode();
 
         // a default equals() testing for equality with the This reference
         if (methodName.equals("equals") && args.length == 1) {
             Object obj = args[0];
-            return new Boolean(this == obj);
+            return this == obj;
         }
 
         // a default clone()
@@ -346,7 +345,7 @@ public final class This implements java.io.Serializable, Runnable {
                     ns.setMethod(method);
                 }
             } catch (UtilEvalException e) {
-                throw e.toEvalError(SimpleNode.JAVA_CODE, callstack);
+                throw e.toEvalError(SimpleNode.JAVA_CODE, callStack);
             }
             return ns.getThis(declaringKrineBasicInterpreter);
         }
@@ -362,12 +361,12 @@ public final class This implements java.io.Serializable, Runnable {
         // Call script "invoke( String methodName, Object [] args );
         if (krineMethod != null)
             return krineMethod.invoke(new Object[]{methodName, args},
-                    krineBasicInterpreter, callstack, callerInfo);
+                    krineBasicInterpreter, callStack, callerInfo);
 
         throw new EvalError("Method " +
                 StringUtil.methodString(methodName, types) +
                 " not found in object: " + namespace.getName(),
-                callerInfo, callstack);
+                callerInfo, callStack);
     }
 
     /**

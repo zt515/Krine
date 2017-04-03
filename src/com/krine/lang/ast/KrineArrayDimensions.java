@@ -1,7 +1,7 @@
 /*****************************************************************************
  *                                                                           *
- *  This file is part of the Krine Java Scripting distribution.          *
- *  Documentation and updates may be found at http://www.beanshell.org/      *
+ *  This file is part of the Krine Java Scripting distribution.              *
+ *                                                                           *
  *                                                                           *
  *  Sun Public License Notice:                                               *
  *                                                                           *
@@ -68,11 +68,11 @@ class KrineArrayDimensions extends SimpleNode {
     }
 
     public Object eval(
-            Class type, CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+            Class type, CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         if (KrineBasicInterpreter.DEBUG) KrineBasicInterpreter.debug("array base type = " + type);
         baseType = type;
-        return eval(callstack, krineBasicInterpreter);
+        return eval(callStack, krineBasicInterpreter);
     }
 
     /**
@@ -87,7 +87,7 @@ class KrineArrayDimensions extends SimpleNode {
      * <p>
      * The structure of the array dims is maintained in dimensions.
      */
-    public Object eval(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public Object eval(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         waitForDebugger();
 
@@ -104,10 +104,10 @@ class KrineArrayDimensions extends SimpleNode {
             if (baseType == null)
                 throw new EvalError(
                         "Internal Array Eval err:  unknown base type",
-                        this, callstack);
+                        this, callStack);
 
             Object initValue = ((KrineArrayInitializer) child).eval(
-                    baseType, numUndefinedDims, callstack, krineBasicInterpreter);
+                    baseType, numUndefinedDims, callStack, krineBasicInterpreter);
 
             Class arrayClass = initValue.getClass();
             int actualDimensions = Reflect.getArrayDimensions(arrayClass);
@@ -119,7 +119,7 @@ class KrineArrayDimensions extends SimpleNode {
                 throw new EvalError(
                         "Incompatible initializer. Allocation calls for a " +
                                 numUndefinedDims + " dimensional array, but initializer is a " +
-                                actualDimensions + " dimensional array", this, callstack);
+                                actualDimensions + " dimensional array", this, callStack);
 
             // fill in definedDimensions [] lengths
             Object arraySlice = initValue;
@@ -138,12 +138,12 @@ class KrineArrayDimensions extends SimpleNode {
             for (int i = 0; i < numDefinedDims; i++) {
                 try {
                     Object length = ((SimpleNode) jjtGetChild(i)).eval(
-                            callstack, krineBasicInterpreter);
+                            callStack, krineBasicInterpreter);
                     definedDimensions[i] = ((Primitive) length).intValue();
                 } catch (Exception e) {
                     throw new EvalError(
                             "Array arrayIndex: " + i +
-                                    " does not evaluate to an integer", this, callstack);
+                                    " does not evaluate to an integer", this, callStack);
                 }
             }
         }

@@ -1,9 +1,9 @@
 package com.krine.lang.ast;
 
-import com.krine.lang.KrineBasicInterpreter;
-import com.krine.lang.utils.CallStack;
 import com.krine.lang.InterpreterException;
+import com.krine.lang.KrineBasicInterpreter;
 import com.krine.lang.UtilEvalException;
+import com.krine.lang.utils.CallStack;
 
 class KrineUnaryExpression extends SimpleNode implements ParserConstants {
     public int kind;
@@ -13,7 +13,7 @@ class KrineUnaryExpression extends SimpleNode implements ParserConstants {
         super(id);
     }
 
-    public Object eval(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public Object eval(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         waitForDebugger();
 
@@ -25,30 +25,30 @@ class KrineUnaryExpression extends SimpleNode implements ParserConstants {
         try {
             if (kind == INCR || kind == DECR) {
                 LeftValue lhs = ((KrinePrimaryExpression) node).toLHS(
-                        callstack, krineBasicInterpreter);
-                return lhsUnaryOperation(lhs, krineBasicInterpreter.getStrictJava());
+                        callStack, krineBasicInterpreter);
+                return lhsUnaryOperation(lhs, krineBasicInterpreter.isStrictJava());
             } else
                 return
-                        unaryOperation(node.eval(callstack, krineBasicInterpreter), kind);
+                        unaryOperation(node.eval(callStack, krineBasicInterpreter), kind);
         } catch (UtilEvalException e) {
-            throw e.toEvalError(this, callstack);
+            throw e.toEvalError(this, callStack);
         }
     }
 
     private Object lhsUnaryOperation(LeftValue lhs, boolean strictJava)
             throws UtilEvalException {
         if (KrineBasicInterpreter.DEBUG) KrineBasicInterpreter.debug("lhsUnaryOperation");
-        Object prevalue, postvalue;
-        prevalue = lhs.getValue();
-        postvalue = unaryOperation(prevalue, kind);
+        Object preValue, postValue;
+        preValue = lhs.getValue();
+        postValue = unaryOperation(preValue, kind);
 
         Object retVal;
         if (postfix)
-            retVal = prevalue;
+            retVal = preValue;
         else
-            retVal = postvalue;
+            retVal = postValue;
 
-        lhs.assign(postvalue, strictJava);
+        lhs.assign(postValue, strictJava);
         return retVal;
     }
 
@@ -71,28 +71,27 @@ class KrineUnaryExpression extends SimpleNode implements ParserConstants {
         Object operand = Primitive.promoteToInteger(val);
 
         if (operand instanceof Boolean)
-            return new Boolean(
-                    Primitive.booleanUnaryOperation((Boolean) operand, kind));
+            return Primitive.booleanUnaryOperation((Boolean) operand, kind);
         else if (operand instanceof Integer) {
             int result = Primitive.intUnaryOperation((Integer) operand, kind);
 
             // ++ and -- must be cast back the original type
             if (kind == INCR || kind == DECR) {
                 if (operandType == Byte.TYPE)
-                    return new Byte((byte) result);
+                    return (byte) result;
                 if (operandType == Short.TYPE)
-                    return new Short((short) result);
+                    return (short) result;
                 if (operandType == Character.TYPE)
-                    return new Character((char) result);
+                    return (char) result;
             }
 
-            return new Integer(result);
+            return result;
         } else if (operand instanceof Long)
-            return new Long(Primitive.longUnaryOperation((Long) operand, kind));
+            return Primitive.longUnaryOperation((Long) operand, kind);
         else if (operand instanceof Float)
-            return new Float(Primitive.floatUnaryOperation((Float) operand, kind));
+            return Primitive.floatUnaryOperation((Float) operand, kind);
         else if (operand instanceof Double)
-            return new Double(Primitive.doubleUnaryOperation((Double) operand, kind));
+            return Primitive.doubleUnaryOperation((Double) operand, kind);
         else
             throw new InterpreterException("An error occurred.  Please call technical support.");
     }

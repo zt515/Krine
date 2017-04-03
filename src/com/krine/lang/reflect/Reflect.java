@@ -1,7 +1,7 @@
 package com.krine.lang.reflect;
 
-import com.krine.lang.KrineBasicInterpreter;
 import com.krine.lang.InterpreterException;
+import com.krine.lang.KrineBasicInterpreter;
 import com.krine.lang.UtilEvalException;
 import com.krine.lang.UtilTargetException;
 import com.krine.lang.ast.*;
@@ -46,10 +46,10 @@ public final class Reflect {
      *
      * @return the result of the method call
      */
-    public static Object invokeObjectMethod(Object object, String methodName, Object[] args, KrineBasicInterpreter krineBasicInterpreter, CallStack callstack, SimpleNode callerInfo) throws ReflectException, EvalError, InvocationTargetException {
+    public static Object invokeObjectMethod(Object object, String methodName, Object[] args, KrineBasicInterpreter krineBasicInterpreter, CallStack callStack, SimpleNode callerInfo) throws ReflectException, EvalError, InvocationTargetException {
         // Krine scripted object
         if (object instanceof This && !This.isExposedThisMethod(methodName)) {
-            return ((This) object).invokeMethod(methodName, args, krineBasicInterpreter, callstack, callerInfo, false/*delcaredOnly*/);
+            return ((This) object).invokeMethod(methodName, args, krineBasicInterpreter, callStack, callerInfo, false/*declaredOnly*/);
         }
 
         // Plain Java object, find the java method
@@ -61,7 +61,7 @@ public final class Reflect {
 
             return invokeMethod(method, object, args);
         } catch (UtilEvalException e) {
-            throw e.toEvalError(callerInfo, callstack);
+            throw e.toEvalError(callerInfo, callStack);
         }
     }
 
@@ -71,9 +71,9 @@ public final class Reflect {
      * No object instance is needed and there is no possibility of the
      * method being a krine scripted method.
      */
-    public static Object invokeStaticMethod(KrineClassManager dcm, Class clas, String methodName, Object[] args) throws ReflectException, UtilEvalException, InvocationTargetException {
+    public static Object invokeStaticMethod(KrineClassManager dcm, Class clazz, String methodName, Object[] args) throws ReflectException, UtilEvalException, InvocationTargetException {
         KrineBasicInterpreter.debug("invoke static Method");
-        Method method = resolveExpectedJavaMethod(dcm, clas, null, methodName, args, true);
+        Method method = resolveExpectedJavaMethod(dcm, clazz, null, methodName, args, true);
         return invokeMethod(method, null, args);
     }
 
@@ -169,8 +169,8 @@ public final class Reflect {
     }
 
 
-    public static Object getStaticFieldValue(Class clas, String fieldName) throws UtilEvalException, ReflectException {
-        return getFieldValue(clas, null, fieldName, true/*onlyStatic*/);
+    public static Object getStaticFieldValue(Class clazz, String fieldName) throws UtilEvalException, ReflectException {
+        return getFieldValue(clazz, null, fieldName, true/*onlyStatic*/);
     }
 
 
@@ -196,8 +196,8 @@ public final class Reflect {
     }
 
 
-    public static LeftValue getLHSStaticField(Class clas, String fieldName) throws UtilEvalException, ReflectException {
-        Field f = resolveExpectedJavaField(clas, fieldName, true/*onlyStatic*/);
+    public static LeftValue getLHSStaticField(Class clazz, String fieldName) throws UtilEvalException, ReflectException {
+        Field f = resolveExpectedJavaField(clazz, fieldName, true/*onlyStatic*/);
         return new LeftValue(f);
     }
 
@@ -252,9 +252,9 @@ public final class Reflect {
      *
      * @return the field or null if not found
      */
-    public static Field resolveJavaField(Class clas, String fieldName, boolean staticOnly) throws UtilEvalException {
+    public static Field resolveJavaField(Class clazz, String fieldName, boolean staticOnly) throws UtilEvalException {
         try {
-            return resolveExpectedJavaField(clas, fieldName, staticOnly);
+            return resolveExpectedJavaField(clazz, fieldName, staticOnly);
         } catch (ReflectException e) {
             return null;
         }
@@ -266,24 +266,24 @@ public final class Reflect {
      *                          Note: this should really just throw NoSuchFieldException... need
      *                          to change related signatures and code.
      */
-    protected static Field resolveExpectedJavaField(Class clas, String fieldName, boolean staticOnly) throws UtilEvalException, ReflectException {
+    protected static Field resolveExpectedJavaField(Class clazz, String fieldName, boolean staticOnly) throws UtilEvalException, ReflectException {
         Field field;
         try {
             if (Capabilities.haveAccessibility()) {
-                field = findAccessibleField(clas, fieldName);
+                field = findAccessibleField(clazz, fieldName);
             } else {
                 // Class getField() finds only public fields
-                field = clas.getField(fieldName);
+                field = clazz.getField(fieldName);
             }
         } catch (NoSuchFieldException e) {
             throw new ReflectException("No such field or field isn't accessible: " + fieldName, e);
 
         } catch (SecurityException e) {
-            throw new UtilTargetException("Security Exception while searching fields of: " + clas, e);
+            throw new UtilTargetException("Security Exception while searching fields of: " + clazz, e);
         }
 
         if (staticOnly && !Modifier.isStatic(field.getModifiers())) {
-            throw new UtilEvalException("Can't reach instance field: " + fieldName + " from static context: " + clas.getName());
+            throw new UtilEvalException("Can't reach instance field: " + fieldName + " from static context: " + clazz.getName());
         }
 
         return field;
@@ -308,25 +308,25 @@ public final class Reflect {
              This method should be rewritten to use getFields() and avoid catching
 			 exceptions during the search.
 		 */
-    private static Field findAccessibleField(Class clas, String fieldName) throws UtilEvalException, NoSuchFieldException {
+    private static Field findAccessibleField(Class clazz, String fieldName) throws UtilEvalException, NoSuchFieldException {
         // Quick check catches public fields include those in interfaces
         try {
-            return clas.getField(fieldName);
+            return clazz.getField(fieldName);
         } catch (NoSuchFieldException e) {
             // ignore
         }
         // try hidden fields (protected, private, package protected)
         if (Capabilities.haveAccessibility()) {
             try {
-                while (clas != null) {
-                    final Field[] declaredFields = clas.getDeclaredFields();
+                while (clazz != null) {
+                    final Field[] declaredFields = clazz.getDeclaredFields();
                     for (Field field : declaredFields) {
                         if (field.getName().equals(fieldName)) {
                             field.setAccessible(true);
                             return field;
                         }
                     }
-                    clas = clas.getSuperclass();
+                    clazz = clazz.getSuperclass();
                 }
             } catch (SecurityException e) {
                 // ignore -> NoSuchFieldException
@@ -340,17 +340,17 @@ public final class Reflect {
      * This method wraps resolveJavaMethod() and expects a non-null method
      * result. If the method is not found it throws a descriptive ReflectException.
      */
-    public static Method resolveExpectedJavaMethod(KrineClassManager dcm, Class clas, Object object, String name, Object[] args, boolean staticOnly) throws ReflectException, UtilEvalException {
+    public static Method resolveExpectedJavaMethod(KrineClassManager dcm, Class clazz, Object object, String name, Object[] args, boolean staticOnly) throws ReflectException, UtilEvalException {
         if (object == Primitive.NULL) {
             //noinspection ThrowableInstanceNeverThrown
             throw new UtilTargetException(new NullPointerException("Attempt to invoke method " + name + " on null value"));
         }
 
         Class[] types = Types.getTypes(args);
-        Method method = resolveJavaMethod(dcm, clas, name, types, staticOnly);
+        Method method = resolveJavaMethod(dcm, clazz, name, types, staticOnly);
 
         if (method == null) {
-            throw new ReflectException((staticOnly ? "Static method " : "Method ") + StringUtil.methodString(name, types) + " not found in class'" + clas.getName() + "'");
+            throw new ReflectException((staticOnly ? "Static method " : "Method ") + StringUtil.methodString(name, types) + " not found in class'" + clazz.getName() + "'");
         }
 
         return method;
@@ -383,8 +383,8 @@ public final class Reflect {
      * @param staticOnly The method located must be static, the object param may be null.
      * @return the method or null if no matching method was found.
      */
-    public static Method resolveJavaMethod(KrineClassManager dcm, Class clas, String name, Class[] types, boolean staticOnly) throws UtilEvalException {
-        if (clas == null) {
+    public static Method resolveJavaMethod(KrineClassManager dcm, Class clazz, String name, Class[] types, boolean staticOnly) throws UtilEvalException {
+        if (clazz == null) {
             throw new InterpreterException("null class");
         }
 
@@ -393,19 +393,19 @@ public final class Reflect {
         if (dcm == null) {
             KrineBasicInterpreter.debug("resolveJavaMethod UNOPTIMIZED lookup");
         } else {
-            method = dcm.getResolvedMethod(clas, name, types, staticOnly);
+            method = dcm.getResolvedMethod(clazz, name, types, staticOnly);
         }
 
         if (method == null) {
             boolean publicOnly = !Capabilities.haveAccessibility();
             // Searching for the method may, itself be a priviliged action
             try {
-                method = findOverloadedMethod(clas, name, types, publicOnly);
+                method = findOverloadedMethod(clazz, name, types, publicOnly);
             } catch (SecurityException e) {
-                throw new UtilTargetException("Security Exception while searching methods of: " + clas, e);
+                throw new UtilTargetException("Security Exception while searching methods of: " + clazz, e);
             }
 
-            checkFoundStaticMethod(method, staticOnly, clas);
+            checkFoundStaticMethod(method, staticOnly, clazz);
 
             // This is the first time we've seen this method, set accessibility if needed
             if ((method != null) && !isPublic(method)) {
@@ -425,7 +425,7 @@ public final class Reflect {
 
             // If succeeded cache the resolved method.
             if (method != null && dcm != null) {
-                dcm.cacheResolvedMethod(clas, types, method);
+                dcm.cacheResolvedMethod(clazz, types, method);
             }
         }
 
@@ -443,8 +443,8 @@ public final class Reflect {
         if (KrineBasicInterpreter.DEBUG) {
             KrineBasicInterpreter.debug("Searching for method: " + StringUtil.methodString(methodName, types) + " in '" + baseClass.getName() + "'");
         }
-        final List<Method> publicMethods = new ArrayList<Method>();
-        final Collection<Method> nonPublicMethods = publicOnly ? new DummyCollection<Method>() : new ArrayList<Method>();
+        final List<Method> publicMethods = new ArrayList<>();
+        final Collection<Method> nonPublicMethods = publicOnly ? new DummyCollection<>() : new ArrayList<>();
         collectMethods(baseClass, methodName, types.length, publicMethods, nonPublicMethods);
         Collections.sort(publicMethods, METHOD_COMPARATOR);
         Method method = findMostSpecificMethod(types, publicMethods);
@@ -505,23 +505,23 @@ public final class Reflect {
      * flag on the method as necessary.
      * <p/>
      */
-    public static Object constructObject(Class clas, Object[] args) throws ReflectException, InvocationTargetException {
-        if (clas.isInterface()) {
-            throw new ReflectException("Can't create instance of an interface: " + clas);
+    public static Object constructObject(Class clazz, Object[] args) throws ReflectException, InvocationTargetException {
+        if (clazz.isInterface()) {
+            throw new ReflectException("Can't create instance of an interface: " + clazz);
         }
 
         Class[] types = Types.getTypes(args);
 
         // Find the constructor.
         // (there are no inherited constructors to worry about)
-        Constructor[] constructors = Capabilities.haveAccessibility() ? clas.getDeclaredConstructors() : clas.getConstructors();
+        Constructor[] constructors = Capabilities.haveAccessibility() ? clazz.getDeclaredConstructors() : clazz.getConstructors();
 
         if (KrineBasicInterpreter.DEBUG) {
-            KrineBasicInterpreter.debug("Looking for most specific constructor: " + clas);
+            KrineBasicInterpreter.debug("Looking for most specific constructor: " + clazz);
         }
         Constructor con = findMostSpecificConstructor(types, constructors);
         if (con == null) {
-            throw cantFindConstructor(clas, types);
+            throw cantFindConstructor(clazz, types);
         }
 
         if (!isPublic(con) && Capabilities.haveAccessibility()) {
@@ -532,7 +532,7 @@ public final class Reflect {
         try {
             return con.newInstance(args);
         } catch (InstantiationException e) {
-            throw new ReflectException("Class " + clas + " is abstract ", e);
+            throw new ReflectException("Class " + clazz + " is abstract ", e);
         } catch (IllegalAccessException e) {
             throw new ReflectException("We don't have permission to create an instance. Use setAccessibility(true) to enable access.", e);
         } catch (IllegalArgumentException e) {
@@ -579,8 +579,8 @@ public final class Reflect {
             KrineBasicInterpreter.debug("Looking for most specific method");
         }
         // copy signatures into array for findMostSpecificMethod()
-        List<Class[]> candidateSigs = new ArrayList<Class[]>();
-        List<Method> methodList = new ArrayList<Method>();
+        List<Class[]> candidateSigs = new ArrayList<>();
+        List<Method> methodList = new ArrayList<>();
         for (Method method : methods) {
             Class[] parameterTypes = method.getParameterTypes();
             methodList.add(method);
@@ -674,9 +674,9 @@ public final class Reflect {
     }
 
 
-    public static boolean hasObjectPropertySetter(Class clas, String propName) {
+    public static boolean hasObjectPropertySetter(Class clazz, String propName) {
         String setterName = accessorName("set", propName);
-        Method[] methods = clas.getMethods();
+        Method[] methods = clazz.getMethods();
 
         // we don't know the right hand side of the assignment yet.
         // has at least one setter of the right name?
@@ -798,11 +798,11 @@ public final class Reflect {
      * This method adds the arguments and invokes the static method, returning
      * the result.
      */
-    public static Object invokeCompiledMethod(Class commandClass, Object[] args, KrineBasicInterpreter krineBasicInterpreter, CallStack callstack) throws UtilEvalException {
+    public static Object invokeCompiledMethod(Class commandClass, Object[] args, KrineBasicInterpreter krineBasicInterpreter, CallStack callStack) throws UtilEvalException {
         // add interpreter and namespace to args list
         Object[] invokeArgs = new Object[args.length + 2];
         invokeArgs[0] = krineBasicInterpreter;
-        invokeArgs[1] = callstack;
+        invokeArgs[1] = callStack;
         System.arraycopy(args, 0, invokeArgs, 2, args.length);
         KrineClassManager dcm = krineBasicInterpreter.getClassManager();
         try {
@@ -820,25 +820,25 @@ public final class Reflect {
             KrineBasicInterpreter.debug(msg + method + " with args:");
             for (int i = 0; i < args.length; i++) {
                 final Object arg = args[i];
-                KrineBasicInterpreter.debug("args[" + i + "] = " + arg + " type = " + (arg == null ? "<unkown>" : arg.getClass()));
+                KrineBasicInterpreter.debug("args[" + i + "] = " + arg + " type = " + (arg == null ? "<unknown>" : arg.getClass()));
             }
         }
     }
 
 
-    private static void checkFoundStaticMethod(Method method, boolean staticOnly, Class clas) throws UtilEvalException {
+    private static void checkFoundStaticMethod(Method method, boolean staticOnly, Class clazz) throws UtilEvalException {
         // We're looking for a static method but found an instance method
         if (method != null && staticOnly && !isStatic(method)) {
-            throw new UtilEvalException("Cannot reach instance method: " + StringUtil.methodString(method.getName(), method.getParameterTypes()) + " from static context: " + clas.getName());
+            throw new UtilEvalException("Cannot reach instance method: " + StringUtil.methodString(method.getName(), method.getParameterTypes()) + " from static context: " + clazz.getName());
         }
     }
 
 
-    private static ReflectException cantFindConstructor(Class clas, Class[] types) {
+    private static ReflectException cantFindConstructor(Class clazz, Class[] types) {
         if (types.length == 0) {
-            return new ReflectException("Can't find default constructor for: " + clas);
+            return new ReflectException("Can't find default constructor for: " + clazz);
         } else {
-            return new ReflectException("Can't find constructor: " + StringUtil.methodString(clas.getName(), types) + " in class: " + clas.getName());
+            return new ReflectException("Can't find constructor: " + StringUtil.methodString(clazz.getName(), types) + " in class: " + clazz.getName());
         }
     }
 

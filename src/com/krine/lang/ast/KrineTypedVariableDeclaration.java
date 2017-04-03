@@ -1,8 +1,8 @@
 package com.krine.lang.ast;
 
 import com.krine.lang.KrineBasicInterpreter;
-import com.krine.lang.utils.CallStack;
 import com.krine.lang.UtilEvalException;
+import com.krine.lang.utils.CallStack;
 
 class KrineTypedVariableDeclaration extends SimpleNode {
     public Modifiers modifiers;
@@ -15,10 +15,10 @@ class KrineTypedVariableDeclaration extends SimpleNode {
         return ((KrineType) jjtGetChild(0));
     }
 
-    Class evalType(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    Class evalType(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         KrineType typeNode = getTypeNode();
-        return typeNode.getType(callstack, krineBasicInterpreter);
+        return typeNode.getType(callStack, krineBasicInterpreter);
     }
 
     KrineVariableDeclarator[] getDeclarators() {
@@ -35,28 +35,26 @@ class KrineTypedVariableDeclaration extends SimpleNode {
      * evaluate the type and one or more variable declarators, e.g.:
      * int a, b=5, c;
      */
-    public Object eval(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public Object eval(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         waitForDebugger();
 
         try {
-            NameSpace namespace = callstack.top();
+            NameSpace namespace = callStack.top();
             KrineType typeNode = getTypeNode();
-            Class type = typeNode.getType(callstack, krineBasicInterpreter);
+            Class type = typeNode.getType(callStack, krineBasicInterpreter);
 
             KrineVariableDeclarator[] bvda = getDeclarators();
-            for (int i = 0; i < bvda.length; i++) {
-                KrineVariableDeclarator dec = bvda[i];
-
+            for (KrineVariableDeclarator dec : bvda) {
                 // Type node is passed down the chain for array initializers
                 // which need it under some circumstances
-                Object value = dec.eval(typeNode, callstack, krineBasicInterpreter);
+                Object value = dec.eval(typeNode, callStack, krineBasicInterpreter);
 
                 try {
                     namespace.setTypedVariable(
                             dec.name, type, value, modifiers);
                 } catch (UtilEvalException e) {
-                    throw e.toEvalError(this, callstack);
+                    throw e.toEvalError(this, callStack);
                 }
             }
         } catch (EvalError e) {
@@ -67,8 +65,8 @@ class KrineTypedVariableDeclaration extends SimpleNode {
     }
 
     public String getTypeDescriptor(
-            CallStack callstack, KrineBasicInterpreter krineBasicInterpreter, String defaultPackage) {
+            CallStack callStack, KrineBasicInterpreter krineBasicInterpreter, String defaultPackage) {
         return getTypeNode().getTypeDescriptor(
-                callstack, krineBasicInterpreter, defaultPackage);
+                callStack, krineBasicInterpreter, defaultPackage);
     }
 }

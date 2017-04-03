@@ -1,8 +1,8 @@
 package com.krine.lang.ast;
 
+import com.krine.lang.InterpreterException;
 import com.krine.lang.KrineBasicInterpreter;
 import com.krine.lang.utils.CallStack;
-import com.krine.lang.InterpreterException;
 
 public class KrineMethodDelayEvaluated extends KrineMethod {
     String returnTypeDescriptor;

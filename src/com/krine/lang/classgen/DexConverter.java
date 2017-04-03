@@ -50,7 +50,7 @@ class DexConverter {
     public byte[] convertJavaClass(String fullClassName, byte[] bytes) {
         prepare();
 
-        classTranslatorPool = new ThreadPoolExecutor(numThreads, numThreads, 0L, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(2 * numThreads, true), new ThreadPoolExecutor.CallerRunsPolicy());
+        classTranslatorPool = new ThreadPoolExecutor(numThreads, numThreads, 0L, TimeUnit.SECONDS, new ArrayBlockingQueue<>(2 * numThreads, true), new ThreadPoolExecutor.CallerRunsPolicy());
         classDefItemConsumer = Executors.newSingleThreadExecutor();
 
         processJavaClass(fullClassName, bytes);
@@ -191,11 +191,11 @@ class DexConverter {
         Future<DirectClassFile> directClassFileFuture;
         private DexConverter dexConverter;
 
-        private DirectClassFileConsumer(DexConverter converter, String name, byte[] bytes, Future<DirectClassFile> dcff) {
+        private DirectClassFileConsumer(DexConverter converter, String name, byte[] bytes, Future<DirectClassFile> directClassFileFuture) {
             this.dexConverter = converter;
             this.name = name;
             this.bytes = bytes;
-            this.directClassFileFuture = dcff;
+            this.directClassFileFuture = directClassFileFuture;
         }
 
         public Boolean call() throws Exception {

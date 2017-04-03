@@ -10,13 +10,13 @@ class KrineReturnStatement extends SimpleNode implements ParserConstants {
         super(id);
     }
 
-    public Object eval(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public Object eval(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         waitForDebugger();
 
         Object value;
         if (jjtGetNumChildren() > 0)
-            value = ((SimpleNode) jjtGetChild(0)).eval(callstack, krineBasicInterpreter);
+            value = ((SimpleNode) jjtGetChild(0)).eval(callStack, krineBasicInterpreter);
         else
             value = Primitive.VOID;
 

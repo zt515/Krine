@@ -1,7 +1,7 @@
 package com.krine.lang.ast;
 
-import com.krine.lang.KrineBasicInterpreter;
 import com.krine.lang.InterpreterException;
+import com.krine.lang.KrineBasicInterpreter;
 import com.krine.lang.UtilEvalException;
 import com.krine.lang.reflect.Reflect;
 import com.krine.lang.reflect.ReflectException;
@@ -40,12 +40,12 @@ public class KrineMethod
 
     Modifiers modifiers;
     private String name;
-    private Class creturnType;
+    private Class returnType;
 
     // Arguments
     private String[] paramNames;
     private int numArgs;
-    private Class[] cparamTypes;
+    private Class[] paramTypes;
 
     // Scripted method body
     KrineBlock methodBody;
@@ -70,11 +70,11 @@ public class KrineMethod
             NameSpace declaringNameSpace, Modifiers modifiers
     ) {
         this.name = name;
-        this.creturnType = returnType;
+        this.returnType = returnType;
         this.paramNames = paramNames;
         if (paramNames != null)
             this.numArgs = paramNames.length;
-        this.cparamTypes = paramTypes;
+        this.paramTypes = paramTypes;
         this.methodBody = methodBody;
         this.declaringNameSpace = declaringNameSpace;
         this.modifiers = modifiers;
@@ -99,11 +99,11 @@ public class KrineMethod
      * types.
      */
     /*
-        Note: krinemethod needs to re-evaluate arg types here
+        Note: krineMethod needs to re-evaluate arg types here
 		This is broken.
 	*/
     public Class[] getParameterTypes() {
-        return cparamTypes;
+        return paramTypes;
     }
 
     public String[] getParameterNames() {
@@ -116,12 +116,12 @@ public class KrineMethod
      * @return Returns null for a loosely typed return value,
      * Void.TYPE for a void return type, or the Class of the type.
      */
-	/*
-		Note: krinemethod needs to re-evaluate the method return type here.
+    /*
+		Note: krineMethod needs to re-evaluate the method return type here.
 		This is broken.
 	*/
     public Class getReturnType() {
-        return creturnType;
+        return returnType;
     }
 
     public Modifiers getModifiers() {
@@ -164,17 +164,17 @@ public class KrineMethod
      *                   errors in EvalError exceptions.  If the node is null here error
      *                   messages may not be able to point to the precise location and text
      *                   of the error.
-     * @param callstack  is the callStack.  If callStack is null a new one
+     * @param callStack  is the callStack.  If callStack is null a new one
      *                   will be created with the declaring namespace of the method on top
      *                   of the stack (i.e. it will look for purposes of the method
      *                   invocation like the method call occurred in the declaring
      *                   (enclosing) namespace in which the method is defined).
      */
     public Object invoke(
-            Object[] argValues, KrineBasicInterpreter krineBasicInterpreter, CallStack callstack,
+            Object[] argValues, KrineBasicInterpreter krineBasicInterpreter, CallStack callStack,
             SimpleNode callerInfo)
             throws EvalError {
-        return invoke(argValues, krineBasicInterpreter, callstack, callerInfo, false);
+        return invoke(argValues, krineBasicInterpreter, callStack, callerInfo, false);
     }
 
     /**
@@ -189,7 +189,7 @@ public class KrineMethod
      *                          errors in EvalError exceptions.  If the node is null here error
      *                          messages may not be able to point to the precise location and text
      *                          of the error.
-     * @param callstack         is the callStack.  If callStack is null a new one
+     * @param callStack         is the callStack.  If callStack is null a new one
      *                          will be created with the declaring namespace of the method on top
      *                          of the stack (i.e. it will look for purposes of the method
      *                          invocation like the method call occurred in the declaring
@@ -199,12 +199,12 @@ public class KrineMethod
      *                          to be used in constructors.
      */
     Object invoke(
-            Object[] argValues, KrineBasicInterpreter krineBasicInterpreter, CallStack callstack,
+            Object[] argValues, KrineBasicInterpreter krineBasicInterpreter, CallStack callStack,
             SimpleNode callerInfo, boolean overrideNameSpace)
             throws EvalError {
         if (argValues != null)
-            for (int i = 0; i < argValues.length; i++)
-                if (argValues[i] == null)
+            for (Object argValue : argValues)
+                if (argValue == null)
                     throw new Error("HERE!");
 
         if (javaMethod != null)
@@ -213,14 +213,14 @@ public class KrineMethod
                         javaMethod, javaObject, argValues);
             } catch (ReflectException e) {
                 throw new EvalError(
-                        "Error invoking Java method: " + e, callerInfo, callstack);
+                        "Error invoking Java method: " + e, callerInfo, callStack);
             } catch (InvocationTargetException e2) {
                 throw new KrineTargetException(
                         "Exception invoking imported object method.",
-                        e2, callerInfo, callstack, true/*isNative*/);
+                        e2, callerInfo, callStack, true/*isNative*/);
             }
 
-        // is this a syncrhonized method?
+        // is this a synchronized method?
         if (modifiers != null && modifiers.hasModifier("synchronized")) {
             // The lock is our declaring namespace's This reference
             // (the method's 'super').  Or in the case of a class it's the
@@ -238,24 +238,24 @@ public class KrineMethod
 
             synchronized (lock) {
                 return invokeImpl(
-                        argValues, krineBasicInterpreter, callstack,
+                        argValues, krineBasicInterpreter, callStack,
                         callerInfo, overrideNameSpace);
             }
         } else
-            return invokeImpl(argValues, krineBasicInterpreter, callstack, callerInfo,
+            return invokeImpl(argValues, krineBasicInterpreter, callStack, callerInfo,
                     overrideNameSpace);
     }
 
     private Object invokeImpl(
-            Object[] argValues, KrineBasicInterpreter krineBasicInterpreter, CallStack callstack,
+            Object[] argValues, KrineBasicInterpreter krineBasicInterpreter, CallStack callStack,
             SimpleNode callerInfo, boolean overrideNameSpace)
             throws EvalError {
         Class returnType = getReturnType();
         Class[] paramTypes = getParameterTypes();
 
         // If null callStack
-        if (callstack == null)
-            callstack = new CallStack(declaringNameSpace);
+        if (callStack == null)
+            callStack = new CallStack(declaringNameSpace);
 
         if (argValues == null)
             argValues = new Object[]{};
@@ -264,13 +264,13 @@ public class KrineMethod
         if (argValues.length != numArgs) {
             throw new EvalError(
                     "Wrong number of arguments for local method: "
-                            + name, callerInfo, callstack);
+                            + name, callerInfo, callStack);
         }
 
         // Make the local namespace for the method invocation
         NameSpace localNameSpace;
         if (overrideNameSpace)
-            localNameSpace = callstack.top();
+            localNameSpace = callStack.top();
         else {
             localNameSpace = new NameSpace(declaringNameSpace, name);
             localNameSpace.isMethod = true;
@@ -291,14 +291,14 @@ public class KrineMethod
                             "Invalid argument: "
                                     + "`" + paramNames[i] + "'" + " for method: "
                                     + name + " : " +
-                                    e.getMessage(), callerInfo, callstack);
+                                    e.getMessage(), callerInfo, callStack);
                 }
                 try {
                     localNameSpace.setTypedVariable(paramNames[i],
                             paramTypes[i], argValues[i], null/*modifiers*/);
                 } catch (UtilEvalException e2) {
                     throw e2.toEvalError("Typed method parameter assignment",
-                            callerInfo, callstack);
+                            callerInfo, callStack);
                 }
             }
             // Set untyped variable
@@ -309,38 +309,38 @@ public class KrineMethod
                     throw new EvalError(
                             "Undefined variable or class name, parameter: " +
                                     paramNames[i] + " to method: "
-                                    + name, callerInfo, callstack);
+                                    + name, callerInfo, callStack);
                 else
                     try {
                         localNameSpace.setLocalVariable(
                                 paramNames[i], argValues[i],
-                                krineBasicInterpreter.getStrictJava());
+                                krineBasicInterpreter.isStrictJava());
                     } catch (UtilEvalException e3) {
-                        throw e3.toEvalError(callerInfo, callstack);
+                        throw e3.toEvalError(callerInfo, callStack);
                     }
             }
         }
 
         // Push the new namespace on the call stack
         if (!overrideNameSpace)
-            callstack.push(localNameSpace);
+            callStack.push(localNameSpace);
 
         // Invoke the block, overriding namespace with localNameSpace
         Object ret = methodBody.eval(
-                callstack, krineBasicInterpreter, true/*override*/);
+                callStack, krineBasicInterpreter, true/*override*/);
 
         // save the callStack including the called method, just for error mess
-        CallStack returnStack = callstack.copy();
+        CallStack returnStack = callStack.copy();
 
         // Get back to caller namespace
         if (!overrideNameSpace)
-            callstack.pop();
+            callStack.pop();
 
         ReturnControl retControl = null;
         if (ret instanceof ReturnControl) {
             retControl = (ReturnControl) ret;
 
-            // Method body can only use 'return' statment type return control.
+            // Method body can only use 'return' statement type return control.
             if (retControl.kind == ParserConstants.RETURN)
                 ret = ((ReturnControl) ret).value;
             else
@@ -373,7 +373,7 @@ public class KrineMethod
                     node = retControl.returnPoint;
                 throw e.toEvalError(
                         "Incorrect type returned from method: "
-                                + name + e.getMessage(), node, callstack);
+                                + name + e.getMessage(), node, callStack);
             }
         }
 
@@ -402,7 +402,7 @@ public class KrineMethod
             if (!name.equals(m.name) || numArgs != m.numArgs)
                 return false;
             for (int i = 0; i < numArgs; i++) {
-                if (!equal(cparamTypes[i], m.cparamTypes[i]))
+                if (!equal(paramTypes[i], m.paramTypes[i]))
                     return false;
             }
             return true;
@@ -419,8 +419,8 @@ public class KrineMethod
     @Override
     public int hashCode() {
         int h = name.hashCode();
-        for (Class<?> cparamType : cparamTypes) {
-            h = h * 31 + cparamType.hashCode();
+        for (Class<?> paramType : paramTypes) {
+            h = h * 31 + paramType.hashCode();
         }
         return h;
     }

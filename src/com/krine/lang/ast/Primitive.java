@@ -227,7 +227,7 @@ public final class Primitive implements ParserConstants, Serializable {
             return result;
     }
 
-    static Object binaryOperationImpl(Object lhs, Object rhs, int kind)
+    private static Object binaryOperationImpl(Object lhs, Object rhs, int kind)
             throws UtilEvalException {
         if (lhs instanceof Boolean)
             return booleanBinaryOperation((Boolean) lhs, (Boolean) rhs, kind);
@@ -243,7 +243,7 @@ public final class Primitive implements ParserConstants, Serializable {
             throw new UtilEvalException("Invalid types in binary operator");
     }
 
-    static Boolean booleanBinaryOperation(Boolean B1, Boolean B2, int kind) {
+    private static Boolean booleanBinaryOperation(Boolean B1, Boolean B2, int kind) {
         boolean lhs = B1;
         boolean rhs = B2;
 
@@ -273,7 +273,7 @@ public final class Primitive implements ParserConstants, Serializable {
     }
 
     // returns Object covering both Long and Boolean return types
-    static Object longBinaryOperation(Long L1, Long L2, int kind) {
+    private static Object longBinaryOperation(Long L1, Long L2, int kind) {
         long lhs = L1;
         long rhs = L2;
 
@@ -348,7 +348,7 @@ public final class Primitive implements ParserConstants, Serializable {
     }
 
     // returns Object covering both Integer and Boolean return types
-    static Object intBinaryOperation(Integer I1, Integer I2, int kind) {
+    private static Object intBinaryOperation(Integer I1, Integer I2, int kind) {
         int lhs = I1;
         int rhs = I2;
 
@@ -423,7 +423,7 @@ public final class Primitive implements ParserConstants, Serializable {
     }
 
     // returns Object covering both Double and Boolean return types
-    static Object doubleBinaryOperation(Double D1, Double D2, int kind)
+    private static Object doubleBinaryOperation(Double D1, Double D2, int kind)
             throws UtilEvalException {
         double lhs = D1;
         double rhs = D2;
@@ -484,7 +484,7 @@ public final class Primitive implements ParserConstants, Serializable {
     }
 
     // returns Object covering both Long and Boolean return types
-    static Object floatBinaryOperation(Float F1, Float F2, int kind)
+    private static Object floatBinaryOperation(Float F1, Float F2, int kind)
             throws UtilEvalException {
         float lhs = F1;
         float rhs = F2;
@@ -560,31 +560,31 @@ public final class Primitive implements ParserConstants, Serializable {
      * Promote the pair of primitives to the maximum type of the two.
      * e.g. [int,long]->[long,long]
      */
-    static Object[] promotePrimitives(Object lhs, Object rhs) {
+    private static Object[] promotePrimitives(Object lhs, Object rhs) {
         lhs = promoteToInteger(lhs);
         rhs = promoteToInteger(rhs);
 
         if ((lhs instanceof Number) && (rhs instanceof Number)) {
-            Number lnum = (Number) lhs;
-            Number rnum = (Number) rhs;
+            Number leftNumber = (Number) lhs;
+            Number rightNumber = (Number) rhs;
 
             boolean b;
 
-            if ((b = (lnum instanceof Double)) || (rnum instanceof Double)) {
+            if ((b = (leftNumber instanceof Double)) || (rightNumber instanceof Double)) {
                 if (b)
-                    rhs = rnum.doubleValue();
+                    rhs = rightNumber.doubleValue();
                 else
-                    lhs = lnum.doubleValue();
-            } else if ((b = (lnum instanceof Float)) || (rnum instanceof Float)) {
+                    lhs = leftNumber.doubleValue();
+            } else if ((b = (leftNumber instanceof Float)) || (rightNumber instanceof Float)) {
                 if (b)
-                    rhs = rnum.floatValue();
+                    rhs = rightNumber.floatValue();
                 else
-                    lhs = lnum.floatValue();
-            } else if ((b = (lnum instanceof Long)) || (rnum instanceof Long)) {
+                    lhs = leftNumber.floatValue();
+            } else if ((b = (leftNumber instanceof Long)) || (rightNumber instanceof Long)) {
                 if (b)
-                    rhs = rnum.longValue();
+                    rhs = rightNumber.longValue();
                 else
-                    lhs = lnum.longValue();
+                    lhs = leftNumber.longValue();
             }
         }
 
@@ -746,10 +746,7 @@ public final class Primitive implements ParserConstants, Serializable {
      * wrapped value.
      */
     public boolean equals(Object obj) {
-        if (obj instanceof Primitive)
-            return ((Primitive) obj).value.equals(this.value);
-        else
-            return false;
+        return obj instanceof Primitive && ((Primitive) obj).value.equals(this.value);
     }
 
     /**
@@ -873,7 +870,7 @@ public final class Primitive implements ParserConstants, Serializable {
     /**
      * Cast this krine.Primitive value to a new krine.Primitive value
      * This is usually a numeric type cast.  Other cases include:
-     * A boolean can be cast to boolen
+     * A boolean can be cast to boolean
      * null can be cast to any object type and remains null
      * Attempting to cast a void causes an exception
      *

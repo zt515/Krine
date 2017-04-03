@@ -1,7 +1,7 @@
 package com.krine.lang;
 
-import com.krine.lang.ast.KrineTargetException;
 import com.krine.lang.ast.EvalError;
+import com.krine.lang.ast.KrineTargetException;
 import com.krine.lang.ast.SimpleNode;
 import com.krine.lang.utils.CallStack;
 
@@ -30,13 +30,13 @@ public class UtilTargetException extends UtilEvalException {
      * Override toEvalError to throw KrineTargetException type.
      */
     public EvalError toEvalError(
-            String msg, SimpleNode node, CallStack callstack) {
+            String msg, SimpleNode node, CallStack callStack) {
         if (msg == null)
             msg = getMessage();
         else
             msg = msg + ": " + getMessage();
 
-        return new KrineTargetException(msg, t, node, callstack, false);
+        return new KrineTargetException(msg, t, node, callStack, false);
     }
 }
 

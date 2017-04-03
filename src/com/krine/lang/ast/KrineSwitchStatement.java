@@ -1,8 +1,8 @@
 package com.krine.lang.ast;
 
 import com.krine.lang.KrineBasicInterpreter;
-import com.krine.lang.utils.CallStack;
 import com.krine.lang.UtilEvalException;
+import com.krine.lang.utils.CallStack;
 
 class KrineSwitchStatement
         extends SimpleNode
@@ -12,14 +12,14 @@ class KrineSwitchStatement
         super(id);
     }
 
-    public Object eval(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public Object eval(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         waitForDebugger();
 
-        int numchild = jjtGetNumChildren();
+        int numChildren = jjtGetNumChildren();
         int child = 0;
         SimpleNode switchExp = ((SimpleNode) jjtGetChild(child++));
-        Object switchVal = switchExp.eval(callstack, krineBasicInterpreter);
+        Object switchVal = switchExp.eval(callStack, krineBasicInterpreter);
 
 		/*
             Note: this could be made clearer by adding an inner class for the
@@ -31,26 +31,26 @@ class KrineSwitchStatement
         ReturnControl returnControl = null;
 
         // get the first label
-        if (child >= numchild)
-            throw new EvalError("Empty switch statement.", this, callstack);
+        if (child >= numChildren)
+            throw new EvalError("Empty switch statement.", this, callStack);
         label = ((KrineSwitchLabel) jjtGetChild(child++));
 
         // while more labels or blocks and haven't hit return control
-        while (child < numchild && returnControl == null) {
+        while (child < numChildren && returnControl == null) {
             // if label is default or equals switchVal
             if (label.isDefault
                     || primitiveEquals(
-                    switchVal, label.eval(callstack, krineBasicInterpreter),
-                    callstack, switchExp)
+                    switchVal, label.eval(callStack, krineBasicInterpreter),
+                    callStack, switchExp)
                     ) {
                 // execute nodes, skipping labels, until a break or return
-                while (child < numchild) {
+                while (child < numChildren) {
                     node = jjtGetChild(child++);
                     if (node instanceof KrineSwitchLabel)
                         continue;
                     // eval it
                     Object value =
-                            ((SimpleNode) node).eval(callstack, krineBasicInterpreter);
+                            ((SimpleNode) node).eval(callStack, krineBasicInterpreter);
 
                     // should check to disallow continue here?
                     if (value instanceof ReturnControl) {
@@ -60,7 +60,7 @@ class KrineSwitchStatement
                 }
             } else {
                 // skip nodes until next label
-                while (child < numchild) {
+                while (child < numChildren) {
                     node = jjtGetChild(child++);
                     if (node instanceof KrineSwitchLabel) {
                         label = (KrineSwitchLabel) node;
@@ -82,7 +82,7 @@ class KrineSwitchStatement
      */
     private boolean primitiveEquals(
             Object switchVal, Object targetVal,
-            CallStack callstack, SimpleNode switchExp)
+            CallStack callStack, SimpleNode switchExp)
             throws EvalError {
         if (switchVal instanceof Primitive || targetVal instanceof Primitive)
             try {
@@ -94,7 +94,7 @@ class KrineSwitchStatement
             } catch (UtilEvalException e) {
                 throw e.toEvalError(
                         "Switch value: " + switchExp.getText() + ": ",
-                        this, callstack);
+                        this, callStack);
             }
         else
             return switchVal.equals(targetVal);

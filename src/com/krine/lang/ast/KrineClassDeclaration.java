@@ -6,15 +6,6 @@ import com.krine.lang.utils.CallStack;
 /**
  */
 class KrineClassDeclaration extends SimpleNode {
-    /**
-     * The class instance initializer method name.
-     * A KrineMethod by this name is installed by the class delcaration into
-     * the static class body namespace.
-     * It is called once to initialize the static members of the class space
-     * and each time an instances is created to initialize the instance
-     * members.
-     */
-    static final String CLASSINITNAME = "_krineClassInit";
 
     String name;
     Modifiers modifiers;
@@ -29,35 +20,35 @@ class KrineClassDeclaration extends SimpleNode {
 
     /**
      */
-    public synchronized Object eval(final CallStack callstack, final KrineBasicInterpreter krineBasicInterpreter) throws EvalError {
+    public synchronized Object eval(final CallStack callStack, final KrineBasicInterpreter krineBasicInterpreter) throws EvalError {
         waitForDebugger();
 
         if (generatedClass == null) {
-            generatedClass = generateClass(callstack, krineBasicInterpreter);
+            generatedClass = generateClass(callStack, krineBasicInterpreter);
         }
         return generatedClass;
     }
 
 
-    private Class<?> generateClass(final CallStack callstack, final KrineBasicInterpreter krineBasicInterpreter) throws EvalError {
+    private Class<?> generateClass(final CallStack callStack, final KrineBasicInterpreter krineBasicInterpreter) throws EvalError {
         int child = 0;
 
         // resolve superclass if any
         Class superClass = null;
         if (extend) {
             KrineAmbiguousName superNode = (KrineAmbiguousName) jjtGetChild(child++);
-            superClass = superNode.toClass(callstack, krineBasicInterpreter);
+            superClass = superNode.toClass(callStack, krineBasicInterpreter);
         }
 
         // Get interfaces
         Class[] interfaces = new Class[numInterfaces];
         for (int i = 0; i < numInterfaces; i++) {
             KrineAmbiguousName node = (KrineAmbiguousName) jjtGetChild(child++);
-            interfaces[i] = node.toClass(callstack, krineBasicInterpreter);
+            interfaces[i] = node.toClass(callStack, krineBasicInterpreter);
             if (!interfaces[i].isInterface())
                 throw new EvalError(
                         "Type: " + node.text + " is not an interface!",
-                        this, callstack);
+                        this, callStack);
         }
 
         KrineBlock block;
@@ -69,7 +60,7 @@ class KrineClassDeclaration extends SimpleNode {
 
         return ClassGenerator.getClassGenerator().generateClass(
                 name, modifiers, interfaces, superClass, block, isInterface,
-                callstack, krineBasicInterpreter);
+                callStack, krineBasicInterpreter);
     }
 
 

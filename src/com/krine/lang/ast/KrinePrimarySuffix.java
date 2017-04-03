@@ -41,7 +41,7 @@ class KrinePrimarySuffix extends SimpleNode {
     */
     public Object doSuffix(
             Object obj, boolean toLHS,
-            CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+            CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         // Handle ".class" suffix operation
         // Prefix must be a KrineType
@@ -49,17 +49,17 @@ class KrinePrimarySuffix extends SimpleNode {
             if (obj instanceof KrineType) {
                 if (toLHS)
                     throw new EvalError("Can't assign .class",
-                            this, callstack);
-                NameSpace namespace = callstack.top();
-                return ((KrineType) obj).getType(callstack, krineBasicInterpreter);
+                            this, callStack);
+                NameSpace namespace = callStack.top();
+                return ((KrineType) obj).getType(callStack, krineBasicInterpreter);
             } else
                 throw new EvalError(
                         "Attempt to use .class suffix on non class.",
-                        this, callstack);
+                        this, callStack);
 
 		/*
             Evaluate our prefix if it needs evaluating first.
-			If this is the first evaluation our prefix mayb be a Node 
+			If this is the first evaluation our prefix maybe be a Node
 			(directly from the PrimaryPrefix) - eval() it to an object.  
 			If it's an LeftValue, resolve to a value.
 
@@ -71,35 +71,35 @@ class KrinePrimarySuffix extends SimpleNode {
 		*/
         if (obj instanceof SimpleNode)
             if (obj instanceof KrineAmbiguousName)
-                obj = ((KrineAmbiguousName) obj).toObject(callstack, krineBasicInterpreter);
+                obj = ((KrineAmbiguousName) obj).toObject(callStack, krineBasicInterpreter);
             else
-                obj = ((SimpleNode) obj).eval(callstack, krineBasicInterpreter);
+                obj = ((SimpleNode) obj).eval(callStack, krineBasicInterpreter);
         else if (obj instanceof LeftValue)
             try {
                 obj = ((LeftValue) obj).getValue();
             } catch (UtilEvalException e) {
-                throw e.toEvalError(this, callstack);
+                throw e.toEvalError(this, callStack);
             }
 
         try {
             switch (operation) {
                 case INDEX:
-                    return doIndex(obj, toLHS, callstack, krineBasicInterpreter);
+                    return doIndex(obj, toLHS, callStack, krineBasicInterpreter);
 
                 case NAME:
-                    return doName(obj, toLHS, callstack, krineBasicInterpreter);
+                    return doName(obj, toLHS, callStack, krineBasicInterpreter);
 
                 case PROPERTY:
-                    return doProperty(toLHS, obj, callstack, krineBasicInterpreter);
+                    return doProperty(toLHS, obj, callStack, krineBasicInterpreter);
 
                 default:
                     throw new InterpreterException("Unknown suffix type");
             }
         } catch (ReflectException e) {
-            throw new EvalError("reflection error: " + e, this, callstack, e);
+            throw new EvalError("reflection error: " + e, this, callStack, e);
         } catch (InvocationTargetException e) {
             throw new KrineTargetException("target exception", e.getTargetException(),
-                    this, callstack, true);
+                    this, callStack, true);
         }
     }
 
@@ -109,14 +109,14 @@ class KrinePrimarySuffix extends SimpleNode {
     */
     private Object doName(
             Object obj, boolean toLHS,
-            CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+            CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError, ReflectException, InvocationTargetException {
         try {
             // .length on array
             if (field.equals("length") && obj.getClass().isArray())
                 if (toLHS)
                     throw new EvalError(
-                            "Can't assign array length", this, callstack);
+                            "Can't assign array length", this, callStack);
                 else
                     return new Primitive(Array.getLength(obj));
 
@@ -130,7 +130,7 @@ class KrinePrimarySuffix extends SimpleNode {
             // Method invocation
             // (LeftValue or non LeftValue evaluation can both encounter method calls)
             Object[] oa = ((KrineArguments) jjtGetChild(0)).getArguments(
-                    callstack, krineBasicInterpreter);
+                    callStack, krineBasicInterpreter);
 
             // TODO:
             // Note: this try/catch block is copied from KrineMethodInvocation
@@ -139,34 +139,34 @@ class KrinePrimarySuffix extends SimpleNode {
             // maybe move this to Reflect ?
             try {
                 return Reflect.invokeObjectMethod(
-                        obj, field, oa, krineBasicInterpreter, callstack, this);
+                        obj, field, oa, krineBasicInterpreter, callStack, this);
             } catch (ReflectException e) {
                 throw new EvalError(
                         "Error in method invocation: " + e.getMessage(),
-                        this, callstack, e);
+                        this, callStack, e);
             } catch (InvocationTargetException e) {
-                throw InvocationUtil.newTargetException("Method Invocation " + field, this, callstack, e);
+                throw InvocationUtil.newTargetException("Method Invocation " + field, this, callStack, e);
             }
 
         } catch (UtilEvalException e) {
-            throw e.toEvalError(this, callstack);
+            throw e.toEvalError(this, callStack);
         }
     }
 
     /**
      */
     static int getIndexAux(
-            Object obj, CallStack callstack, KrineBasicInterpreter krineBasicInterpreter,
+            Object obj, CallStack callStack, KrineBasicInterpreter krineBasicInterpreter,
             SimpleNode callerInfo)
             throws EvalError {
         if (!obj.getClass().isArray())
-            throw new EvalError("Not an array", callerInfo, callstack);
+            throw new EvalError("Not an array", callerInfo, callStack);
 
         int index;
         try {
             Object indexVal =
                     ((SimpleNode) callerInfo.jjtGetChild(0)).eval(
-                            callstack, krineBasicInterpreter);
+                            callStack, krineBasicInterpreter);
             if (!(indexVal instanceof Primitive))
                 indexVal = Types.castObject(
                         indexVal, Integer.TYPE, Types.ASSIGNMENT);
@@ -175,7 +175,7 @@ class KrinePrimarySuffix extends SimpleNode {
             KrineBasicInterpreter.debug("doIndex: " + e);
             throw e.toEvalError(
                     "Arrays may only be indexed by integer types.",
-                    callerInfo, callstack);
+                    callerInfo, callStack);
         }
 
         return index;
@@ -187,16 +187,16 @@ class KrinePrimarySuffix extends SimpleNode {
      */
     private Object doIndex(
             Object obj, boolean toLHS,
-            CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+            CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError, ReflectException {
-        int index = getIndexAux(obj, callstack, krineBasicInterpreter, this);
+        int index = getIndexAux(obj, callStack, krineBasicInterpreter, this);
         if (toLHS)
             return new LeftValue(obj, index);
         else
             try {
                 return Reflect.getIndex(obj, index);
             } catch (UtilEvalException e) {
-                throw e.toEvalError(this, callstack);
+                throw e.toEvalError(this, callStack);
             }
     }
 
@@ -205,29 +205,29 @@ class KrinePrimarySuffix extends SimpleNode {
      * Must handle toLeftValue case.
      */
     private Object doProperty(boolean toLHS,
-                              Object obj, CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+                              Object obj, CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         if (obj == Primitive.VOID)
             throw new EvalError(
                     "Attempt to access property on undefined variable or class name",
-                    this, callstack);
+                    this, callStack);
 
         if (obj instanceof Primitive)
             throw new EvalError("Attempt to access property on a primitive",
-                    this, callstack);
+                    this, callStack);
 
         Object value = ((SimpleNode) jjtGetChild(0)).eval(
-                callstack, krineBasicInterpreter);
+                callStack, krineBasicInterpreter);
 
         if (!(value instanceof String))
             throw new EvalError(
                     "Property expression must be a String or identifier.",
-                    this, callstack);
+                    this, callStack);
 
         if (toLHS)
             return new LeftValue(obj, (String) value);
 
-        // Property style access to Hashtable or Map
+        // Property style access to HashTable or Map
         CollectionManager cm = CollectionManager.getCollectionManager();
         if (cm.isMap(obj)) {
             Object val = cm.getFromMap(obj, value/*key*/);
@@ -237,9 +237,9 @@ class KrinePrimarySuffix extends SimpleNode {
         try {
             return Reflect.getObjectProperty(obj, (String) value);
         } catch (UtilEvalException e) {
-            throw e.toEvalError("Property: " + value, this, callstack);
+            throw e.toEvalError("Property: " + value, this, callStack);
         } catch (ReflectException e) {
-            throw new EvalError("No such property: " + value, this, callstack);
+            throw new EvalError("No such property: " + value, this, callStack);
         }
     }
 }

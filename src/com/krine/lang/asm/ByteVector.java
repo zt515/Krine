@@ -1,4 +1,4 @@
-/***
+/**
  * ASM: a very small and fast Java bytecode manipulation framework
  * Copyright (C) 2000 INRIA, France Telecom
  * Copyright (C) 2002 France Telecom

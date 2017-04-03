@@ -1,7 +1,7 @@
 /*****************************************************************************
  *                                                                           *
  *  This file is part of the Krine Java Scripting distribution.          *
- *  Documentation and updates may be found at http://www.beanshell.org/      *
+ *        *
  *                                                                           *
  *  Sun Public License Notice:                                               *
  *                                                                           *

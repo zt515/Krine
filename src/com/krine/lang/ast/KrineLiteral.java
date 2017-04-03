@@ -1,8 +1,8 @@
 package com.krine.lang.ast;
 
+import com.krine.lang.InterpreterException;
 import com.krine.lang.KrineBasicInterpreter;
 import com.krine.lang.utils.CallStack;
-import com.krine.lang.InterpreterException;
 
 public final class KrineLiteral extends SimpleNode {
     public static volatile boolean internStrings = true;
@@ -13,7 +13,7 @@ public final class KrineLiteral extends SimpleNode {
         super(id);
     }
 
-    public Object eval(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public Object eval(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         waitForDebugger();
 

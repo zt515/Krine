@@ -1,7 +1,7 @@
 package com.krine.lang.ast;
 
-import com.krine.lang.utils.CallStack;
 import com.krine.lang.KrineBasicInterpreter;
+import com.krine.lang.utils.CallStack;
 
 /**
  * TODO: This class needs logic to prevent the right hand side of boolean logical
@@ -14,7 +14,7 @@ class KrineTernaryExpression extends SimpleNode {
         super(id);
     }
 
-    public Object eval(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public Object eval(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         waitForDebugger();
 
@@ -23,10 +23,10 @@ class KrineTernaryExpression extends SimpleNode {
                 evalTrue = (SimpleNode) jjtGetChild(1),
                 evalFalse = (SimpleNode) jjtGetChild(2);
 
-        if (KrineIfStatement.evaluateCondition(cond, callstack, krineBasicInterpreter))
-            return evalTrue.eval(callstack, krineBasicInterpreter);
+        if (KrineIfStatement.evaluateCondition(cond, callStack, krineBasicInterpreter))
+            return evalTrue.eval(callStack, krineBasicInterpreter);
         else
-            return evalFalse.eval(callstack, krineBasicInterpreter);
+            return evalFalse.eval(callStack, krineBasicInterpreter);
     }
 
 }

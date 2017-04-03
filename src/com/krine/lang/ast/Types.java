@@ -6,7 +6,7 @@ import com.krine.lang.UtilTargetException;
 import com.krine.lang.reflect.Reflect;
 
 /**
- * Static routines supporing type comparison and conversion in Krine.
+ * Static routines supporting type comparison and conversion in Krine.
  * <p>
  * The following are notes on type comparison and conversion in Krine.
  */
@@ -22,7 +22,7 @@ public class Types {
 
     public static final int
             JAVA_BASE_ASSIGNABLE = 1;
-    static final int JAVA_BOX_TYPES_ASSIGABLE = 2;
+    static final int JAVA_BOX_TYPES_ASSIGNABLE = 2;
     static final int JAVA_VARARGS_ASSIGNABLE = 3;
     static final int KRINE_ASSIGNABLE = 4;
 
@@ -77,7 +77,7 @@ public class Types {
                     if (!isJavaBaseAssignable(to[i], from[i]))
                         return false;
                 return true;
-            case JAVA_BOX_TYPES_ASSIGABLE:
+            case JAVA_BOX_TYPES_ASSIGNABLE:
                 for (int i = 0; i < from.length; i++)
                     if (!isJavaBoxTypesAssignable(to[i], from[i]))
                         return false;
@@ -137,7 +137,7 @@ public class Types {
      */
     static boolean isJavaBaseAssignable(Class lhsType, Class rhsType) {
         /*
-			Assignment to loose type, defer to krine extensions
+            Assignment to loose type, defer to krine extensions
 			Note: we could shortcut this here:
 			if ( lhsType == null ) return true;
 			rather than forcing another round.  It's not strictly a Java issue,
@@ -262,7 +262,7 @@ public class Types {
                         : fromValue.getClass();
 
         return castObject(
-                toType, fromType, fromValue, operation, false/*checkonly*/);
+                toType, fromType, fromValue, operation, false/*checkOnly*/);
     }
 
     /**
@@ -285,8 +285,8 @@ public class Types {
      * <p/>
      * <p>
      * A CAST is stronger than an ASSIGNMENT operation in that it will attempt to
-     * perform primtive operations that cast to a smaller type. e.g. (byte)myLong;
-     * These are used in explicit primitive casts, primitive delclarations and
+     * perform primitive operations that cast to a smaller type. e.g. (byte)myLong;
+     * These are used in explicit primitive casts, primitive declarations and
      * array declarations. I don't believe there are any object conversions which are
      * different between  ASSIGNMENT and CAST (e.g. scripted object to interface proxy
      * in krine is done on assignment as well as cast).
@@ -310,10 +310,10 @@ public class Types {
      *                  (Primitive.NULL is ok) and the actual cast is performed.
      * @param operation is Types.CAST or Types.ASSIGNMENT
      * @throws UtilEvalException   on invalid assignment (when operation is
-     *                         assignment ).
+     *                             assignment ).
      * @throws UtilTargetException wrapping ClassCastException on cast error
-     *                         (when operation is cast)
-     * @see krine.Primitive.getType()
+     *                             (when operation is cast)
+     * @see Primitive#getType()
      */
 	/*
 		Notes: This method is currently responsible for auto-boxing/unboxing

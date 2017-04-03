@@ -1,8 +1,8 @@
 package com.krine.lang.ast;
 
 import com.krine.lang.KrineBasicInterpreter;
-import com.krine.lang.utils.CallStack;
 import com.krine.lang.UtilEvalException;
+import com.krine.lang.utils.CallStack;
 
 class KrineMethodDeclaration extends SimpleNode {
     public String name;
@@ -54,23 +54,23 @@ class KrineMethodDeclaration extends SimpleNode {
      *
      * @return the type or null indicating loosely typed return
      */
-    Class evalReturnType(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    Class evalReturnType(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         insureNodesParsed();
         if (returnTypeNode != null)
-            return returnTypeNode.evalReturnType(callstack, krineBasicInterpreter);
+            return returnTypeNode.evalReturnType(callStack, krineBasicInterpreter);
         else
             return null;
     }
 
     String getReturnTypeDescriptor(
-            CallStack callstack, KrineBasicInterpreter krineBasicInterpreter, String defaultPackage) {
+            CallStack callStack, KrineBasicInterpreter krineBasicInterpreter, String defaultPackage) {
         insureNodesParsed();
         if (returnTypeNode == null)
             return null;
         else
             return returnTypeNode.getTypeDescriptor(
-                    callstack, krineBasicInterpreter, defaultPackage);
+                    callStack, krineBasicInterpreter, defaultPackage);
     }
 
     KrineReturnType getReturnTypeNode() {
@@ -82,12 +82,12 @@ class KrineMethodDeclaration extends SimpleNode {
      * Evaluate the declaration of the method.  That is, determine the
      * structure of the method and install it into the caller's namespace.
      */
-    public Object eval(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public Object eval(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         waitForDebugger();
 
-        returnType = evalReturnType(callstack, krineBasicInterpreter);
-        evalNodes(callstack, krineBasicInterpreter);
+        returnType = evalReturnType(callStack, krineBasicInterpreter);
+        evalNodes(callStack, krineBasicInterpreter);
 
         // Install an *instance* of this method in the namespace.
         // See notes in KrineMethod
@@ -97,30 +97,30 @@ class KrineMethodDeclaration extends SimpleNode {
 // so that we can re-eval params, etc. when classloader changes
 // look into this
 
-        NameSpace namespace = callstack.top();
+        NameSpace namespace = callStack.top();
         KrineMethod krineMethod = new KrineMethod(this, namespace, modifiers);
         try {
             namespace.setMethod(krineMethod);
         } catch (UtilEvalException e) {
-            throw e.toEvalError(this, callstack);
+            throw e.toEvalError(this, callStack);
         }
 
         return Primitive.VOID;
     }
 
-    private void evalNodes(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    private void evalNodes(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         insureNodesParsed();
 
         // validate that the throws names are class names
         for (int i = firstThrowsClause; i < numThrows + firstThrowsClause; i++)
             ((KrineAmbiguousName) jjtGetChild(i)).toClass(
-                    callstack, krineBasicInterpreter);
+                    callStack, krineBasicInterpreter);
 
-        paramsNode.eval(callstack, krineBasicInterpreter);
+        paramsNode.eval(callStack, krineBasicInterpreter);
 
         // if strictJava mode, check for loose parameters and return type
-        if (krineBasicInterpreter.getStrictJava()) {
+        if (krineBasicInterpreter.isStrictJava()) {
             for (int i = 0; i < paramsNode.paramTypes.length; i++)
                 if (paramsNode.paramTypes[i] == null)
                     // Warning: Null callStack here.  Don't think we need

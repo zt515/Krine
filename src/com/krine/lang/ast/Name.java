@@ -1,13 +1,15 @@
 package com.krine.lang.ast;
 
-import com.krine.lang.*;
+import com.krine.lang.InterpreterException;
+import com.krine.lang.KrineBasicInterpreter;
+import com.krine.lang.UtilEvalException;
+import com.krine.lang.UtilTargetException;
 import com.krine.lang.classpath.ClassIdentifier;
 import com.krine.lang.classpath.ClassPathException;
 import com.krine.lang.classpath.KrineClassManager;
 import com.krine.lang.reflect.Reflect;
 import com.krine.lang.reflect.ReflectException;
 import com.krine.lang.utils.CallStack;
-import com.krine.lang.utils.StringUtil;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
@@ -57,7 +59,7 @@ import java.lang.reflect.InvocationTargetException;
 	is prohibited by the restriction that you can only call .caller on a 
 	literal	this or caller reference.  The effect is that magic caller 
 	reference only works through the current 'this' reference.
-	The real explanation is that This referernces do not really know anything
+	The real explanation is that This references do not really know anything
 	about their depth on the call stack.  It might even be hard to define
 	such a thing...
 
@@ -86,10 +88,10 @@ public class Name implements Serializable {
      * this, caller, and super resolution.
      */
     private String lastEvalName;
-    private static String FINISHED = null; // null evalname and we're finished
+    private static String FINISHED = null; // null evalName and we're finished
     private Object evalBaseObject;    // base object for current eval
 
-    private int callstackDepth;        // number of times eval hit 'this.caller'
+    private int callStackDepth;        // number of times eval hit 'this.caller'
 
     //
     //  End mutable instance variables.
@@ -116,7 +118,7 @@ public class Name implements Serializable {
     private void reset() {
         evalName = value;
         evalBaseObject = null;
-        callstackDepth = 0;
+        callStackDepth = 0;
     }
 
     /**
@@ -152,9 +154,9 @@ public class Name implements Serializable {
      * "this.caller" magic leftValue.
      * "this.callStack" magic leftValue.
      */
-    public Object toObject(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public Object toObject(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws UtilEvalException {
-        return toObject(callstack, krineBasicInterpreter, false);
+        return toObject(callStack, krineBasicInterpreter, false);
     }
 
     /**
@@ -164,14 +166,14 @@ public class Name implements Serializable {
      * @see #toObject(CallStack, KrineBasicInterpreter)
      */
     synchronized public Object toObject(
-            CallStack callstack, KrineBasicInterpreter krineBasicInterpreter, boolean forceClass)
+            CallStack callStack, KrineBasicInterpreter krineBasicInterpreter, boolean forceClass)
             throws UtilEvalException {
         reset();
 
         Object obj = null;
         while (evalName != null)
             obj = consumeNextObjectField(
-                    callstack, krineBasicInterpreter, forceClass, false/*autoalloc*/);
+                    callStack, krineBasicInterpreter, forceClass, false/*autoalloc*/);
 
         if (obj == null)
             throw new InterpreterException("null value in toObject()");
@@ -196,11 +198,11 @@ public class Name implements Serializable {
      * identifier.
      */
     private Object consumeNextObjectField(
-            CallStack callstack, KrineBasicInterpreter krineBasicInterpreter,
+            CallStack callStack, KrineBasicInterpreter krineBasicInterpreter,
             boolean forceClass, boolean autoAllocateThis)
             throws UtilEvalException {
         /*
-			Is it a simple variable name?
+            Is it a simple variable name?
 			Doing this first gives the correct Java precedence for vars 
 			vs. imported class names (at least in the simple case - see
 			tests/precedence1.krine).  It should also speed things up a bit.
@@ -208,14 +210,14 @@ public class Name implements Serializable {
         if ((evalBaseObject == null && !isCompound(evalName))
                 && !forceClass) {
             Object obj = resolveThisFieldReference(
-                    callstack, namespace, krineBasicInterpreter, evalName, false);
+                    callStack, namespace, krineBasicInterpreter, evalName, false);
 
             if (obj != Primitive.VOID)
                 return completeRound(evalName, FINISHED, obj);
         }
 
 		/*
-			Is it a krine script variable reference?
+            Is it a krine script variable reference?
 			If we're just starting the eval of name (no base object)
 			or we're evaluating relative to a This type reference check.
 		*/
@@ -229,10 +231,10 @@ public class Name implements Serializable {
             // switch namespace and special var visibility
             if (evalBaseObject == null) {
                 obj = resolveThisFieldReference(
-                        callstack, namespace, krineBasicInterpreter, varName, false);
+                        callStack, namespace, krineBasicInterpreter, varName, false);
             } else {
                 obj = resolveThisFieldReference(
-                        callstack, ((This) evalBaseObject).namespace,
+                        callStack, ((This) evalBaseObject).namespace,
                         krineBasicInterpreter, varName, true);
             }
 
@@ -257,20 +259,20 @@ public class Name implements Serializable {
 			/*
 				Keep adding parts until we have a class 
 			*/
-            Class clas = null;
+            Class clazz = null;
             int i = 1;
             String className = null;
             for (; i <= countParts(evalName); i++) {
                 className = prefix(evalName, i);
-                if ((clas = namespace.getClass(className)) != null)
+                if ((clazz = namespace.getClass(className)) != null)
                     break;
             }
 
-            if (clas != null) {
+            if (clazz != null) {
                 return completeRound(
                         className,
                         suffix(evalName, countParts(evalName) - i),
-                        new ClassIdentifier(clas)
+                        new ClassIdentifier(clazz)
                 );
             }
             // not a class (or variable per above)
@@ -335,7 +337,7 @@ public class Name implements Serializable {
 			static leftValue, inner class, ?
 		*/
         if (evalBaseObject instanceof ClassIdentifier) {
-            Class clas = ((ClassIdentifier) evalBaseObject).getTargetClass();
+            Class clazz = ((ClassIdentifier) evalBaseObject).getTargetClass();
             String field = prefix(evalName, 1);
 
             // Class qualified 'this' reference from inner class.
@@ -346,14 +348,14 @@ public class Name implements Serializable {
                 while (ns != null) {
                     // getClassInstance() throws exception if not there
                     if (ns.classInstance != null
-                            && ns.classInstance.getClass() == clas
+                            && ns.classInstance.getClass() == clazz
                             )
                         return completeRound(
                                 field, suffix(evalName), ns.classInstance);
                     ns = ns.getParent();
                 }
                 throw new UtilEvalException(
-                        "Can't find enclosing 'this' instance of class: " + clas);
+                        "Can't find enclosing 'this' instance of class: " + clazz);
             }
 
             Object obj = null;
@@ -361,8 +363,8 @@ public class Name implements Serializable {
             try {
                 if (KrineBasicInterpreter.DEBUG)
                     KrineBasicInterpreter.debug("Name call to getStaticFieldValue, class: "
-                            + clas + ", leftValue:" + field);
-                obj = Reflect.getStaticFieldValue(clas, field);
+                            + clazz + ", leftValue:" + field);
+                obj = Reflect.getStaticFieldValue(clazz, field);
             } catch (ReflectException e) {
                 if (KrineBasicInterpreter.DEBUG)
                     KrineBasicInterpreter.debug("leftValue reflect error: " + e);
@@ -370,7 +372,7 @@ public class Name implements Serializable {
 
             // inner class?
             if (obj == null) {
-                String iclass = clas.getName() + "$" + field;
+                String iclass = clazz.getName() + "$" + field;
                 Class c = namespace.getClass(iclass);
                 if (c != null)
                     obj = new ClassIdentifier(c);
@@ -379,7 +381,7 @@ public class Name implements Serializable {
             if (obj == null)
                 throw new UtilEvalException(
                         "No static leftValue or inner class: "
-                                + field + " of " + clas);
+                                + field + " of " + clazz);
 
             return completeRound(field, suffix(evalName), obj);
         }
@@ -426,19 +428,19 @@ public class Name implements Serializable {
      * Optionally interpret special "magic" leftValue names: e.g. krineBasicInterpreter.
      * <p/>
      *
-     * @param callstack may be null, but this is only legitimate in special
-     *                  cases where we are sure resolution will not involve this.caller.
-     * @param namespace the namespace of the this reference (should be the
-     *                  same as the top of the stack?
+     * @param callStack     may be null, but this is only legitimate in special
+     *                      cases where we are sure resolution will not involve this.caller.
+     * @param thisNameSpace the namespace of the this reference (should be the
+     *                      same as the top of the stack?
      */
     Object resolveThisFieldReference(
-            CallStack callstack, NameSpace thisNameSpace, KrineBasicInterpreter krineBasicInterpreter,
+            CallStack callStack, NameSpace thisNameSpace, KrineBasicInterpreter krineBasicInterpreter,
             String varName, boolean specialFieldsVisible)
             throws UtilEvalException {
         if (varName.equals("this")) {
 			/*
 				Somewhat of a hack.  If the special fields are visible (we're
-				operating relative to a 'this' type already) dissallow further
+				operating relative to a 'this' type already) disallow further
 				.this references to prevent user from skipping to things like
 				super.this.caller
 			*/
@@ -496,26 +498,32 @@ public class Name implements Serializable {
             obj = thisNameSpace.getGlobal(krineBasicInterpreter);
 
         if (obj == null && specialFieldsVisible) {
-            if (varName.equals("namespace"))
-                obj = thisNameSpace;
-            else if (varName.equals("variables"))
-                obj = thisNameSpace.getVariableNames();
-            else if (varName.equals("methods"))
-                obj = thisNameSpace.getMethodNames();
-            else if (varName.equals("krineBasicInterpreter"))
-                if (lastEvalName.equals("this"))
-                    obj = krineBasicInterpreter;
-                else
-                    throw new UtilEvalException(
-                            "Can only call .krineBasicInterpreter on literal 'this'");
+            switch (varName) {
+                case "namespace":
+                    obj = thisNameSpace;
+                    break;
+                case "variables":
+                    obj = thisNameSpace.getVariableNames();
+                    break;
+                case "methods":
+                    obj = thisNameSpace.getMethodNames();
+                    break;
+                case "krineBasicInterpreter":
+                    if (lastEvalName.equals("this"))
+                        obj = krineBasicInterpreter;
+                    else
+                        throw new UtilEvalException(
+                                "Can only call .krineBasicInterpreter on literal 'this'");
+                    break;
+            }
         }
 
         if (obj == null && specialFieldsVisible && varName.equals("caller")) {
             if (lastEvalName.equals("this") || lastEvalName.equals("caller")) {
                 // get the previous context (see notes for this class)
-                if (callstack == null)
+                if (callStack == null)
                     throw new InterpreterException("no callStack");
-                obj = callstack.get(++callstackDepth).getThis(
+                obj = callStack.get(++callStackDepth).getThis(
                         krineBasicInterpreter);
             } else
                 throw new UtilEvalException(
@@ -529,9 +537,9 @@ public class Name implements Serializable {
                 && varName.equals("callStack")) {
             if (lastEvalName.equals("this")) {
                 // get the previous context (see notes for this class)
-                if (callstack == null)
+                if (callStack == null)
                     throw new InterpreterException("no callStack");
-                obj = callstack;
+                obj = callStack;
             } else
                 throw new UtilEvalException(
                         "Can only call .callStack on literal 'this'");
@@ -586,9 +594,9 @@ public class Name implements Serializable {
             return asClass = null;
 
 		/* Try straightforward class name first */
-        Class clas = namespace.getClass(evalName);
+        Class clazz = namespace.getClass(evalName);
 
-        if (clas == null) {
+        if (clazz == null) {
 			/* 
 				Try toObject() which knows how to work through inner classes
 				and see what we end up with 
@@ -598,25 +606,25 @@ public class Name implements Serializable {
                 // Null krineBasicInterpreter and callStack references.
                 // class only resolution should not require them.
                 obj = toObject(null, null, true);
-            } catch (UtilEvalException e) {
+            } catch (UtilEvalException ignored) {
             }// couldn't resolve it
 
             if (obj instanceof ClassIdentifier)
-                clas = ((ClassIdentifier) obj).getTargetClass();
+                clazz = ((ClassIdentifier) obj).getTargetClass();
         }
 
-        if (clas == null)
+        if (clazz == null)
             throw new ClassNotFoundException(
                     "Class: " + value + " not found in namespace");
 
-        asClass = clas;
+        asClass = clazz;
         return asClass;
     }
 
     /*
     */
     synchronized public LeftValue toLeftValue(
-            CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+            CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws UtilEvalException {
         // Should clean this up to a single return statement
         reset();
@@ -636,7 +644,7 @@ public class Name implements Serializable {
         Object obj = null;
         try {
             while (evalName != null && isCompound(evalName)) {
-                obj = consumeNextObjectField(callstack, krineBasicInterpreter,
+                obj = consumeNextObjectField(callStack, krineBasicInterpreter,
                         false/*forcclass*/, true/*autoallocthis*/);
             }
         } catch (UtilEvalException e) {
@@ -652,7 +660,7 @@ public class Name implements Serializable {
 
         // e.g. this.x=5;  or someThisType.x=5;
         if (obj instanceof This) {
-            // dissallow assignment to magic fields
+            // disallow assignment to magic fields
             if (
                     evalName.equals("namespace")
                             || evalName.equals("variables")
@@ -680,8 +688,8 @@ public class Name implements Serializable {
         if (evalName != null) {
             try {
                 if (obj instanceof ClassIdentifier) {
-                    Class clas = ((ClassIdentifier) obj).getTargetClass();
-                    lhs = Reflect.getLHSStaticField(clas, evalName);
+                    Class clazz = ((ClassIdentifier) obj).getTargetClass();
+                    lhs = Reflect.getLHSStaticField(clazz, evalName);
                     return lhs;
                 } else {
                     lhs = Reflect.getLHSObjectField(obj, evalName);
@@ -700,7 +708,7 @@ public class Name implements Serializable {
      * Performs caching of method resolution using SignatureKey.
      * <p>
      * <p>
-     * Name contains a wholely unqualfied messy name; resolve it to
+     * Name contains a wholely unqualified messy name; resolve it to
      * ( object | static prefix ) + method name and invoke.
      * <p>
      * <p>
@@ -720,13 +728,13 @@ public class Name implements Serializable {
      * </pre>
      */
     public Object invokeMethod(
-            KrineBasicInterpreter krineBasicInterpreter, Object[] args, CallStack callstack,
+            KrineBasicInterpreter krineBasicInterpreter, Object[] args, CallStack callStack,
             SimpleNode callerInfo
     )
             throws UtilEvalException, EvalError, ReflectException, InvocationTargetException {
         String methodName = Name.suffix(value, 1);
         KrineClassManager dcm = krineBasicInterpreter.getClassManager();
-        NameSpace namespace = callstack.top();
+        NameSpace namespace = callStack.top();
 
         // Optimization - If classOfStaticMethod is set then we have already
         // been here and determined that this is a static method invocation.
@@ -738,7 +746,7 @@ public class Name implements Serializable {
 
         if (!Name.isCompound(value))
             return invokeLocalMethod(
-                    krineBasicInterpreter, args, callstack, callerInfo);
+                    krineBasicInterpreter, args, callStack, callerInfo);
 
         // Note: if we want methods declared inside blocks to be accessible via
         // this.methodName() inside the block we could handle it here as a
@@ -763,7 +771,7 @@ public class Name implements Serializable {
 
         // Find target object or class identifier
         Name targetName = namespace.getNameResolver(prefix);
-        Object obj = targetName.toObject(callstack, krineBasicInterpreter);
+        Object obj = targetName.toObject(callStack, krineBasicInterpreter);
 
         if (obj == Primitive.VOID)
             throw new UtilEvalException("Attempt to resolve method: " + methodName
@@ -790,7 +798,7 @@ public class Name implements Serializable {
 
             // found an object and it's not an undefined variable
             return Reflect.invokeObjectMethod(
-                    obj, methodName, args, krineBasicInterpreter, callstack, callerInfo);
+                    obj, methodName, args, krineBasicInterpreter, callStack, callerInfo);
         }
 
         // It's a class
@@ -799,13 +807,13 @@ public class Name implements Serializable {
         if (KrineBasicInterpreter.DEBUG)
             KrineBasicInterpreter.debug("invokeMethod: trying static - " + targetName);
 
-        Class clas = ((ClassIdentifier) obj).getTargetClass();
+        Class clazz = ((ClassIdentifier) obj).getTargetClass();
 
         // cache the fact that this is a static method invocation on this class
-        classOfStaticMethod = clas;
+        classOfStaticMethod = clazz;
 
-        if (clas != null)
-            return Reflect.invokeStaticMethod(dcm, clas, methodName, args);
+        if (clazz != null)
+            return Reflect.invokeStaticMethod(dcm, clazz, methodName, args);
 
         // return null; ???
         throw new UtilEvalException("invokeMethod: unknown target: " + targetName);
@@ -823,7 +831,7 @@ public class Name implements Serializable {
 		needs to be integrated into NameSpace.
 	*/
     private Object invokeLocalMethod(
-            KrineBasicInterpreter krineBasicInterpreter, Object[] args, CallStack callstack,
+            KrineBasicInterpreter krineBasicInterpreter, Object[] args, CallStack callStack,
             SimpleNode callerInfo
     )
             throws EvalError/*, ReflectException, InvocationTargetException*/ {
@@ -842,12 +850,12 @@ public class Name implements Serializable {
             method = namespace.getMethod(commandName, argTypes);
         } catch (UtilEvalException e) {
             throw e.toEvalError(
-                    "Local method invocation", callerInfo, callstack);
+                    "Local method invocation", callerInfo, callStack);
         }
 
         // If defined, invoke it
         if (method != null)
-            return method.invoke(args, krineBasicInterpreter, callstack, callerInfo);
+            return method.invoke(args, krineBasicInterpreter, callStack, callerInfo);
 
         throw new InterpreterException("invalid method type");
     }

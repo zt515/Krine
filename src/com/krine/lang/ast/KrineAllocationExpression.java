@@ -20,7 +20,7 @@ class KrineAllocationExpression extends SimpleNode {
 
     private static int innerClassCount = 0;
 
-    public Object eval(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public Object eval(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         waitForDebugger();
 
@@ -35,40 +35,40 @@ class KrineAllocationExpression extends SimpleNode {
 
             if (args instanceof KrineArguments)
                 return objectAllocation(name, (KrineArguments) args,
-                        callstack, krineBasicInterpreter);
+                        callStack, krineBasicInterpreter);
             else
                 return objectArrayAllocation(name, (KrineArrayDimensions) args,
-                        callstack, krineBasicInterpreter);
+                        callStack, krineBasicInterpreter);
         } else
             return primitiveArrayAllocation((KrinePrimitiveType) type,
-                    (KrineArrayDimensions) args, callstack, krineBasicInterpreter);
+                    (KrineArrayDimensions) args, callStack, krineBasicInterpreter);
     }
 
     private Object objectAllocation(
             KrineAmbiguousName nameNode, KrineArguments argumentsNode,
-            CallStack callstack, KrineBasicInterpreter krineBasicInterpreter
+            CallStack callStack, KrineBasicInterpreter krineBasicInterpreter
     )
             throws EvalError {
 
-        Object[] args = argumentsNode.getArguments(callstack, krineBasicInterpreter);
+        Object[] args = argumentsNode.getArguments(callStack, krineBasicInterpreter);
         if (args == null)
-            throw new EvalError("Null args in new.", this, callstack);
+            throw new EvalError("Null args in new.", this, callStack);
 
         // Look for scripted class object
         @SuppressWarnings("UnusedAssignment")
         Object obj = nameNode.toObject(
-                callstack, krineBasicInterpreter, false/* force class*/);
+                callStack, krineBasicInterpreter, false/* force class*/);
 
         // Try regular class
         obj = nameNode.toObject(
-                callstack, krineBasicInterpreter, true/*force class*/);
+                callStack, krineBasicInterpreter, true/*force class*/);
 
         Class type;
         if (obj instanceof ClassIdentifier)
             type = ((ClassIdentifier) obj).getTargetClass();
         else
             throw new EvalError(
-                    "Unknown class: " + nameNode.text, this, callstack);
+                    "Unknown class: " + nameNode.text, this, callStack);
 
         // Is an inner class style object allocation
         boolean hasBody = jjtGetNumChildren() > 2;
@@ -77,29 +77,29 @@ class KrineAllocationExpression extends SimpleNode {
             KrineBlock body = (KrineBlock) jjtGetChild(2);
             if (type.isInterface())
                 return constructWithInterfaceBody(
-                        type, args, body, callstack, krineBasicInterpreter);
+                        type, args, body, callStack, krineBasicInterpreter);
             else
                 return constructWithClassBody(
-                        type, args, body, callstack, krineBasicInterpreter);
+                        type, args, body, callStack, krineBasicInterpreter);
         } else
-            return constructObject(type, args, callstack, krineBasicInterpreter);
+            return constructObject(type, args, callStack, krineBasicInterpreter);
     }
 
 
-    private Object constructObject(Class<?> type, Object[] args, CallStack callstack, KrineBasicInterpreter krineBasicInterpreter) throws EvalError {
+    private Object constructObject(Class<?> type, Object[] args, CallStack callStack, KrineBasicInterpreter krineBasicInterpreter) throws EvalError {
         final boolean isGeneratedClass = GeneratedClass.class.isAssignableFrom(type);
         if (isGeneratedClass) {
-            ClassGenerator.registerConstructorContext(callstack, krineBasicInterpreter);
+            ClassGenerator.registerConstructorContext(callStack, krineBasicInterpreter);
         }
         Object obj;
         try {
             obj = Reflect.constructObject(type, args);
         } catch (ReflectException e) {
-            throw new EvalError("Constructor error: " + e.getMessage(), this, callstack, e);
+            throw new EvalError("Constructor error: " + e.getMessage(), this, callStack, e);
         } catch (InvocationTargetException e) {
             // No need to wrap this debug
             KrineBasicInterpreter.debug("The constructor threw an exception:\n\t" + e.getTargetException());
-            throw new KrineTargetException("Object constructor", e.getTargetException(), this, callstack, true);
+            throw new KrineTargetException("Object constructor", e.getTargetException(), this, callStack, true);
         } finally {
             if (isGeneratedClass) {
                 ClassGenerator.registerConstructorContext(null, null); // clean up, prevent memory leak
@@ -108,7 +108,7 @@ class KrineAllocationExpression extends SimpleNode {
 
         String className = type.getName();
         // Is it an inner class?
-        if (className.indexOf("$") == -1)
+        if (!className.contains("$"))
             return obj;
 
         // Temporary hack to support inner classes
@@ -117,7 +117,7 @@ class KrineAllocationExpression extends SimpleNode {
         // Replace this later...
 
         // work through to class 'this'
-        This ths = callstack.top().getThis(null);
+        This ths = callStack.top().getThis(null);
         NameSpace instanceNameSpace =
                 Name.getClassNameSpace(ths.getNameSpace());
 
@@ -137,34 +137,34 @@ class KrineAllocationExpression extends SimpleNode {
 
     private Object constructWithClassBody(
             Class type, Object[] args, KrineBlock block,
-            CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+            CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
-        String name = callstack.top().getName() + "$" + (++innerClassCount);
+        String name = callStack.top().getName() + "$" + (++innerClassCount);
         Modifiers modifiers = new Modifiers();
         modifiers.addModifier(Modifiers.CLASS, "public");
-        Class clas = ClassGenerator.getClassGenerator().generateClass(
+        Class clazz = ClassGenerator.getClassGenerator().generateClass(
                 name, modifiers, null/*interfaces*/, type/*superClass*/,
-                block, false/*isInterface*/, callstack, krineBasicInterpreter);
+                block, false/*isInterface*/, callStack, krineBasicInterpreter);
         try {
-            return Reflect.constructObject(clas, args);
+            return Reflect.constructObject(clazz, args);
         } catch (Exception e) {
             Throwable cause = e;
             if (e instanceof InvocationTargetException) {
                 cause = ((InvocationTargetException) e).getTargetException();
             }
-            throw new EvalError("Error constructing inner class instance: " + e, this, callstack, cause);
+            throw new EvalError("Error constructing inner class instance: " + e, this, callStack, cause);
         }
     }
 
     private Object constructWithInterfaceBody(
             Class type, Object[] args, KrineBlock body,
-            CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+            CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
-        NameSpace namespace = callstack.top();
+        NameSpace namespace = callStack.top();
         NameSpace local = new NameSpace(namespace, "AnonymousBlock");
-        callstack.push(local);
-        body.eval(callstack, krineBasicInterpreter, true/*overrideNamespace*/);
-        callstack.pop();
+        callStack.push(local);
+        body.eval(callStack, krineBasicInterpreter, true/*overrideNamespace*/);
+        callStack.pop();
         // statical import fields from the interface so that code inside
         // can refer to the fields directly (e.g. HEIGHT)
         local.importStatic(type);
@@ -173,42 +173,42 @@ class KrineAllocationExpression extends SimpleNode {
 
     private Object objectArrayAllocation(
             KrineAmbiguousName nameNode, KrineArrayDimensions dimensionsNode,
-            CallStack callstack, KrineBasicInterpreter krineBasicInterpreter
+            CallStack callStack, KrineBasicInterpreter krineBasicInterpreter
     )
             throws EvalError {
-        NameSpace namespace = callstack.top();
-        Class type = nameNode.toClass(callstack, krineBasicInterpreter);
+        NameSpace namespace = callStack.top();
+        Class type = nameNode.toClass(callStack, krineBasicInterpreter);
         if (type == null)
             throw new EvalError("Class " + nameNode.getName(namespace)
-                    + " not found.", this, callstack);
+                    + " not found.", this, callStack);
 
-        return arrayAllocation(dimensionsNode, type, callstack, krineBasicInterpreter);
+        return arrayAllocation(dimensionsNode, type, callStack, krineBasicInterpreter);
     }
 
     private Object primitiveArrayAllocation(
             KrinePrimitiveType typeNode, KrineArrayDimensions dimensionsNode,
-            CallStack callstack, KrineBasicInterpreter krineBasicInterpreter
+            CallStack callStack, KrineBasicInterpreter krineBasicInterpreter
     )
             throws EvalError {
         Class type = typeNode.getType();
 
-        return arrayAllocation(dimensionsNode, type, callstack, krineBasicInterpreter);
+        return arrayAllocation(dimensionsNode, type, callStack, krineBasicInterpreter);
     }
 
     private Object arrayAllocation(
             KrineArrayDimensions dimensionsNode, Class type,
-            CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+            CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         /*
-            dimensionsNode can return either a fully intialized array or VOID.
+            dimensionsNode can return either a fully initialized array or VOID.
 			when VOID the prescribed array dimensions (defined and undefined)
 			are contained in the node.
 		*/
-        Object result = dimensionsNode.eval(type, callstack, krineBasicInterpreter);
+        Object result = dimensionsNode.eval(type, callStack, krineBasicInterpreter);
         if (result != Primitive.VOID)
             return result;
         else
-            return arrayNewInstance(type, dimensionsNode, callstack);
+            return arrayNewInstance(type, dimensionsNode, callStack);
     }
 
     /**
@@ -234,7 +234,7 @@ class KrineAllocationExpression extends SimpleNode {
      * (undefined) dimensions as the "base" type for the array creation...
      * Java will then create the correct type by adding the dimensions of the
      * base type to specified allocated dimensions yielding an array of
-     * dimensionality base + specified with the base dimensons unallocated.
+     * dimensionality base + specified with the base dimensions unallocated.
      * To create the "base" array type we simply create a prototype, zero
      * length in each dimension, array and use it to get its class
      * (Actually, I think there is a way we could do it with Class.forName()
@@ -242,7 +242,7 @@ class KrineAllocationExpression extends SimpleNode {
      * see below.
      */
     private Object arrayNewInstance(
-            Class type, KrineArrayDimensions dimensionsNode, CallStack callstack)
+            Class type, KrineArrayDimensions dimensionsNode, CallStack callStack)
             throws EvalError {
         if (dimensionsNode.numUndefinedDims > 0) {
             Object proto = Array.newInstance(
@@ -254,10 +254,10 @@ class KrineAllocationExpression extends SimpleNode {
             return Array.newInstance(
                     type, dimensionsNode.definedDimensions);
         } catch (NegativeArraySizeException e1) {
-            throw new KrineTargetException(e1, this, callstack);
+            throw new KrineTargetException(e1, this, callStack);
         } catch (Exception e) {
             throw new EvalError("Can't construct primitive array: " +
-                    e.getMessage(), this, callstack);
+                    e.getMessage(), this, callStack);
         }
     }
 }

@@ -1,7 +1,7 @@
 /*****************************************************************************
  *                                                                           *
- *  This file is part of the Krine Java Scripting distribution.          *
- *  Documentation and updates may be found at http://www.beanshell.org/      *
+ *  This file is part of the Krine Java Scripting distribution.              *
+ *                                                                           *
  *                                                                           *
  *  Sun Public License Notice:                                               *
  *                                                                           *
@@ -55,7 +55,7 @@ import java.util.zip.ZipInputStream;
  * <p>
  * Classpath traversal is done lazily when a call is made to
  * getClassesForPackage() or getClassSource()
- * or can be done explicitily through insureInitialized().
+ * or can be done explicitly through insureInitialized().
  * Feedback on mapping progress is provided through the MappingFeedback
  * interface.
  * <p>
@@ -113,8 +113,6 @@ public class KrineClassPath
 
     // end constructors
 
-    // mutators
-
     public void setPath(URL[] urls) {
         reset();
         add(urls);
@@ -162,8 +160,8 @@ public class KrineClassPath
             set.addAll(c);
 
         if (compPaths != null)
-            for (int i = 0; i < compPaths.size(); i++) {
-                c = compPaths.get(i).getClassesForPackage(
+            for (KrineClassPath compPath : compPaths) {
+                c = compPath.getClassesForPackage(
                         pack);
                 if (c != null)
                     set.addAll(c);
@@ -179,16 +177,16 @@ public class KrineClassPath
         // Before triggering classpath mapping (initialization) check for
         // explicitly set class sources (e.g. generated classes).  These would
         // take priority over any found in the classpath anyway.
-        ClassSource cs = (ClassSource) classSource.get(className);
+        ClassSource cs = classSource.get(className);
         if (cs != null)
             return cs;
 
         insureInitialized(); // trigger possible mapping
 
-        cs = (ClassSource) classSource.get(className);
+        cs = classSource.get(className);
         if (cs == null && compPaths != null)
             for (int i = 0; i < compPaths.size() && cs == null; i++)
-                cs = ((KrineClassPath) compPaths.get(i)).getClassSource(className);
+                cs = compPaths.get(i).getClassSource(className);
         return cs;
     }
 
@@ -202,7 +200,7 @@ public class KrineClassPath
     }
 
     /**
-     * If the claspath map is not initialized, do it now.
+     * If the ClassPath map is not initialized, do it now.
      * If component maps are not do them as well...
      * <p>
      * Random note:
@@ -240,12 +238,11 @@ public class KrineClassPath
 
         // initialize components
         if (compPaths != null)
-            for (int i = 0; i < compPaths.size(); i++)
-                ((KrineClassPath) compPaths.get(i)).insureInitialized(false);
+            for (KrineClassPath compPath : compPaths) compPath.insureInitialized(false);
 
-        // initialize ourself
+        // initialize ourselves
         if (!mapsInitialized)
-            map((URL[]) path.toArray(new URL[0]));
+            map(path.toArray(new URL[0]));
 
         if (topPath && !mapsInitialized)
             endClassMapping();
@@ -261,13 +258,11 @@ public class KrineClassPath
     protected List getFullPath() {
         List list = new ArrayList();
         if (compPaths != null) {
-            for (int i = 0; i < compPaths.size(); i++) {
-                List l = compPaths.get(i).getFullPath();
+            for (KrineClassPath compPath : compPaths) {
+                List l = compPath.getFullPath();
                 // take care to remove dups
                 // wish we had an ordered set collection
-                Iterator it = l.iterator();
-                while (it.hasNext()) {
-                    Object o = it.next();
+                for (Object o : l) {
                     if (!list.contains(o))
                         list.add(o);
                 }
@@ -291,7 +286,7 @@ public class KrineClassPath
 
         Object obj = unqNameTable.get(name);
         if (obj instanceof AmbiguousName)
-            throw new ClassPathException("Ambigous class names: " +
+            throw new ClassPathException("Ambiguous class names: " +
                     ((AmbiguousName) obj).get());
 
         return (String) obj;
@@ -312,17 +307,13 @@ public class KrineClassPath
 
         // add component names
         if (compPaths != null)
-            for (int i = 0; i < compPaths.size(); i++) {
-                Set s = compPaths.get(i).classSource.keySet();
-                Iterator it = s.iterator();
-                while (it.hasNext())
-                    unqNameTable.add((String) it.next());
+            for (KrineClassPath compPath : compPaths) {
+                Set s = compPath.classSource.keySet();
+                for (Object value : s) unqNameTable.add((String) value);
             }
 
         // add ours
-        Iterator it = classSource.keySet().iterator();
-        while (it.hasNext())
-            unqNameTable.add((String) it.next());
+        for (String o : classSource.keySet()) unqNameTable.add(o);
 
         return unqNameTable;
     }
@@ -331,9 +322,8 @@ public class KrineClassPath
         insureInitialized();
 
         List names = new ArrayList();
-        Iterator it = getPackagesSet().iterator();
-        while (it.hasNext()) {
-            String pack = (String) it.next();
+        for (Object o : getPackagesSet()) {
+            String pack = (String) o;
             names.addAll(
                     removeInnerClassNames(getClassesForPackage(pack)));
         }
@@ -348,11 +338,11 @@ public class KrineClassPath
      * call map(url) for each url in the array
      */
     synchronized void map(URL[] urls) {
-        for (int i = 0; i < urls.length; i++)
+        for (URL url : urls)
             try {
-                map(urls[i]);
+                map(url);
             } catch (IOException e) {
-                String s = "Error constructing classpath: " + urls[i] + ": " + e;
+                String s = "Error constructing classpath: " + url + ": " + e;
                 errorWhileMapping(s);
             }
     }
@@ -380,9 +370,9 @@ public class KrineClassPath
     }
 
     private void map(String[] classes, ClassSource source) {
-        for (int i = 0; i < classes.length; i++) {
+        for (String aClass : classes) {
             //System.out.println( classes[i] +": "+ source );
-            mapClass(classes[i], source);
+            mapClass(aClass, source);
         }
     }
 
@@ -454,15 +444,14 @@ public class KrineClassPath
         String top = topDir.getAbsolutePath();
 
         File[] children = dir.listFiles();
-        for (int i = 0; i < children.length; i++) {
-            File child = children[i];
+        for (File child : children) {
             if (child.isDirectory())
                 list.addAll(traverseDirForClassesAux(topDir, child));
             else {
                 String name = child.getAbsolutePath();
                 if (isClassFileName(name)) {
-					/* 
-						Remove absolute (topdir) portion of path and leave 
+                    /*
+                        Remove absolute (topDir) portion of path and leave
 						package-class part 
 					*/
                     if (name.startsWith(top))
@@ -531,20 +520,19 @@ public class KrineClassPath
     /**
      * Split class name into package and name
      */
-    public static String[] splitClassname(String classname) {
-        classname = canonicalizeClassName(classname);
+    public static String[] splitClassname(String className) {
+        className = canonicalizeClassName(className);
 
-        int i = classname.lastIndexOf(".");
-        String classn, packn;
+        int i = className.lastIndexOf(".");
+        String packageName;
         if (i == -1) {
             // top level class
-            classn = classname;
-            packn = "<unpackaged>";
+            packageName = "<unpackaged>";
         } else {
-            packn = classname.substring(0, i);
-            classn = classname.substring(i + 1);
+            packageName = className.substring(0, i);
+            className = className.substring(i + 1);
         }
-        return new String[]{packn, classn};
+        return new String[]{packageName, className};
     }
 
     /**
@@ -556,7 +544,7 @@ public class KrineClassPath
         Iterator it = list.iterator();
         while (it.hasNext()) {
             String name = (String) it.next();
-            if (name.indexOf("$") != -1)
+            if (name.contains("$"))
                 it.remove();
         }
         return list;
@@ -602,9 +590,9 @@ public class KrineClassPath
         set.addAll(packageMap.keySet());
 
         if (compPaths != null)
-            for (int i = 0; i < compPaths.size(); i++)
+            for (KrineClassPath compPath : compPaths)
                 set.addAll(
-                        compPaths.get(i).packageMap.keySet());
+                        compPath.packageMap.keySet());
         return set;
     }
 
@@ -805,8 +793,8 @@ public class KrineClassPath
         if (nameSourceListeners == null)
             return;
 
-        for (int i = 0; i < nameSourceListeners.size(); i++)
-            nameSourceListeners.get(i)
+        for (Listener nameSourceListener : nameSourceListeners)
+            nameSourceListener
                     .nameSourceChanged(this);
     }
 

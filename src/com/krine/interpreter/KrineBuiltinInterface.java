@@ -1,7 +1,7 @@
 package com.krine.interpreter;
 
-import com.krine.extension.KrineMethod;
 import com.krine.extension.IKrineLinkable;
+import com.krine.extension.KrineMethod;
 
 /**
  * @author kiva

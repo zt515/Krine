@@ -71,7 +71,7 @@ public class Variable implements java.io.Serializable {
             value = Primitive.getDefaultValue(type);
 
         if (lhs != null) {
-            lhs.assign(value, false/*strictjava*/);
+            lhs.assign(value, false/*strictJava*/);
             return;
         }
 

@@ -9,7 +9,7 @@ import java.util.StringTokenizer;
 public class StringUtil {
 
     public static String[] split(String s, String delim) {
-        List<String> v = new ArrayList<String>();
+        List<String> v = new ArrayList<>();
         StringTokenizer st = new StringTokenizer(s, delim);
         while (st.hasMoreTokens())
             v.add(st.nextToken());

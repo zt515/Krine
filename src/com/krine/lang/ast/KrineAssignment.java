@@ -1,9 +1,9 @@
 package com.krine.lang.ast;
 
-import com.krine.lang.utils.CallStack;
-import com.krine.lang.KrineBasicInterpreter;
 import com.krine.lang.InterpreterException;
+import com.krine.lang.KrineBasicInterpreter;
 import com.krine.lang.UtilEvalException;
+import com.krine.lang.utils.CallStack;
 
 class KrineAssignment extends SimpleNode implements ParserConstants {
     public int operator;
@@ -13,7 +13,7 @@ class KrineAssignment extends SimpleNode implements ParserConstants {
     }
 
     public Object eval(
-            CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+            CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         waitForDebugger();
 
@@ -21,10 +21,10 @@ class KrineAssignment extends SimpleNode implements ParserConstants {
                 (KrinePrimaryExpression) jjtGetChild(0);
 
         if (lhsNode == null)
-            throw new InterpreterException("Error, null LHSnode");
+            throw new InterpreterException("Error, null LHS-node");
 
-        boolean strictJava = krineBasicInterpreter.getStrictJava();
-        LeftValue lhs = lhsNode.toLHS(callstack, krineBasicInterpreter);
+        boolean strictJava = krineBasicInterpreter.isStrictJava();
+        LeftValue lhs = lhsNode.toLHS(callStack, krineBasicInterpreter);
         if (lhs == null)
             throw new InterpreterException("Error, null LeftValue");
 
@@ -36,7 +36,7 @@ class KrineAssignment extends SimpleNode implements ParserConstants {
             try {
                 lhsValue = lhs.getValue();
             } catch (UtilEvalException e) {
-                throw e.toEvalError(this, callstack);
+                throw e.toEvalError(this, callStack);
             }
 
         SimpleNode rhsNode = (SimpleNode) jjtGetChild(1);
@@ -47,10 +47,10 @@ class KrineAssignment extends SimpleNode implements ParserConstants {
         // if ( rhsNode instanceof KrineBlock )
         //    rsh =
         // else
-        rhs = rhsNode.eval(callstack, krineBasicInterpreter);
+        rhs = rhsNode.eval(callStack, krineBasicInterpreter);
 
         if (rhs == Primitive.VOID)
-            throw new EvalError("Void assignment.", this, callstack);
+            throw new EvalError("Void assignment.", this, callStack);
 
         try {
             switch (operator) {
@@ -112,7 +112,7 @@ class KrineAssignment extends SimpleNode implements ParserConstants {
                             "unimplemented operator in assignment Krine");
             }
         } catch (UtilEvalException e) {
-            throw e.toEvalError(this, callstack);
+            throw e.toEvalError(this, callStack);
         }
     }
 

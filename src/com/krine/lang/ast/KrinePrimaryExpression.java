@@ -1,8 +1,8 @@
 package com.krine.lang.ast;
 
 import com.krine.lang.KrineBasicInterpreter;
-import com.krine.lang.utils.CallStack;
 import com.krine.lang.UtilEvalException;
+import com.krine.lang.utils.CallStack;
 
 class KrinePrimaryExpression extends SimpleNode {
     KrinePrimaryExpression(int id) {
@@ -12,20 +12,20 @@ class KrinePrimaryExpression extends SimpleNode {
     /**
      * Evaluate to a value object.
      */
-    public Object eval(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public Object eval(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
-        return eval(false, callstack, krineBasicInterpreter);
+        return eval(false, callStack, krineBasicInterpreter);
     }
 
     /**
      * Evaluate to a value object.
      */
-    public LeftValue toLHS(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public LeftValue toLHS(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
-        Object obj = eval(true, callstack, krineBasicInterpreter);
+        Object obj = eval(true, callStack, krineBasicInterpreter);
 
         if (!(obj instanceof LeftValue))
-            throw new EvalError("Can't assign to:", this, callstack);
+            throw new EvalError("Can't assign to:", this, callStack);
         else
             return (LeftValue) obj;
     }
@@ -39,7 +39,7 @@ class KrinePrimaryExpression extends SimpleNode {
         how to interpret an ambiguous name (e.g. for the .class operation).
     */
     private Object eval(boolean toLHS,
-                        CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+                        CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         waitForDebugger();
 
@@ -48,7 +48,7 @@ class KrinePrimaryExpression extends SimpleNode {
 
         for (int i = 1; i < numChildren; i++)
             obj = ((KrinePrimarySuffix) jjtGetChild(i)).doSuffix(
-                    obj, toLHS, callstack, krineBasicInterpreter);
+                    obj, toLHS, callStack, krineBasicInterpreter);
 
 		/*
             If the result is a Node eval() it to an object or LeftValue
@@ -58,18 +58,18 @@ class KrinePrimaryExpression extends SimpleNode {
             if (obj instanceof KrineAmbiguousName)
                 if (toLHS)
                     obj = ((KrineAmbiguousName) obj).toLHS(
-                            callstack, krineBasicInterpreter);
+                            callStack, krineBasicInterpreter);
                 else
                     obj = ((KrineAmbiguousName) obj).toObject(
-                            callstack, krineBasicInterpreter);
+                            callStack, krineBasicInterpreter);
             else
                 // Some arbitrary kind of node
                 if (toLHS)
                     // is this right?
                     throw new EvalError("Can't assign to prefix.",
-                            this, callstack);
+                            this, callStack);
                 else
-                    obj = ((SimpleNode) obj).eval(callstack, krineBasicInterpreter);
+                    obj = ((SimpleNode) obj).eval(callStack, krineBasicInterpreter);
 
         // return LeftValue or value object as determined by toLeftValue
         if (obj instanceof LeftValue)
@@ -79,7 +79,7 @@ class KrinePrimaryExpression extends SimpleNode {
                 try {
                     return ((LeftValue) obj).getValue();
                 } catch (UtilEvalException e) {
-                    throw e.toEvalError(this, callstack);
+                    throw e.toEvalError(this, callStack);
                 }
         else
             return obj;

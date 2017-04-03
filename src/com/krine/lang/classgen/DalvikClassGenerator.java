@@ -4,8 +4,9 @@ import com.krine.lang.ast.KrineMethodDelayEvaluated;
 import com.krine.lang.ast.Modifiers;
 import com.krine.lang.ast.NameSpace;
 import com.krine.lang.ast.Variable;
-import java.io.FileOutputStream;
+
 import java.io.File;
+import java.io.FileOutputStream;
 
 /**
  * @author kiva
@@ -29,7 +30,7 @@ class DalvikClassGenerator extends DefaultJavaClassGenerator implements IClassGe
 
         DexConverter dexConverter = getDexConverter();
         byte[] out = dexConverter.convertJavaClass(packageName + "." + className, javaClass);
-        
+
         if (System.getProperty("krineDexDebugDir") != null) {
             try (FileOutputStream os = new FileOutputStream(new File(System.getProperty("krineDexDebugDir"), className + ".dex"))) {
                 os.write(out);
@@ -37,7 +38,7 @@ class DalvikClassGenerator extends DefaultJavaClassGenerator implements IClassGe
             } catch (Exception ignored) {
             }
         }
-        
+
         return out;
     }
 }

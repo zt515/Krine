@@ -255,12 +255,12 @@ class DefaultJavaClassGenerator implements IClassGenerator, Constants {
         cv.visitLdcInsn(methodName);
 
         // Generate code to push arguments as an object array
-        generateParameterReifierCode(paramTypes, isStatic, cv);
+        generateParameterReifiedCode(paramTypes, isStatic, cv);
 
         // Push nulls for various args of invokeMethod
         cv.visitInsn(ACONST_NULL); // krineBasicInterpreter
         cv.visitInsn(ACONST_NULL); // callStack
-        cv.visitInsn(ACONST_NULL); // callerinfo
+        cv.visitInsn(ACONST_NULL); // callerInfo
 
         // Push the boolean constant 'true' (for declaredOnly)
         cv.visitInsn(ICONST_1);
@@ -295,7 +295,7 @@ class DefaultJavaClassGenerator implements IClassGenerator, Constants {
         CodeVisitor cv = cw.visitMethod(modifiers, "<init>", methodDescriptor, exceptions);
 
         // Generate code to push arguments as an object array
-        generateParameterReifierCode(paramTypes, false/*isStatic*/, cv);
+        generateParameterReifiedCode(paramTypes, false/*isStatic*/, cv);
         cv.visitVarInsn(ASTORE, argsVar);
 
         // Generate the code implementing the alternate constructor switch
@@ -331,7 +331,7 @@ class DefaultJavaClassGenerator implements IClassGenerator, Constants {
      * This method also generates the code to call the static
      * ClassGeneratorUtil
      * getConstructorArgs() method which inspects the scripted constructor to
-     * find the alternate constructor signature (if any) and evalute the
+     * find the alternate constructor signature (if any) and evaluate the
      * arguments at runtime.  The getConstructorArgs() method returns the
      * actual arguments as well as the index of the constructor to call.
      */
@@ -514,9 +514,9 @@ class DefaultJavaClassGenerator implements IClassGenerator, Constants {
     }
 
 
-    boolean classContainsMethod(Class clas, String methodName, String[] paramTypes) {
-        while (clas != null) {
-            Method[] methods = clas.getDeclaredMethods();
+    boolean classContainsMethod(Class clazz, String methodName, String[] paramTypes) {
+        while (clazz != null) {
+            Method[] methods = clazz.getDeclaredMethods();
             for (Method method : methods) {
                 if (method.getName().equals(methodName)) {
                     String[] methodParamTypes = getTypeDescriptors(method.getParameterTypes());
@@ -533,7 +533,7 @@ class DefaultJavaClassGenerator implements IClassGenerator, Constants {
                 }
             }
 
-            clas = clas.getSuperclass();
+            clazz = clazz.getSuperclass();
         }
 
         return false;
@@ -548,13 +548,16 @@ class DefaultJavaClassGenerator implements IClassGenerator, Constants {
             cv.visitInsn(RETURN);
         } else if (isPrimitive(returnType)) {
             int opcode = IRETURN;
-            if (returnType.equals("D")) {
-                opcode = DRETURN;
-            } else if (returnType.equals("F")) {
-                opcode = FRETURN;
-            } else if (returnType.equals("J"))  //long
-            {
-                opcode = LRETURN;
+            switch (returnType) {
+                case "D":
+                    opcode = DRETURN;
+                    break;
+                case "F":
+                    opcode = FRETURN;
+                    break;
+                case "J":
+                    opcode = LRETURN;
+                    break;
             }
 
             cv.visitInsn(opcode);
@@ -576,7 +579,7 @@ class DefaultJavaClassGenerator implements IClassGenerator, Constants {
      * @author Eric Bruneton
      * @author Pat Niemeyer
      */
-    private static void generateParameterReifierCode(String[] paramTypes, boolean isStatic, final CodeVisitor cv) {
+    private static void generateParameterReifiedCode(String[] paramTypes, boolean isStatic, final CodeVisitor cv) {
         cv.visitIntInsn(SIPUSH, paramTypes.length);
         cv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
         int localVarIndex = isStatic ? 0 : 1;
@@ -586,22 +589,26 @@ class DefaultJavaClassGenerator implements IClassGenerator, Constants {
             cv.visitIntInsn(SIPUSH, i);
             if (isPrimitive(param)) {
                 int opcode;
-                if (param.equals("F")) {
-                    opcode = FLOAD;
-                } else if (param.equals("D")) {
-                    opcode = DLOAD;
-                } else if (param.equals("J")) {
-                    opcode = LLOAD;
-                } else {
-                    opcode = ILOAD;
+                switch (param) {
+                    case "F":
+                        opcode = FLOAD;
+                        break;
+                    case "D":
+                        opcode = DLOAD;
+                        break;
+                    case "J":
+                        opcode = LLOAD;
+                        break;
+                    default:
+                        opcode = ILOAD;
+                        break;
                 }
 
                 String type = "com/krine/lang/ast/Primitive";
                 cv.visitTypeInsn(NEW, type);
                 cv.visitInsn(DUP);
                 cv.visitVarInsn(opcode, localVarIndex);
-                String desc = param; // ok?
-                cv.visitMethodInsn(INVOKESPECIAL, type, "<init>", "(" + desc + ")V");
+                cv.visitMethodInsn(INVOKESPECIAL, type, "<init>", "(" + param + ")V");
             } else {
                 // Technically incorrect here - we need to wrap null values
                 // as krine.Primitive.NULL.  However the This.invokeMethod()
@@ -617,7 +624,7 @@ class DefaultJavaClassGenerator implements IClassGenerator, Constants {
 
 
     /**
-     * Generates the code to unreify the result of the given method.  For a
+     * Generates the code to un-reify the result of the given method.  For a
      * method "int m (int i, String s)", this code is the bytecode
      * corresponding to the "((Integer)...).intValue()" expression.
      *
@@ -631,40 +638,48 @@ class DefaultJavaClassGenerator implements IClassGenerator, Constants {
             cv.visitInsn(RETURN);
         } else if (isPrimitive(returnType)) {
             int opcode = IRETURN;
-            String type;
-            String meth;
-            if (returnType.equals("B")) {
-                type = "java/lang/Byte";
-                meth = "byteValue";
-            } else if (returnType.equals("I")) {
-                type = "java/lang/Integer";
-                meth = "intValue";
-            } else if (returnType.equals("Z")) {
-                type = "java/lang/Boolean";
-                meth = "booleanValue";
-            } else if (returnType.equals("D")) {
-                opcode = DRETURN;
-                type = "java/lang/Double";
-                meth = "doubleValue";
-            } else if (returnType.equals("F")) {
-                opcode = FRETURN;
-                type = "java/lang/Float";
-                meth = "floatValue";
-            } else if (returnType.equals("J")) {
-                opcode = LRETURN;
-                type = "java/lang/Long";
-                meth = "longValue";
-            } else if (returnType.equals("C")) {
-                type = "java/lang/Character";
-                meth = "charValue";
-            } else /*if (returnType.equals("S") )*/ {
-                type = "java/lang/Short";
-                meth = "shortValue";
+            String type = "";
+            String method = "";
+            switch (returnType) {
+                case "B":
+                    type = "java/lang/Byte";
+                    method = "byteValue";
+                    break;
+                case "I":
+                    type = "java/lang/Integer";
+                    method = "intValue";
+                    break;
+                case "Z":
+                    type = "java/lang/Boolean";
+                    method = "booleanValue";
+                    break;
+                case "D":
+                    opcode = DRETURN;
+                    type = "java/lang/Double";
+                    method = "doubleValue";
+                    break;
+                case "F":
+                    opcode = FRETURN;
+                    type = "java/lang/Float";
+                    method = "floatValue";
+                    break;
+                case "J":
+                    opcode = LRETURN;
+                    type = "java/lang/Long";
+                    method = "longValue";
+                    break;
+                case "C":
+                    type = "java/lang/Character";
+                    method = "charValue";
+                    break;
+                case "S":
+                    type = "java/lang/Short";
+                    method = "shortValue";
+                    break;
             }
 
-            String desc = returnType;
             cv.visitTypeInsn(CHECKCAST, type); // type is correct here
-            cv.visitMethodInsn(INVOKEVIRTUAL, type, meth, "()" + desc);
+            cv.visitMethodInsn(INVOKEVIRTUAL, type, method, "()" + returnType);
             cv.visitInsn(opcode);
         } else {
             cv.visitTypeInsn(CHECKCAST, descriptorToClassName(returnType));

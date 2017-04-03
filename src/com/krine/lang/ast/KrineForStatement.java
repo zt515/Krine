@@ -22,7 +22,7 @@ class KrineForStatement extends SimpleNode implements ParserConstants {
         super(id);
     }
 
-    public Object eval(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
+    public Object eval(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
         waitForDebugger();
         int i = 0;
@@ -35,7 +35,7 @@ class KrineForStatement extends SimpleNode implements ParserConstants {
         if (i < jjtGetNumChildren()) // should normally be
             statement = ((SimpleNode) jjtGetChild(i));
 
-        NameSpace enclosingNameSpace = callstack.top();
+        NameSpace enclosingNameSpace = callStack.top();
         BlockNameSpace forNameSpace = new BlockNameSpace(enclosingNameSpace);
 
 		/*
@@ -47,26 +47,26 @@ class KrineForStatement extends SimpleNode implements ParserConstants {
 
 			2) We do *not* call the body block eval with the namespace 
 			override.  Instead we allow it to create a second subordinate 
-			BlockNameSpace child of the forNameSpace.  Variable propogation 
+			BlockNameSpace child of the forNameSpace.  Variable propagation
 			still works through the chain, but the block's child cleans the 
 			state between iteration.  
-			(which is correct Java behavior... see forscope4.krine)
+			(which is correct Java behavior... see forScope for krine)
 		*/
 
         // put forNameSpace it on the top of the stack
         // Note: it's important that there is only one exit point from this
         // method so that we can swap back the namespace.
-        callstack.swap(forNameSpace);
+        callStack.swap(forNameSpace);
 
         // Do the for init
         if (hasForInit)
-            forInit.eval(callstack, krineBasicInterpreter);
+            forInit.eval(callStack, krineBasicInterpreter);
 
         Object returnControl = Primitive.VOID;
         while (true) {
             if (hasExpression) {
                 boolean cond = KrineIfStatement.evaluateCondition(
-                        expression, callstack, krineBasicInterpreter);
+                        expression, callStack, krineBasicInterpreter);
 
                 if (!cond)
                     break;
@@ -76,7 +76,7 @@ class KrineForStatement extends SimpleNode implements ParserConstants {
             if (statement != null) // not empty statement
             {
                 // do *not* invoke special override for block... (see above)
-                Object ret = statement.eval(callstack, krineBasicInterpreter);
+                Object ret = statement.eval(callStack, krineBasicInterpreter);
 
                 if (ret instanceof ReturnControl) {
                     switch (((ReturnControl) ret).kind) {
@@ -99,10 +99,10 @@ class KrineForStatement extends SimpleNode implements ParserConstants {
                 break;
 
             if (hasForUpdate)
-                forUpdate.eval(callstack, krineBasicInterpreter);
+                forUpdate.eval(callStack, krineBasicInterpreter);
         }
 
-        callstack.swap(enclosingNameSpace);  // put it back
+        callStack.swap(enclosingNameSpace);  // put it back
         return returnControl;
     }
 }
