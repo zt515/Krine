@@ -22,7 +22,7 @@ public class KrineInterpreter extends KrineBasicInterpreter {
     /**
      * Krine Version
      */
-    public static final String VERSION = "1.1";
+    public static final String VERSION = "2.0";
 
     public KrineInterpreter(Reader in, PrintStream out, PrintStream err, NameSpace namespace, KrineBasicInterpreter parent, String sourceFileInfo) {
         super(in, out, err, namespace, parent, sourceFileInfo);

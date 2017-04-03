@@ -597,7 +597,7 @@ public class KrineClassPath
     }
 
     public void addListener(ClassPathListener l) {
-        listeners.addElement(new WeakReference(l));
+        listeners.addElement(new WeakReference<>(l));
     }
 
     public void removeListener(ClassPathListener l) {
@@ -774,7 +774,7 @@ public class KrineClassPath
     }
 
     public static class AmbiguousName {
-        List list = new ArrayList();
+        List<String> list = new ArrayList<>();
 
         public void add(String name) {
             list.add(name);
