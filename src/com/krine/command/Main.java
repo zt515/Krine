@@ -3,6 +3,7 @@ package com.krine.command;
 import com.krine.interpreter.KrineInterpreter;
 import com.krine.lang.ast.KrineTargetException;
 
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 
 public class Main {
@@ -14,24 +15,16 @@ public class Main {
         }
 
         String fileName = args[0];
-        String[] krineArgs;
-
-        if (args.length > 1) {
-            krineArgs = new String[args.length - 1];
-            System.arraycopy(args, 1, krineArgs, 0, args.length - 1);
-        } else {
-            krineArgs = new String[0];
-        }
 
         KrineInterpreter interpreter = new KrineInterpreter();
-        interpreter.setUnchecked("krine.args", krineArgs);
+        interpreter.setUnchecked("krine.args", args);
 
         try {
             Object result = interpreter.source(fileName, interpreter.getGlobalNameSpace());
 
             if (result instanceof Class) {
                 try {
-                    KrineInterpreter.invokeMain((Class) result, krineArgs);
+                    KrineInterpreter.invokeMain((Class) result, args);
                 } catch (Exception e) {
                     Object o = e;
                     if (e instanceof InvocationTargetException) {
