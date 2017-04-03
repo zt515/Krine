@@ -129,6 +129,7 @@ public class KrineDebugger {
 
             }
         }
+        reader.close();
     }
 
     public static class BreakPointAdder {

@@ -31,15 +31,11 @@ class DalvikClassGenerator extends DefaultJavaClassGenerator implements IClassGe
         byte[] out = dexConverter.convertJavaClass(packageName + "." + className, javaClass);
         
         if (System.getProperty("krineDexDebugDir") != null) {
-            try
-            {
-                FileOutputStream os = new FileOutputStream(new File(System.getProperty("krineDexDebugDir"), className + ".dex"));
+            try (FileOutputStream os = new FileOutputStream(new File(System.getProperty("krineDexDebugDir"), className + ".dex"))) {
                 os.write(out);
                 os.flush();
-                os.close();
+            } catch (Exception ignored) {
             }
-            catch (Exception ignore)
-            {}
         }
         
         return out;

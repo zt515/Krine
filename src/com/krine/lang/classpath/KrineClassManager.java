@@ -1,5 +1,6 @@
 package com.krine.lang.classpath;
 
+import com.krine.kar.KarFile;
 import com.krine.lang.KrineBasicInterpreter;
 import com.krine.lang.utils.Capabilities;
 import com.krine.lang.InterpreterException;
@@ -92,8 +93,8 @@ public class KrineClassManager {
     public static void clearResolveCache() {
         KrineClassManager[] managers = classManagers.keySet().toArray(new KrineClassManager[0]);
         for (KrineClassManager m : managers) {
-            m.resolvedObjectMethods = new Hashtable<SignatureKey, Method>();
-            m.resolvedStaticMethods = new Hashtable<SignatureKey, Method>();
+            m.resolvedObjectMethods = new Hashtable<>();
+            m.resolvedStaticMethods = new Hashtable<>();
         }
     }
 
@@ -283,9 +284,9 @@ public class KrineClassManager {
      */
     protected void clearCaches() {
         absoluteNonClasses = Collections.synchronizedSet(new HashSet<String>());
-        absoluteClassCache = new Hashtable<String, Class>();
-        resolvedObjectMethods = new Hashtable<SignatureKey, Method>();
-        resolvedStaticMethods = new Hashtable<SignatureKey, Method>();
+        absoluteClassCache = new Hashtable<>();
+        resolvedObjectMethods = new Hashtable<>();
+        resolvedStaticMethods = new Hashtable<>();
     }
 
     /**
@@ -305,6 +306,10 @@ public class KrineClassManager {
     }
 
     public void addClassPath(URL path)
+            throws IOException {
+    }
+
+    public void addClassPath(KarFile karFile)
             throws IOException {
     }
 

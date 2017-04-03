@@ -23,13 +23,13 @@ import java.util.List;
 public final class ClassGenerator {
 
     /**
-     * The name of the static field holding the reference to the krine
+     * The name of the static leftValue holding the reference to the krine
      * static This (the callback namespace for static methods)
      */
     public static final String KRINE_STATIC = "_krineStatic";
 
     /**
-     * The name of the instance field holding the reference to the krine
+     * The name of the instance leftValue holding the reference to the krine
      * instance This (the callback namespace for instance methods)
      */
     public static final String KRINE_THIS = "_krineThis";
@@ -156,12 +156,12 @@ public final class ClassGenerator {
         byte[] code = classGenerator.generateClass(modifiers, className, packageName, superClass, interfaces, variables, methods, classStaticNameSpace, isInterface);
 
         // if debug, write out the class file to debugClasses directory
-        if (DEBUG_DIR != null) try {
-            FileOutputStream out = new FileOutputStream(DEBUG_DIR + '/' + className + ".class");
-            out.write(code);
-            out.close();
-        } catch (IOException e) {
-            throw new IllegalStateException("cannot create file " + DEBUG_DIR + '/' + className + ".class", e);
+        if (DEBUG_DIR != null) {
+            try (FileOutputStream out = new FileOutputStream(DEBUG_DIR + '/' + className + ".class")) {
+                out.write(code);
+            } catch (IOException e) {
+                throw new IllegalStateException("cannot create file " + DEBUG_DIR + '/' + className + ".class", e);
+            }
         }
 
         // Define the new class in the classloader
@@ -322,9 +322,9 @@ public final class ClassGenerator {
 
     /**
      * Evaluate the arguments (if any) for the constructor specified by
-     * the constructor index.  Return the ConstructorArgs object which
+     * the constructor arrayIndex.  Return the ConstructorArgs object which
      * contains the actual arguments to the alternate constructor and also the
-     * index of that constructor for the constructor switch.
+     * arrayIndex of that constructor for the constructor switch.
      *
      * @param consArgs the arguments to the constructor.  These are necessary in
      *                 the evaluation of the alt constructor args.  e.g. Foo(a) { super(a); }
@@ -548,7 +548,7 @@ public final class ClassGenerator {
     }
 
     /**
-     * Get the instance krine namespace field from the object instance.
+     * Get the instance krine namespace leftValue from the object instance.
      *
      * @return the class instance This object or null if the object has not
      * been initialized.
@@ -572,7 +572,7 @@ public final class ClassGenerator {
     }
 
     /**
-     * Get the static krine namespace field from the class.
+     * Get the static krine namespace leftValue from the class.
      *
      * @param className may be the name of clazz itself or a superclass of clazz.
      */
@@ -587,7 +587,7 @@ public final class ClassGenerator {
 
     /**
      * A ConstructorArgs object holds evaluated arguments for a constructor
-     * call as well as the index of a possible alternate selector to invoke.
+     * call as well as the arrayIndex of a possible alternate selector to invoke.
      * This object is used by the constructor switch.
      */
     public static class ConstructorArgs {
@@ -603,7 +603,7 @@ public final class ClassGenerator {
 
 
         /**
-         * The index of the constructor to call.
+         * The arrayIndex of the constructor to call.
          */
 
         ConstructorArgs() {

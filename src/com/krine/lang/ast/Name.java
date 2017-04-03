@@ -147,10 +147,10 @@ public class Name implements Serializable {
      * my.package.stuff.MyClass.someField.someField...
      * <p>
      * KrineInterpreter reference is necessary to allow resolution of
-     * "this.krineBasicInterpreter" magic field.
+     * "this.krineBasicInterpreter" magic leftValue.
      * CallStack reference is necessary to allow resolution of
-     * "this.caller" magic field.
-     * "this.callStack" magic field.
+     * "this.caller" magic leftValue.
+     * "this.callStack" magic leftValue.
      */
     public Object toObject(CallStack callstack, KrineBasicInterpreter krineBasicInterpreter)
             throws UtilEvalException {
@@ -332,7 +332,7 @@ public class Name implements Serializable {
 
 		/* 
 			Resolve relative to a class type
-			static field, inner class, ?
+			static leftValue, inner class, ?
 		*/
         if (evalBaseObject instanceof ClassIdentifier) {
             Class clas = ((ClassIdentifier) evalBaseObject).getTargetClass();
@@ -357,15 +357,15 @@ public class Name implements Serializable {
             }
 
             Object obj = null;
-            // static field?
+            // static leftValue?
             try {
                 if (KrineBasicInterpreter.DEBUG)
                     KrineBasicInterpreter.debug("Name call to getStaticFieldValue, class: "
-                            + clas + ", field:" + field);
+                            + clas + ", leftValue:" + field);
                 obj = Reflect.getStaticFieldValue(clas, field);
             } catch (ReflectException e) {
                 if (KrineBasicInterpreter.DEBUG)
-                    KrineBasicInterpreter.debug("field reflect error: " + e);
+                    KrineBasicInterpreter.debug("leftValue reflect error: " + e);
             }
 
             // inner class?
@@ -378,7 +378,7 @@ public class Name implements Serializable {
 
             if (obj == null)
                 throw new UtilEvalException(
-                        "No static field or inner class: "
+                        "No static leftValue or inner class: "
                                 + field + " of " + clas);
 
             return completeRound(field, suffix(evalName), obj);
@@ -393,7 +393,7 @@ public class Name implements Serializable {
                     value + " does not resolve to a class name.");
 
 		/* 
-			Some kind of field access?
+			Some kind of leftValue access?
 		*/
 
         String field = prefix(evalName, 1);
@@ -404,16 +404,16 @@ public class Name implements Serializable {
             return completeRound(field, suffix(evalName), obj);
         }
 
-        // Check for field on object
+        // Check for leftValue on object
         // Note: could eliminate throwing the exception somehow
         try {
             Object obj = Reflect.getObjectFieldValue(evalBaseObject, field);
             return completeRound(field, suffix(evalName), obj);
-        } catch (ReflectException e) { /* not a field */ }
+        } catch (ReflectException e) { /* not a leftValue */ }
 
         // if we get here we have failed
         throw new UtilEvalException(
-                "Cannot access field: " + field + ", on object: " + evalBaseObject);
+                "Cannot access leftValue: " + field + ", on object: " + evalBaseObject);
     }
 
     /**
@@ -423,7 +423,7 @@ public class Name implements Serializable {
      * fields from the This context.  Together the namespace and krineBasicInterpreter
      * comprise the This context.  The callStack, if available allows for the
      * this.caller construct.
-     * Optionally interpret special "magic" field names: e.g. krineBasicInterpreter.
+     * Optionally interpret special "magic" leftValue names: e.g. krineBasicInterpreter.
      * <p/>
      *
      * @param callstack may be null, but this is only legitimate in special
@@ -542,7 +542,7 @@ public class Name implements Serializable {
             obj = thisNameSpace.getVariable(varName);
 
         if (obj == null)
-            throw new InterpreterException("null this field ref:" + varName);
+            throw new InterpreterException("null this leftValue ref:" + varName);
 
         return obj;
     }
@@ -741,7 +741,7 @@ public class Name implements Serializable {
                     krineBasicInterpreter, args, callstack, callerInfo);
 
         // Note: if we want methods declared inside blocks to be accessible via
-        // this.methodname() inside the block we could handle it here as a
+        // this.methodName() inside the block we could handle it here as a
         // special case.  See also resolveThisFieldReference() special handling
         // for BlockNameSpace case.  They currently work via the direct name
         // e.g. methodName().
@@ -837,94 +837,20 @@ public class Name implements Serializable {
         Class[] argTypes = Types.getTypes(args);
 
         // Check for existing method
-        KrineMethod meth = null;
+        KrineMethod method;
         try {
-            meth = namespace.getMethod(commandName, argTypes);
+            method = namespace.getMethod(commandName, argTypes);
         } catch (UtilEvalException e) {
             throw e.toEvalError(
                     "Local method invocation", callerInfo, callstack);
         }
 
         // If defined, invoke it
-        if (meth != null)
-            return meth.invoke(args, krineBasicInterpreter, callstack, callerInfo);
-
-        KrineClassManager dcm = krineBasicInterpreter.getClassManager();
-
-        // Look for a Krine command
-
-        Object commandObject;
-        try {
-            commandObject = namespace.getCommand(
-                    commandName, argTypes, krineBasicInterpreter);
-        } catch (UtilEvalException e) {
-            throw e.toEvalError("Error loading command: ",
-                    callerInfo, callstack);
-        }
-
-        // should try to print usage here if nothing found
-        if (commandObject == null) {
-            // Look for a default invoke() handler method in the namespace
-            // Note: this code duplicates that in This.java... should it?
-            // Call on 'This' can never be a command
-            KrineMethod invokeMethod = null;
-            try {
-                invokeMethod = namespace.getMethod(
-                        "invoke", new Class[]{null, null});
-            } catch (UtilEvalException e) {
-                throw e.toEvalError(
-                        "Local method invocation", callerInfo, callstack);
-            }
-
-            if (invokeMethod != null)
-                return invokeMethod.invoke(
-                        new Object[]{commandName, args},
-                        krineBasicInterpreter, callstack, callerInfo);
-
-            throw new EvalError("Method not found: "
-                    + StringUtil.methodString(commandName, argTypes),
-                    callerInfo, callstack);
-        }
-
-        if (commandObject instanceof KrineMethod)
-            return ((KrineMethod) commandObject).invoke(
-                    args, krineBasicInterpreter, callstack, callerInfo);
-
-        if (commandObject instanceof Class)
-            try {
-                return Reflect.invokeCompiledMethod(
-                        ((Class) commandObject), args, krineBasicInterpreter, callstack);
-            } catch (UtilEvalException e) {
-                throw e.toEvalError("Error invoking compiled method: ",
-                        callerInfo, callstack);
-            }
+        if (method != null)
+            return method.invoke(args, krineBasicInterpreter, callstack, callerInfo);
 
         throw new InterpreterException("invalid method type");
     }
-
-/*
-	private String getHelp( String name )
-		throws UtilEvalException
-	{
-		try {
-			// should check for null namespace here
-			return get( "krine.help."+name, null/krineBasicInterpreter/ );
-		} catch ( Exception e ) {
-			return "usage: "+name;
-		}
-	}
-
-	private String getHelp( Class commandClass )
-		throws UtilEvalException
-	{
-        try {
-            return (String)Reflect.invokeStaticMethod(
-				null/dcm/, commandClass, "usage", null );
-        } catch( Exception e )
-			return "usage: "+name;
-		}
-	}
-*/
 
     // Static methods that operate on compound ('.' separated) names
     // I guess we could move these to StringUtil someday

@@ -410,24 +410,34 @@ class DefaultJavaClassGenerator implements IClassGenerator, Constants {
         // Unload the arguments from the ConstructorArgs object
         for (String type : paramTypes) {
             final String method;
-            if (type.equals("Z")) {
-                method = "getBoolean";
-            } else if (type.equals("B")) {
-                method = "getByte";
-            } else if (type.equals("C")) {
-                method = "getChar";
-            } else if (type.equals("S")) {
-                method = "getShort";
-            } else if (type.equals("I")) {
-                method = "getInt";
-            } else if (type.equals("J")) {
-                method = "getLong";
-            } else if (type.equals("D")) {
-                method = "getDouble";
-            } else if (type.equals("F")) {
-                method = "getFloat";
-            } else {
-                method = "getObject";
+            switch (type) {
+                case "Z":
+                    method = "getBoolean";
+                    break;
+                case "B":
+                    method = "getByte";
+                    break;
+                case "C":
+                    method = "getChar";
+                    break;
+                case "S":
+                    method = "getShort";
+                    break;
+                case "I":
+                    method = "getInt";
+                    break;
+                case "J":
+                    method = "getLong";
+                    break;
+                case "D":
+                    method = "getDouble";
+                    break;
+                case "F":
+                    method = "getFloat";
+                    break;
+                default:
+                    method = "getObject";
+                    break;
             }
 
             // invoke the iterator method on the ConstructorArgs

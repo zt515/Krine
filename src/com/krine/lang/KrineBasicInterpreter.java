@@ -60,7 +60,7 @@ public class KrineBasicInterpreter
     /*
         Debug utils are static so that they are reachable by code that doesn't
         necessarily have an krineBasicInterpreter reference (e.g. tracing in utils).
-        In the future we may want to allow debug/trace to be turned on on
+        In the future we may want to allow debugStream/trace to be turned on on
         a per krineBasicInterpreter basis, in which case we'll need to use the parent
         reference in some way to determine the scope of the command that
         turns it on or off.
@@ -68,7 +68,7 @@ public class KrineBasicInterpreter
     public static boolean DEBUG, TRACE, LOCAL_SCOPING;
 
     // This should be per instance
-    private transient static PrintStream debug;
+    private transient static PrintStream debugStream;
     private static final This SYSTEM_OBJECT = This.getThis(new NameSpace(null, null, "krine.system"), null);
 
     static {
@@ -81,6 +81,13 @@ public class KrineBasicInterpreter
      * @see #setStrictJava(boolean)
      */
     private boolean strictJava = false;
+
+    /**
+     * Whether we can use Java classes in Krine.
+     *
+     * @see #setAllowJavaClass(boolean)
+     */
+    private boolean allowJavaClass = true;
 
 	/* --- End static members --- */
 
@@ -135,7 +142,7 @@ public class KrineBasicInterpreter
         this.in = in;
         this.out = out;
         this.err = err;
-        debug = err;
+        debugStream = err;
         this.parent = parent;
         if (parent != null)
             setStrictJava(parent.getStrictJava());
@@ -158,7 +165,7 @@ public class KrineBasicInterpreter
 
         // now done in NameSpace automatically when root
         // The classes which are imported by default
-        //globalNameSpace.loadDefaultImports();
+        //globalNameSpace.importDefaultPackages();
 
         if (KrineBasicInterpreter.DEBUG) {
             long t2 = System.currentTimeMillis();
@@ -246,7 +253,7 @@ public class KrineBasicInterpreter
      * it may be an indication that you are doing more work than you have
      * to.  For example, caching the krineBasicInterpreter instance rather than the
      * namespace should not add a significant overhead.  No state other
-     * than the debug status is stored in the krineBasicInterpreter.
+     * than the debugStream status is stored in the krineBasicInterpreter.
      * <p>
      * <p>
      * All features of the namespace can also be accessed using the
@@ -265,7 +272,7 @@ public class KrineBasicInterpreter
      * it may be an indication that you are doing more work than you have
      * to.  For example, caching the krineBasicInterpreter instance rather than the
      * namespace should not add a significant overhead.  No state other than
-     * the debug status is stored in the krineBasicInterpreter.
+     * the debugStream status is stored in the krineBasicInterpreter.
      * <p>
      * <p>
      * All features of the namespace can also be accessed using the
@@ -441,7 +448,7 @@ public class KrineBasicInterpreter
     /**
      * Bind debugger for program
      *
-     * @param node     node to debug
+     * @param node     node to debugStream
      * @param debugger debugger
      */
     private void bindDebugger(SimpleNode node, KrineDebugger debugger) {
@@ -562,12 +569,12 @@ public class KrineBasicInterpreter
     // End SystemIOBridge
 
     /**
-     * Print a debug message on debug stream associated with this krineBasicInterpreter
+     * Print a debugStream message on debugStream stream associated with this krineBasicInterpreter
      * only if debugging is turned on.
      */
     public static void debug(String s) {
         if (DEBUG) {
-            debug.println(" *** <Debug>: " + s);
+            debugStream.println(" *** <Debug>: " + s);
         }
     }
 
@@ -790,9 +797,19 @@ public class KrineBasicInterpreter
      * This mode will become more strict in a future release when
      * classes are interpreted and there is an alternative to scripting
      * objects as method closures.
+     *
+     * @param b Strict Java
      */
     public void setStrictJava(boolean b) {
         this.strictJava = b;
+    }
+
+    /**
+     * Allow KrineInterpreter to load Java classes or not.
+     * @param b Allow Java classes
+     */
+    public void setAllowJavaClass(boolean b) {
+        this.allowJavaClass = b;
     }
 
     /**
@@ -808,8 +825,8 @@ public class KrineBasicInterpreter
 
     private static void staticInit() {
         try {
-            debug = System.err;
-            DEBUG = Boolean.getBoolean("debug");
+            debugStream = System.err;
+            DEBUG = Boolean.getBoolean("debugStream");
             TRACE = Boolean.getBoolean("trace");
             LOCAL_SCOPING = Boolean.getBoolean("local_scoping");
             String outFile = System.getProperty("outfile");

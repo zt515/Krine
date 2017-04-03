@@ -6,6 +6,7 @@ import com.krine.lang.UtilTargetException;
 import com.krine.lang.reflect.Reflect;
 
 import java.io.ObjectStreamException;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,30 +20,9 @@ import java.util.Map;
     Note: this class is final because we may test == Primitive.class in places.
 	If we need to change that search for those tests.
 */
-public final class Primitive implements ParserConstants, java.io.Serializable {
-    /*
-    static Hashtable primitiveToWrapper = new Hashtable();
-    static Hashtable wrapperToPrimitive = new Hashtable();
-    static {
-        primitiveToWrapper.put( Boolean.TYPE, Boolean.class );
-        primitiveToWrapper.put( Byte.TYPE, Byte.class );
-        primitiveToWrapper.put( Short.TYPE, Short.class );
-        primitiveToWrapper.put( Character.TYPE, Character.class );
-        primitiveToWrapper.put( Integer.TYPE, Integer.class );
-        primitiveToWrapper.put( Long.TYPE, Long.class );
-        primitiveToWrapper.put( Float.TYPE, Float.class );
-        primitiveToWrapper.put( Double.TYPE, Double.class );
-        wrapperToPrimitive.put( Boolean.class, Boolean.TYPE );
-        wrapperToPrimitive.put( Byte.class, Byte.TYPE );
-        wrapperToPrimitive.put( Short.class, Short.TYPE );
-        wrapperToPrimitive.put( Character.class, Character.TYPE );
-        wrapperToPrimitive.put( Integer.class, Integer.TYPE );
-        wrapperToPrimitive.put( Long.class, Long.TYPE );
-        wrapperToPrimitive.put( Float.class, Float.TYPE );
-        wrapperToPrimitive.put( Double.class, Double.TYPE );
-    }
-    */
-    static final Map<Class, Class> wrapperMap = new HashMap<Class, Class>();
+public final class Primitive implements ParserConstants, Serializable {
+
+    static final Map<Class, Class> wrapperMap = new HashMap<>();
 
     static {
         wrapperMap.put(Boolean.TYPE, Boolean.class);
@@ -928,7 +908,7 @@ public final class Primitive implements ParserConstants, java.io.Serializable {
             boolean checkOnly, int operation)
             throws UtilEvalException {
         /*
-			Lots of preconditions checked here...
+            Lots of preconditions checked here...
 			Once things are running smoothly we might comment these out
 			(That's what assertions are for).
 		*/

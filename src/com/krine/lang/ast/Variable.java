@@ -88,7 +88,7 @@ public class Variable implements java.io.Serializable {
     /*
         Note: UtilEvalException here comes from lhs.getValue().
         A Variable can represent an LeftValue for the case of an imported class or
-        object field.
+        object leftValue.
     */
     Object getValue()
             throws UtilEvalException {

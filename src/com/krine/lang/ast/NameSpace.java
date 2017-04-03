@@ -1,14 +1,14 @@
 package com.krine.lang.ast;
 
-import com.krine.lang.*;
+import com.krine.lang.InterpreterException;
+import com.krine.lang.KrineBasicInterpreter;
+import com.krine.lang.UtilEvalException;
 import com.krine.lang.classpath.ClassIdentifier;
 import com.krine.lang.classpath.KrineClassManager;
 import com.krine.lang.reflect.Reflect;
 import com.krine.lang.utils.CallStack;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -53,7 +53,6 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
 
     protected Map<String, String> importedClasses;
     private List<String> importedPackages;
-    private List<String> importedCommands;
     private List<Object> importedObjects;
     private List<Class> importedStatic;
     private String packageName;
@@ -72,7 +71,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
      * The node associated with the creation of this namespace.
      * This is used support getInvocationLine() and getInvocationText().
      */
-    SimpleNode callerInfoNode;
+    private SimpleNode callerInfoNode;
 
     /**
      * Note that the namespace is a method body namespace.  This is used for
@@ -84,7 +83,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
      * This is used for controlling static/object import precedence, etc.
      */
     /*
-		Note: We will ll move this behavior out to a subclass of 
+        Note: We will ll move this behavior out to a subclass of
 		NameSpace, but we'll start here.
 	*/
     boolean isClass;
@@ -390,8 +389,8 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
      * things like printing messages and other per-krineBasicInterpreter phenomenon
      * when called externally from Java.
      */
-	/*
-		Note: we need a singleton here so that things like 'this == this' work
+    /*
+        Note: we need a singleton here so that things like 'this == this' work
 		(and probably a good idea for speed).
 
 		Caching a single instance here seems technically incorrect,
@@ -454,7 +453,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
 
         // If we are disconnected from root we need to handle the def imports
         if (parent == null)
-            loadDefaultImports();
+            importDefaultPackages();
     }
 
     /**
@@ -504,7 +503,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
 
         // Change import precedence if we are a class body/instance
         // Get imported first.
-        if (var == null && isClass)
+        if (isClass)
             var = getImportedVar(name);
 
         if (var == null && variables != null)
@@ -539,18 +538,6 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     protected Object unwrapVariable(Variable var)
             throws UtilEvalException {
         return (var == null) ? Primitive.VOID : var.getValue();
-    }
-
-    /**
-     * @deprecated See #setTypedVariable( String, Class, Object, Modifiers )
-     */
-    public void setTypedVariable(
-            String name, Class type, Object value, boolean isFinal)
-            throws UtilEvalException {
-        Modifiers modifiers = new Modifiers();
-        if (isFinal)
-            modifiers.addModifier(Modifiers.FIELD, "final");
-        setTypedVariable(name, type, value, modifiers);
     }
 
     /**
@@ -617,18 +604,6 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     }
 
     /**
-     Dissallow static vars outside of a class
-     @param name is here just to allow the error message to use it
-     protected void checkVariableModifiers( String name, Modifiers modifiers )
-     throws UtilEvalException
-     {
-     if ( modifiers!=null && modifiers.hasModifier("static") )
-     throw new UtilEvalException(
-     "Can't declare static variable outside of class: "+name );
-     }
-     */
-
-    /**
      * Note: this is primarily for internal use.
      *
      * @see KrineBasicInterpreter#source(String)
@@ -639,7 +614,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
         //checkMethodModifiers( method );
 
         if (methods == null)
-            methods = new HashMap<String, List<KrineMethod>>();
+            methods = new HashMap<>();
 
         String name = method.getName();
         List<KrineMethod> list = methods.get(name);
@@ -648,7 +623,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
             methods.put(name, Collections.singletonList(method));
         } else {
             if (!(list instanceof ArrayList)) {
-                list = new ArrayList<KrineMethod>(list);
+                list = new ArrayList<>(list);
                 methods.put(name, list);
             }
             list.remove(method);
@@ -657,8 +632,8 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     }
 
     /**
-     * @see #getMethod(String, Class [], boolean)
-     * @see #getMethod(String, Class [])
+     * @see #getMethod(String, Class[])
+     * @see #getMethod(String, Class[], boolean)
      */
     public KrineMethod getMethod(String name, Class[] sig)
             throws UtilEvalException {
@@ -720,8 +695,11 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
      * Subsequent imports override earlier ones
      */
     public void importClass(String name) {
+        if ( name.startsWith("java")) {
+            return;
+        }
         if (importedClasses == null)
-            importedClasses = new HashMap<String, String>();
+            importedClasses = new HashMap<>();
 
         importedClasses.put(Name.suffix(name, 1), name);
         nameSpaceChanged();
@@ -732,112 +710,13 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
      */
     public void importPackage(String name) {
         if (importedPackages == null)
-            importedPackages = new ArrayList<String>();
+            importedPackages = new ArrayList<>();
 
         // If it exists, remove it and add it at the end (avoid memory leak)
         importedPackages.remove(name);
 
         importedPackages.add(name);
         nameSpaceChanged();
-    }
-
-    /**
-     * Import scripted or compiled Krine commands in the following package
-     * in the classpath.  You may use either "/" path or "." package notation.
-     * e.g. importCommands("/com.krine.lang/commands") or importCommands("com.krine.lang.commands")
-     * are equivalent.  If a relative path style specifier is used then it is
-     * made into an absolute path by prepending "/".
-     */
-    public void importCommands(String name) {
-        if (importedCommands == null)
-            importedCommands = new ArrayList<String>();
-
-        // dots to slashes
-        name = name.replace('.', '/');
-        // absolute
-        if (!name.startsWith("/"))
-            name = "/" + name;
-        // remove trailing (but preserve case of simple "/")
-        if (name.length() > 1 && name.endsWith("/"))
-            name = name.substring(0, name.length() - 1);
-
-        // If it exists, remove it and add it at the end (avoid memory leak)
-        importedCommands.remove(name);
-
-        importedCommands.add(name);
-        nameSpaceChanged();
-    }
-
-    /**
-     * A command is a scripted method or compiled command class implementing a
-     * specified method signature.  Commands are loaded from the classpath
-     * and may be imported using the importCommands() method.
-     * <p/>
-     * <p>
-     * This method searches the imported commands packages for a script or
-     * command object corresponding to the name of the method.  If it is a
-     * script the script is sourced into this namespace and the KrineMethod for
-     * the requested signature is returned.  If it is a compiled class the
-     * class is returned.  (Compiled command classes implement static invoke()
-     * methods).
-     * <p/>
-     * <p>
-     * The imported packages are searched in reverse order, so that later
-     * imports take priority.
-     * Currently only the first object (script or class) with the appropriate
-     * name is checked.  If another, overloaded form, is located in another
-     * package it will not currently be found.  This could be fixed.
-     * <p/>
-     *
-     * @param name     is the name of the desired command method
-     * @param argTypes is the signature of the desired command method.
-     * @return a KrineMethod, Class, or null if no such command is found.
-     * @throws UtilEvalException if loadScriptedCommand throws UtilEvalException
-     *                       i.e. on errors loading a script that was found
-     */
-    public Object getCommand(
-            String name, Class[] argTypes, KrineBasicInterpreter krineBasicInterpreter)
-            throws UtilEvalException {
-        if (KrineBasicInterpreter.DEBUG) KrineBasicInterpreter.debug("getCommand: " + name);
-        KrineClassManager dcm = krineBasicInterpreter.getClassManager();
-
-        if (importedCommands != null) {
-            // loop backwards for precedence
-            for (int i = importedCommands.size() - 1; i >= 0; i--) {
-                String path = importedCommands.get(i);
-
-                String scriptPath;
-                if (path.equals("/"))
-                    scriptPath = path + name + ".com.krine.lang";
-                else
-                    scriptPath = path + "/" + name + ".com.krine.lang";
-
-                KrineBasicInterpreter.debug("searching for script: " + scriptPath);
-
-                InputStream in = dcm.getResourceAsStream(scriptPath);
-
-                if (in != null)
-                    return loadScriptedCommand(
-                            in, name, argTypes, scriptPath, krineBasicInterpreter);
-
-                // Chop leading "/" and change "/" to "."
-                String className;
-                if (path.equals("/"))
-                    className = name;
-                else
-                    className = path.substring(1).replace('/', '.') + "." + name;
-
-                KrineBasicInterpreter.debug("searching for class: " + className);
-                Class clazz = dcm.classForName(className);
-                if (clazz != null)
-                    return clazz;
-            }
-        }
-
-        if (parent != null)
-            return parent.getCommand(name, argTypes, krineBasicInterpreter);
-        else
-            return null;
     }
 
     protected KrineMethod getImportedMethod(String name, Class[] sig)
@@ -894,51 +773,11 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     }
 
     /**
-     * Load a command script from the input stream and find the KrineMethod in
-     * the target namespace.
-     *
-     * @throws UtilEvalException on error in parsing the script or if the the
-     *                       method is not found after parsing the script.
-     */
-	/*
-		If we want to support multiple commands in the command path we need to
-		change this to not throw the exception.
-	*/
-    private KrineMethod loadScriptedCommand(
-            InputStream in, String name, Class[] argTypes, String resourcePath,
-            KrineBasicInterpreter krineBasicInterpreter)
-            throws UtilEvalException {
-        try {
-            krineBasicInterpreter.eval(
-                    new InputStreamReader(in), this, resourcePath);
-        } catch (EvalError e) {
-		/* 
-			Here we catch any EvalError from the krineBasicInterpreter because we are
-			using it as a tool to load the command, not as part of the
-			execution path.
-		*/
-            KrineBasicInterpreter.debug(e.toString());
-            throw new UtilEvalException(
-                    "Error loading script: " + e.getMessage(), e);
-        }
-
-        // Look for the loaded command
-        KrineMethod meth = getMethod(name, argTypes);
-		/*
-		if ( meth == null )
-			throw new UtilEvalException("Loaded resource: " + resourcePath +
-				"had an error or did not contain the correct method" );
-		*/
-
-        return meth;
-    }
-
-    /**
      * Helper that caches class.
      */
-    void cacheClass(String name, Class c) {
+    private void cacheClass(String name, Class c) {
         if (classCache == null) {
-            classCache = new HashMap<String, Class>();
+            classCache = new HashMap<>();
             //cacheCount++; // debug
         }
 
@@ -1179,9 +1018,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
      * required.  The method will appear as if called externally from Java.
      * <p>
      *
-     * @see This.invokeMethod(
-     * String methodName, Object [] args, KrineBasicInterpreter interpreter,
-     * CallStack callstack, SimpleNode callerInfo, boolean )
+     * @see This#invokeMethod(String, Object[], KrineBasicInterpreter, CallStack, SimpleNode, boolean)
      */
     public Object invokeMethod(
             String methodName, Object[] args, KrineBasicInterpreter krineBasicInterpreter)
@@ -1194,9 +1031,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
      * This method simply delegates to This.invokeMethod();
      * <p>
      *
-     * @see This.invokeMethod(
-     * String methodName, Object [] args, KrineBasicInterpreter interpreter,
-     * CallStack callstack, SimpleNode callerInfo )
+     * @see This#invokeMethod(String, Object[], KrineBasicInterpreter, CallStack, SimpleNode, boolean)
      */
     public Object invokeMethod(
             String methodName, Object[] args, KrineBasicInterpreter krineBasicInterpreter,
@@ -1222,31 +1057,16 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
         names = null;
     }
 
-    /**
-     * Import standard packages.  Currently:
-     * <pre>
-     * importClass("com.krine.lang.ast.EvalError");
-     * importClass("com.krine.lang.KrineInterpreter");
-     * importPackage("javax.swing.event");
-     * importPackage("javax.swing");
-     * importPackage("java.awt.event");
-     * importPackage("java.awt");
-     * importPackage("java.net");
-     * importPackage("java.util");
-     * importPackage("java.io");
-     * importPackage("java.lang");
-     * importCommands("/com.krine.lang/commands");
-     * </pre>
-     */
-    public void loadDefaultImports() {
-        /**
-         Note: the resolver looks through these in reverse order, per
-         precedence rules...  so for max efficiency put the most common
-         ones later.
-         */
+    private void importDefaultPackages() {
+        // Note: the resolver looks through these in reverse order, per
+        // precedence rules...  so for max efficiency put the most common
+        // ones later.
         importClass("com.krine.lang.ast.EvalError");
         importClass("com.krine.lang.KrineInterpreter");
         importClass("com.krine.interpreter.KrineInterpreter");
+
+        // Even if we don't allow Java classes,
+        // We still need them.
         importPackage("java.net");
         importPackage("java.util");
         importPackage("java.io");
@@ -1323,17 +1143,16 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
      * If this namespace is the root, it will be reset to the default
      * imports.
      *
-     * @see #loadDefaultImports()
+     * @see #importDefaultPackages()
      */
     public void clear() {
         variables = null;
         methods = null;
         importedClasses = null;
         importedPackages = null;
-        importedCommands = null;
         importedObjects = null;
         if (parent == null)
-            loadDefaultImports();
+            importDefaultPackages();
         classCache = null;
         names = null;
     }
@@ -1402,7 +1221,6 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
             clone.methods = clone(methods);
             clone.importedClasses = clone(importedClasses);
             clone.importedPackages = clone(importedPackages);
-            clone.importedCommands = clone(importedCommands);
             clone.importedObjects = clone(importedObjects);
             clone.importedStatic = clone(importedStatic);
             clone.names = clone(names);
@@ -1417,7 +1235,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
         if (map == null) {
             return null;
         }
-        return new HashMap<K, V>(map);
+        return new HashMap<>(map);
     }
 
 
@@ -1425,7 +1243,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
         if (list == null) {
             return null;
         }
-        return new ArrayList<T>(list);
+        return new ArrayList<>(list);
     }
 
 }

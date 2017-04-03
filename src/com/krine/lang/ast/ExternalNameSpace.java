@@ -213,7 +213,7 @@ public class ExternalNameSpace extends NameSpace {
             } catch (UtilEvalException ute) {
                 // There should be no case for this.  unwrapVariable throws
                 // UtilEvalException in some cases where it holds an LeftValue or array
-                // index.
+                // arrayIndex.
                 throw new InterpreterException("unexpected UtilEvalException");
             }
 

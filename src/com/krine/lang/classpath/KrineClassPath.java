@@ -71,20 +71,20 @@ public class KrineClassPath
     /**
      * The URL path components
      */
-    private List path;
+    private List<URL> path;
     /**
      * Ordered list of components KrineClassPaths
      */
-    private List compPaths;
+    private List<KrineClassPath> compPaths;
 
     /**
      * Set of classes in a package mapped by package name
      */
-    private Map packageMap;
+    private Map<String, Collection> packageMap;
     /**
-     * Map of source (URL or File dir) of every clas
+     * Map of source (URL or File dir) of every class
      */
-    private Map classSource;
+    private Map<String, ClassSource> classSource;
     /**
      * The packageMap and classSource maps have been built.
      */
@@ -97,7 +97,7 @@ public class KrineClassPath
      */
     private boolean nameCompletionIncludesUnqNames = true;
 
-    Vector listeners = new Vector();
+    Vector<WeakReference<ClassPathListener>> listeners = new Vector<>();
 
     // constructors
 
@@ -157,13 +157,13 @@ public class KrineClassPath
     synchronized public Set getClassesForPackage(String pack) {
         insureInitialized();
         Set set = new HashSet();
-        Collection c = (Collection) packageMap.get(pack);
+        Collection c = packageMap.get(pack);
         if (c != null)
             set.addAll(c);
 
         if (compPaths != null)
             for (int i = 0; i < compPaths.size(); i++) {
-                c = ((KrineClassPath) compPaths.get(i)).getClassesForPackage(
+                c = compPaths.get(i).getClassesForPackage(
                         pack);
                 if (c != null)
                     set.addAll(c);
@@ -262,7 +262,7 @@ public class KrineClassPath
         List list = new ArrayList();
         if (compPaths != null) {
             for (int i = 0; i < compPaths.size(); i++) {
-                List l = ((KrineClassPath) compPaths.get(i)).getFullPath();
+                List l = compPaths.get(i).getFullPath();
                 // take care to remove dups
                 // wish we had an ordered set collection
                 Iterator it = l.iterator();
@@ -313,7 +313,7 @@ public class KrineClassPath
         // add component names
         if (compPaths != null)
             for (int i = 0; i < compPaths.size(); i++) {
-                Set s = ((KrineClassPath) compPaths.get(i)).classSource.keySet();
+                Set s = compPaths.get(i).classSource.keySet();
                 Iterator it = s.iterator();
                 while (it.hasNext())
                     unqNameTable.add((String) it.next());
@@ -379,18 +379,18 @@ public class KrineClassPath
         }
     }
 
-    private void map(String[] classes, Object source) {
+    private void map(String[] classes, ClassSource source) {
         for (int i = 0; i < classes.length; i++) {
             //System.out.println( classes[i] +": "+ source );
             mapClass(classes[i], source);
         }
     }
 
-    private void mapClass(String className, Object source) {
+    private void mapClass(String className, ClassSource source) {
         // add to package map
         String[] sa = splitClassname(className);
         String pack = sa[0];
-        String clas = sa[1];
+        String clazz = sa[1];
         Set set = (Set) packageMap.get(pack);
         if (set == null) {
             set = new HashSet();
@@ -410,7 +410,7 @@ public class KrineClassPath
      * Clear everything and reset the path to empty.
      */
     synchronized private void reset() {
-        path = new ArrayList();
+        path = new ArrayList<>();
         compPaths = null;
         clearCachedStructures();
     }
@@ -420,8 +420,8 @@ public class KrineClassPath
      */
     synchronized private void clearCachedStructures() {
         mapsInitialized = false;
-        packageMap = new HashMap();
-        classSource = new HashMap();
+        packageMap = new HashMap<>();
+        classSource = new HashMap<>();
         unqNameTable = null;
         nameSpaceChanged();
     }
@@ -604,7 +604,7 @@ public class KrineClassPath
         if (compPaths != null)
             for (int i = 0; i < compPaths.size(); i++)
                 set.addAll(
-                        ((KrineClassPath) compPaths.get(i)).packageMap.keySet());
+                        compPaths.get(i).packageMap.keySet());
         return set;
     }
 
@@ -733,14 +733,10 @@ public class KrineClassPath
                 return null;
 
             byte[] bytes;
-            try {
-                FileInputStream fis = new FileInputStream(file);
-                DataInputStream dis = new DataInputStream(fis);
-
+            try (DataInputStream dis = new DataInputStream(new FileInputStream(file))) {
                 bytes = new byte[(int) file.length()];
-
                 dis.readFully(bytes);
-                dis.close();
+
             } catch (IOException ie) {
                 throw new RuntimeException("Couldn't load file: " + file);
             }
@@ -770,7 +766,7 @@ public class KrineClassPath
         Note: we could probably do away with the unqualified name table
         in favor of a second name source
     */
-    static class UnqualifiedNameTable extends HashMap {
+    static class UnqualifiedNameTable extends HashMap<String, Object> {
         void add(String fullName) {
             String name = splitClassname(fullName)[1];
             Object have = super.get(name);
@@ -810,11 +806,11 @@ public class KrineClassPath
             return;
 
         for (int i = 0; i < nameSourceListeners.size(); i++)
-            ((NameSource.Listener) (nameSourceListeners.get(i)))
+            nameSourceListeners.get(i)
                     .nameSourceChanged(this);
     }
 
-    List nameSourceListeners;
+    private List<NameSource.Listener> nameSourceListeners;
 
     /**
      * Implements NameSource
@@ -822,7 +818,7 @@ public class KrineClassPath
      */
     public void addNameSourceListener(NameSource.Listener listener) {
         if (nameSourceListeners == null)
-            nameSourceListeners = new ArrayList();
+            nameSourceListeners = new ArrayList<>();
         nameSourceListeners.add(listener);
     }
 

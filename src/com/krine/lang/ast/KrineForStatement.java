@@ -105,5 +105,4 @@ class KrineForStatement extends SimpleNode implements ParserConstants {
         callstack.swap(enclosingNameSpace);  // put it back
         return returnControl;
     }
-
 }

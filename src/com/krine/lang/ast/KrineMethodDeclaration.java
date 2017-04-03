@@ -12,7 +12,7 @@ class KrineMethodDeclaration extends SimpleNode {
     KrineReturnType returnTypeNode;
     KrineFormalParameters paramsNode;
     KrineBlock blockNode;
-    // index of the first throws clause child node
+    // arrayIndex of the first throws clause child node
     int firstThrowsClause;
 
     // End Child node structure evaluated by insureNodesParsed

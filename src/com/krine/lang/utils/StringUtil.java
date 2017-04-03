@@ -44,4 +44,51 @@ public class StringUtil {
     public static String normalizeClassName(Class type) {
         return Reflect.normalizeClassName(type);
     }
+
+    /**
+     * Replaces unprintable characters by their escaped (or unicode escaped)
+     * equivalents in the given string
+     */
+    public static String addEscapes(String str) {
+        StringBuilder stringBuilder = new StringBuilder();
+        char ch;
+        for (int i = 0; i < str.length(); i++) {
+            switch (str.charAt(i)) {
+                case 0:
+                    continue;
+                case '\b':
+                    stringBuilder.append("\\b");
+                    continue;
+                case '\t':
+                    stringBuilder.append("\\t");
+                    continue;
+                case '\n':
+                    stringBuilder.append("\\n");
+                    continue;
+                case '\f':
+                    stringBuilder.append("\\f");
+                    continue;
+                case '\r':
+                    stringBuilder.append("\\r");
+                    continue;
+                case '\"':
+                    stringBuilder.append("\\\"");
+                    continue;
+                case '\'':
+                    stringBuilder.append("\\\'");
+                    continue;
+                case '\\':
+                    stringBuilder.append("\\\\");
+                    continue;
+                default:
+                    if ((ch = str.charAt(i)) < 0x20 || ch > 0x7e) {
+                        String s = "0000" + Integer.toString(ch, 16);
+                        stringBuilder.append("\\u").append(s.substring(s.length() - 4, s.length()));
+                    } else {
+                        stringBuilder.append(ch);
+                    }
+            }
+        }
+        return stringBuilder.toString();
+    }
 }

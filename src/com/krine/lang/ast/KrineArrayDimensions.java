@@ -142,7 +142,7 @@ class KrineArrayDimensions extends SimpleNode {
                     definedDimensions[i] = ((Primitive) length).intValue();
                 } catch (Exception e) {
                     throw new EvalError(
-                            "Array index: " + i +
+                            "Array arrayIndex: " + i +
                                     " does not evaluate to an integer", this, callstack);
                 }
             }

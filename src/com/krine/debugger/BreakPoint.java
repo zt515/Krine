@@ -9,7 +9,7 @@ import java.util.Locale;
 public class BreakPoint {
     private static int ID = 0;
 
-    private int id = ID++;
+    private int breakPointId = ID++;
     private String file;
     private int line;
     private String code;
@@ -32,8 +32,8 @@ public class BreakPoint {
         return code;
     }
 
-    public static int getId() {
-        return ID;
+    public int getId() {
+        return breakPointId;
     }
 
     @Override

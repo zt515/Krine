@@ -193,10 +193,10 @@ public class Parser/*@bgen(jjtree)*/ implements ParserTreeConstants, ParserConst
      *****************************************/
 
 /*
-    Gather modifiers for a class, method, or field.
+    Gather modifiers for a class, method, or leftValue.
 	I lookahead is true then we are being called as part of a lookahead and we
 	should not enforce any rules.  Otherwise we validate based on context
-	(field, method, class)
+	(leftValue, method, class)
 */
     final public Modifiers Modifiers(int context, boolean lookahead) throws ParseException {
         Modifiers mods = null;

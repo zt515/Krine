@@ -32,7 +32,7 @@ class KrineImportDeclaration extends SimpleNode {
                     namespace.importStatic(clazz);
                 } else
                     throw new EvalError(
-                            "static field imports not supported yet",
+                            "static leftValue imports not supported yet",
                             this, callstack);
             } else {
                 String name = ((KrineAmbiguousName) jjtGetChild(0)).text;

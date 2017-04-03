@@ -33,6 +33,7 @@
 
 package com.krine.lang.classpath;
 
+import com.krine.kar.KarFile;
 import com.krine.lang.*;
 import com.krine.lang.classpath.KrineClassPath.ClassSource;
 import com.krine.lang.classpath.KrineClassPath.GeneratedClassSource;
@@ -180,17 +181,13 @@ public class ClassManagerImpl extends KrineClassManager {
             if (myClassLoader != null) {
                 try {
                     c = myClassLoader.loadClass(name);
-                } catch (ClassNotFoundException e) {
-                    // fall through
-                } catch (NoClassDefFoundError e) {
+                } catch (ClassNotFoundException | NoClassDefFoundError e) {
                     // fall through
                 }
             } else {
                 try {
                     c = Class.forName(name);
-                } catch (ClassNotFoundException e) {
-                    // fall through
-                } catch (NoClassDefFoundError e) {
+                } catch (ClassNotFoundException | NoClassDefFoundError e) {
                     // fall through
                 }
             }
@@ -224,11 +221,7 @@ public class ClassManagerImpl extends KrineClassManager {
                 if (contextClassLoader != null) {
                     c = Class.forName(name, true, contextClassLoader);
                 }
-            } catch (ClassNotFoundException e) {
-                // fall through
-            } catch (NoClassDefFoundError e) {
-                // fall through
-            } catch (SecurityException e) {
+            } catch (ClassNotFoundException | NoClassDefFoundError | SecurityException e) {
                 // fall through
             }
         }
@@ -289,10 +282,8 @@ public class ClassManagerImpl extends KrineClassManager {
         return (ClassLoader) loaderMap.get(name);
     }
 
-    // Classpath mutators
+    // Classpath
 
-    /**
-     */
     @Override
     public void addClassPath(URL path)
             throws IOException {
@@ -304,6 +295,12 @@ public class ClassManagerImpl extends KrineClassManager {
             baseClassPath.add(path);
             classLoaderChanged();
         }
+    }
+
+    @Override
+    public void addClassPath(KarFile karFile)
+            throws IOException {
+
     }
 
     /**
@@ -513,14 +510,12 @@ public class ClassManagerImpl extends KrineClassManager {
         listeners.addElement(new WeakReference(l, refQueue));
 
         // clean up old listeners
-        Reference deadref;
-        while ((deadref = refQueue.poll()) != null) {
-            boolean ok = listeners.removeElement(deadref);
-            if (ok) {
-                //System.err.println("cleaned up weak ref: "+deadref);
-            } else {
+        Reference deadReference;
+        while ((deadReference = refQueue.poll()) != null) {
+            boolean ok = listeners.removeElement(deadReference);
+            if (!ok) {
                 if (KrineBasicInterpreter.DEBUG) KrineBasicInterpreter.debug(
-                        "tried to remove non-existent weak ref: " + deadref);
+                        "tried to remove non-existent weak ref: " + deadReference);
             }
         }
     }

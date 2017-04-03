@@ -124,7 +124,7 @@ class KrineAllocationExpression extends SimpleNode {
         // Change the parent (which was the class static) to the class instance
         // We really need to check if we're a static inner class here first...
         // but for some reason Java won't show the static modifier on our
-        // fake inner classes...  could generate a flag field.
+        // fake inner classes...  could generate a flag leftValue.
         if (instanceNameSpace != null
                 && className.startsWith(instanceNameSpace.getName() + "$")
                 ) {

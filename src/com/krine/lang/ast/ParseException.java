@@ -1,5 +1,7 @@
 package com.krine.lang.ast;
 
+import com.krine.lang.utils.StringUtil;
+
 /**
  * This exception is thrown when parse errors are encountered.
  * You can explicitly create objects of this exception type by
@@ -154,88 +156,39 @@ public final class ParseException extends EvalError {
             expected += eol + "    ";
         }
         // Begin Krine Modification - added sourceFile info
-        String retval = "In file: " + sourceFile + " got \"";
+        String result = "In file: " + sourceFile + " got \"";
         // End Krine Modification - added sourceFile info
         Token tok = currentToken.next;
         for (int i = 0; i < maxSize; i++) {
-            if (i != 0) retval += " ";
+            if (i != 0) result += " ";
             if (tok.kind == 0) {
-                retval += tokenImage[0];
+                result += tokenImage[0];
                 break;
             }
-            retval += add_escapes(tok.image);
+            result += StringUtil.addEscapes(tok.image);
             tok = tok.next;
         }
-        retval += "\" at line " + currentToken.next.beginLine + ", column " + currentToken.next.beginColumn + "." + eol;
+        result += "\" at line " + currentToken.next.beginLine + ", column " + currentToken.next.beginColumn + "." + eol;
 
         // Begin Krine Modification - made conditional on debug
         if (debug) {
             if (expectedTokenSequences.length == 1) {
-                retval += "Was expecting:" + eol + "    ";
+                result += "Was expecting:" + eol + "    ";
             } else {
-                retval += "Was expecting one of:" + eol + "    ";
+                result += "Was expecting one of:" + eol + "    ";
             }
 
-            retval += expected;
+            result += expected;
         }
         // End Krine Modification - made conditional on debug
 
-        return retval;
+        return result;
     }
 
     /**
      * The end of line string for this machine.
      */
     protected String eol = System.getProperty("line.separator", "\n");
-
-    /**
-     * Used to convert raw characters to their escaped version
-     * when these raw version cannot be used as part of an ASCII
-     * string literal.
-     */
-    protected String add_escapes(String str) {
-        StringBuilder retval = new StringBuilder();
-        char ch;
-        for (int i = 0; i < str.length(); i++) {
-            switch (str.charAt(i)) {
-                case 0:
-                    continue;
-                case '\b':
-                    retval.append("\\b");
-                    continue;
-                case '\t':
-                    retval.append("\\t");
-                    continue;
-                case '\n':
-                    retval.append("\\n");
-                    continue;
-                case '\f':
-                    retval.append("\\f");
-                    continue;
-                case '\r':
-                    retval.append("\\r");
-                    continue;
-                case '\"':
-                    retval.append("\\\"");
-                    continue;
-                case '\'':
-                    retval.append("\\\'");
-                    continue;
-                case '\\':
-                    retval.append("\\\\");
-                    continue;
-                default:
-                    if ((ch = str.charAt(i)) < 0x20 || ch > 0x7e) {
-                        String s = "0000" + Integer.toString(ch, 16);
-                        retval.append("\\u" + s.substring(s.length() - 4, s.length()));
-                    } else {
-                        retval.append(ch);
-                    }
-                    continue;
-            }
-        }
-        return retval.toString();
-    }
 
     // Begin Krine Modification - override error methods and toString
 
@@ -251,19 +204,19 @@ public final class ParseException extends EvalError {
                 maxSize = expectedTokenSequences[i].length;
         }
 
-        String retval = "";
+        String result = "";
         Token tok = currentToken.next;
         for (int i = 0; i < maxSize; i++) {
-            if (i != 0) retval += " ";
+            if (i != 0) result += " ";
             if (tok.kind == 0) {
-                retval += tokenImage[0];
+                result += tokenImage[0];
                 break;
             }
-            retval += add_escapes(tok.image);
+            result += StringUtil.addEscapes(tok.image);
             tok = tok.next;
         }
 
-        return retval;
+        return result;
     }
 
     // End Krine Modification - override error methods and toString

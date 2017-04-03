@@ -1,10 +1,13 @@
 package com.krine.lang.ast;
 
-import com.krine.lang.*;
+import com.krine.lang.InterpreterException;
+import com.krine.lang.KrineBasicInterpreter;
+import com.krine.lang.UtilEvalException;
 import com.krine.lang.reflect.Reflect;
 import com.krine.lang.reflect.ReflectException;
 import com.krine.lang.utils.CallStack;
 import com.krine.lang.utils.CollectionManager;
+import com.krine.lang.utils.InvocationUtil;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
@@ -17,7 +20,6 @@ class KrinePrimarySuffix extends SimpleNode {
             PROPERTY = 3;
 
     public int operation;
-    Object index;
     public String field;
 
     KrinePrimarySuffix(int id) {
@@ -118,7 +120,7 @@ class KrinePrimarySuffix extends SimpleNode {
                 else
                     return new Primitive(Array.getLength(obj));
 
-            // field access
+            // leftValue access
             if (jjtGetNumChildren() == 0)
                 if (toLHS)
                     return Reflect.getLHSObjectField(obj, field);
@@ -143,22 +145,7 @@ class KrinePrimarySuffix extends SimpleNode {
                         "Error in method invocation: " + e.getMessage(),
                         this, callstack, e);
             } catch (InvocationTargetException e) {
-                String msg = "Method Invocation " + field;
-                Throwable te = e.getTargetException();
-
-				/*
-                    Try to squeltch the native code stack trace if the exception
-					was caused by a reflective call back into the krine krineBasicInterpreter
-					(e.g. eval() or source()
-				*/
-                boolean isNative = true;
-                if (te instanceof EvalError)
-                    if (te instanceof KrineTargetException)
-                        isNative = ((KrineTargetException) te).exceptionInNative();
-                    else
-                        isNative = false;
-
-                throw new KrineTargetException(msg, te, this, callstack, isNative);
+                throw InvocationUtil.newTargetException("Method Invocation " + field, this, callstack, e);
             }
 
         } catch (UtilEvalException e) {
@@ -195,7 +182,7 @@ class KrinePrimarySuffix extends SimpleNode {
     }
 
     /**
-     * array index.
+     * array arrayIndex.
      * Must handle toLeftValue case.
      */
     private Object doIndex(
