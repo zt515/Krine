@@ -1,28 +1,39 @@
 package com.krine.extension;
 
+import com.krine.extension.annotations.ExtensionConfig;
+import com.krine.extension.annotations.KrineMethod;
+import com.krine.extension.annotations.KrineVariable;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.IllegalFormatFlagsException;
 import java.util.List;
 
 /**
  * @author kiva
  * @date 2017/2/24
  */
-public class KrineNativeInterface {
+public class KrineExtension {
     private List<Method> methods;
     private List<Field> fields;
-
     private IKrineLinkable object;
+    private String requiredNameSpace;
 
-    private KrineNativeInterface(List<Method> methods, List<Field> fields, IKrineLinkable object) {
+    private KrineExtension(List<Method> methods, List<Field> fields, String requiredNameSpace, IKrineLinkable object) {
         this.fields = fields;
         this.methods = methods;
+        this.requiredNameSpace = requiredNameSpace;
         this.object = object;
     }
 
-    public static KrineNativeInterface fromClass(Class<? extends IKrineLinkable> clazz)
+    public static KrineExtension fromClass(Class<? extends IKrineLinkable> clazz)
             throws IllegalAccessException, InstantiationException {
+        ExtensionConfig config = clazz.getAnnotation(ExtensionConfig.class);
+        if (config == null) {
+            throw new IllegalAccessException("No extension config for " + clazz.getName() + " found.");
+        }
+
         IKrineLinkable object = clazz.newInstance();
 
         List<Method> methods = new ArrayList<>(4);
@@ -40,7 +51,7 @@ public class KrineNativeInterface {
             }
         }
 
-        return new KrineNativeInterface(methods, fields, object);
+        return new KrineExtension(methods, fields, config.requiredNameSpace(), object);
     }
 
     public List<Method> getMethods() {
@@ -53,5 +64,9 @@ public class KrineNativeInterface {
 
     public IKrineLinkable getObject() {
         return object;
+    }
+
+    public String getRequiredNameSpace() {
+        return requiredNameSpace;
     }
 }

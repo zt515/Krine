@@ -1,6 +1,8 @@
 package com.krine.interpreter;
 
-import com.krine.extension.KrineNativeInterface;
+import com.krine.dynamic.KrineDynamicInterface;
+import com.krine.extension.IKrineLinkable;
+import com.krine.extension.KrineExtension;
 import com.krine.lang.InterpreterException;
 import com.krine.lang.KrineBasicInterpreter;
 import com.krine.lang.UtilEvalException;
@@ -56,26 +58,43 @@ public class KrineInterpreter extends KrineBasicInterpreter {
 
     private void init() {
         try {
-            linkNativeInterface(KrineNativeInterface.fromClass(KrineBuiltinInterface.class));
+            linkNativeInterface(KrineExtension.fromClass(KrineBuiltinInterface.class));
+            linkNativeInterface(KrineExtension.fromClass(KrineDynamicInterface.class));
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void linkNativeInterface(KrineNativeInterface nativeInterface)
-            throws UtilEvalException, IllegalAccessException, InterpreterException {
-        Object javaObject = nativeInterface.getObject();
-        nativeInterface.getObject().bindInterpreter(this);
+    public void linkNativeInterface(KrineExtension nativeInterface)
+            throws UtilEvalException, IllegalAccessException, InterpreterException, IllegalStateException {
+        IKrineLinkable javaObject = nativeInterface.getObject();
+        javaObject.bindInterpreter(this);
+
+        NameSpace linkingNameSpace = getGlobalNameSpace();
+
+//        String requiredNameSpace = nativeInterface.getRequiredNameSpace();
+//        if (requiredNameSpace != null && !requiredNameSpace.isEmpty()
+//                && !linkingNameSpace.getName().equals(requiredNameSpace)) {
+//            Object check = getGlobalNameSpace().get(requiredNameSpace, this);
+//            if (check == null) {
+//                linkingNameSpace = new NameSpace(getNameSpace(), requiredNameSpace);
+//            } else if (check instanceof NameSpace) {
+//                linkingNameSpace = ((NameSpace) check);
+//            } else {
+//                throw new IllegalStateException("NameSpace cannot be initialized.");
+//            }
+//        }
 
         for (Method m : nativeInterface.getMethods()) {
             KrineMethod method = new KrineMethod(m, javaObject);
             method.makePublic();
-            getNameSpace().setMethod(method);
+
+            linkingNameSpace.setMethod(method);
         }
 
         for (Field f : nativeInterface.getFields()) {
-            linkNativeObject(f.getName(), f.get(javaObject));
+            linkingNameSpace.setVariable(f.getName(), f.get(javaObject), false);
         }
     }
 

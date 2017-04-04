@@ -695,9 +695,6 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
      * Subsequent imports override earlier ones
      */
     public void importClass(String name) {
-        if (name.startsWith("java")) {
-            return;
-        }
         if (importedClasses == null)
             importedClasses = new HashMap<>();
 

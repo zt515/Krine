@@ -1,12 +1,14 @@
 package com.krine.interpreter;
 
 import com.krine.extension.IKrineLinkable;
-import com.krine.extension.KrineMethod;
+import com.krine.extension.annotations.ExtensionConfig;
+import com.krine.extension.annotations.KrineMethod;
 
 /**
  * @author kiva
  * @date 2017/2/24
  */
+@ExtensionConfig
 public class KrineBuiltinInterface implements IKrineLinkable {
     private KrineInterpreter interpreter;
 

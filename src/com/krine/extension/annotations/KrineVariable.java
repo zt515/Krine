@@ -1,4 +1,4 @@
-package com.krine.extension;
+package com.krine.extension.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
