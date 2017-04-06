@@ -157,10 +157,23 @@ public final class ClassGenerator {
 
         // if debug, write out the class file to debugClasses directory
         if (DEBUG_DIR != null) {
-            try (FileOutputStream out = new FileOutputStream(DEBUG_DIR + '/' + className + ".class")) {
+            FileOutputStream out = null;
+            try {
+                out = new FileOutputStream(DEBUG_DIR + '/' + className + ".class");
                 out.write(code);
+                out.flush();
             } catch (IOException e) {
-                throw new IllegalStateException("cannot create file " + DEBUG_DIR + '/' + className + ".class", e);
+                // Only debug, this Exception won't
+                // make a difference to the program.
+                e.printStackTrace();
+            } finally {
+                if (out != null) {
+                    try {
+                        out.close();
+                    } catch(IOException ignored) {
+                        // ignored
+                    }
+                }
             }
         }
 

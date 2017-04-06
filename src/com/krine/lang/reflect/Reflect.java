@@ -444,7 +444,7 @@ public final class Reflect {
             KrineBasicInterpreter.debug("Searching for method: " + StringUtil.methodString(methodName, types) + " in '" + baseClass.getName() + "'");
         }
         final List<Method> publicMethods = new ArrayList<>();
-        final Collection<Method> nonPublicMethods = publicOnly ? new DummyCollection<>() : new ArrayList<>();
+        final Collection<Method> nonPublicMethods = publicOnly ? new DummyCollection<Method>() : new ArrayList<>();
         collectMethods(baseClass, methodName, types.length, publicMethods, nonPublicMethods);
         Collections.sort(publicMethods, METHOD_COMPARATOR);
         Method method = findMostSpecificMethod(types, publicMethods);

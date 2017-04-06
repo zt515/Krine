@@ -7,6 +7,7 @@ import com.krine.lang.ast.Variable;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 
 /**
  * @author kiva
@@ -32,10 +33,23 @@ class DalvikClassGenerator extends DefaultJavaClassGenerator implements IClassGe
         byte[] out = dexConverter.convertJavaClass(packageName + "." + className, javaClass);
 
         if (System.getProperty("krineDexDebugDir") != null) {
-            try (FileOutputStream os = new FileOutputStream(new File(System.getProperty("krineDexDebugDir"), className + ".dex"))) {
+            File dexFile = new File(System.getProperty("krineDexDebugDir"), className + ".dex");
+            FileOutputStream os = null;
+            
+            try {
+                os = new FileOutputStream(dexFile);
                 os.write(out);
                 os.flush();
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (os != null) {
+                    try {
+                        os.close();
+                    } catch (IOException ignored) {
+                        // ignored
+                    }
+                }
             }
         }
 

@@ -721,14 +721,23 @@ public class KrineClassPath
                 return null;
 
             byte[] bytes;
-            try (DataInputStream dis = new DataInputStream(new FileInputStream(file))) {
+            DataInputStream dis = null;
+            try {
+                dis = new DataInputStream(new FileInputStream(file));
                 bytes = new byte[(int) file.length()];
                 dis.readFully(bytes);
-
-            } catch (IOException ie) {
+            } catch (IOException e) {
                 throw new RuntimeException("Couldn't load file: " + file);
+            } finally {
+                if (dis != null) {
+                    try {
+                        dis.close();
+                    } catch (IOException ignored) {
+                        // ignored
+                    }
+                }
             }
-
+            
             return bytes;
         }
 
