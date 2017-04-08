@@ -1,15 +1,16 @@
-package com.krine.interpreter;
+package com.krine.api.core;
 
 import com.krine.extension.IKrineLinkable;
 import com.krine.extension.annotations.ExtensionConfig;
 import com.krine.extension.annotations.KrineMethod;
+import com.krine.interpreter.KrineInterpreter;
 
 /**
  * @author kiva
  * @date 2017/2/24
  */
 @ExtensionConfig
-public class KrineBuiltinInterface implements IKrineLinkable {
+public class KrineCoreExtension implements IKrineLinkable {
     private KrineInterpreter interpreter;
 
     @KrineMethod

@@ -1,4 +1,4 @@
-package com.krine.dynamic;
+package com.krine.api.dynamic;
 
 import com.krine.extension.IKrineLinkable;
 import com.krine.extension.annotations.ExtensionConfig;
@@ -12,7 +12,7 @@ import krine.dynamic.DynamicMethod;
  * @date 2017/4/4
  */
 @ExtensionConfig(requiredNameSpace = "krine.dynamic")
-public class KrineDynamicInterface implements IKrineLinkable {
+public class KrineDynamicExtension implements IKrineLinkable {
     private KrineInterpreter interpreter;
 
     @Override

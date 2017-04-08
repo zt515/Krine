@@ -1,12 +1,15 @@
 package com.krine.lang.utils;
 
-import com.krine.lang.reflect.Reflect;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
 public class StringUtil {
+    public static boolean isEmpty(String string) {
+        return string == null
+                || string.length() == 0
+                || string.trim().length() == 0;
+    }
 
     public static String[] split(String s, String delim) {
         List<String> v = new ArrayList<>();
@@ -36,13 +39,6 @@ public class StringUtil {
         }
         sb.append(')');
         return sb.toString();
-    }
-
-    /**
-     * Hack - The real method is in Reflect.java which is not public.
-     */
-    public static String normalizeClassName(Class type) {
-        return Reflect.normalizeClassName(type);
     }
 
     /**

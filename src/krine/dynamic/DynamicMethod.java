@@ -20,6 +20,7 @@ public class DynamicMethod {
     private Accessibility accessibility;
 
     private DynamicMethod() {
+        parameters = new HashMap<>(2);
     }
 
     public Class<?> getReturnType() {
@@ -56,8 +57,8 @@ public class DynamicMethod {
         for (String paramName : params.keySet()) {
             builder.append(params.get(paramName).getName()).append(' ').append(paramName).append(',');
         }
-        if (builder.charAt(builder.length()) == ',') {
-            builder.deleteCharAt(builder.length());
+        if (builder.charAt(builder.length() - 1) == ',') {
+            builder.deleteCharAt(builder.length() - 1);
         }
         builder.append(')');
 

@@ -1,6 +1,7 @@
 package com.krine.interpreter;
 
-import com.krine.dynamic.KrineDynamicInterface;
+import com.krine.api.core.KrineCoreExtension;
+import com.krine.api.dynamic.KrineDynamicExtension;
 import com.krine.extension.IKrineLinkable;
 import com.krine.extension.KrineExtension;
 import com.krine.lang.InterpreterException;
@@ -9,6 +10,7 @@ import com.krine.lang.UtilEvalException;
 import com.krine.lang.ast.KrineMethod;
 import com.krine.lang.ast.NameSpace;
 import com.krine.lang.io.SystemIOBridge;
+import com.krine.lang.utils.StringUtil;
 
 import java.io.PrintStream;
 import java.io.Reader;
@@ -24,7 +26,7 @@ public class KrineInterpreter extends KrineBasicInterpreter {
     /**
      * Krine Version
      */
-    public static final String VERSION = "2.0";
+    public static final String VERSION = "2.1.build_1";
 
     public KrineInterpreter(Reader in, PrintStream out, PrintStream err, NameSpace namespace, KrineBasicInterpreter parent, String sourceFileInfo) {
         super(in, out, err, namespace, parent, sourceFileInfo);
@@ -58,8 +60,8 @@ public class KrineInterpreter extends KrineBasicInterpreter {
 
     private void init() {
         try {
-            linkNativeInterface(KrineExtension.fromClass(KrineBuiltinInterface.class));
-            linkNativeInterface(KrineExtension.fromClass(KrineDynamicInterface.class));
+            linkNativeInterface(KrineExtension.fromClass(KrineCoreExtension.class));
+            linkNativeInterface(KrineExtension.fromClass(KrineDynamicExtension.class));
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -71,20 +73,23 @@ public class KrineInterpreter extends KrineBasicInterpreter {
         IKrineLinkable javaObject = nativeInterface.getObject();
         javaObject.bindInterpreter(this);
 
-        NameSpace linkingNameSpace = getGlobalNameSpace();
+        NameSpace globalNameSpace = getGlobalNameSpace();
+        NameSpace linkingNameSpace = globalNameSpace;
 
-//        String requiredNameSpace = nativeInterface.getRequiredNameSpace();
-//        if (requiredNameSpace != null && !requiredNameSpace.isEmpty()
-//                && !linkingNameSpace.getName().equals(requiredNameSpace)) {
-//            Object check = getGlobalNameSpace().get(requiredNameSpace, this);
-//            if (check == null) {
-//                linkingNameSpace = new NameSpace(getNameSpace(), requiredNameSpace);
-//            } else if (check instanceof NameSpace) {
-//                linkingNameSpace = ((NameSpace) check);
-//            } else {
-//                throw new IllegalStateException("NameSpace cannot be initialized.");
-//            }
-//        }
+        String requiredNameSpace = nativeInterface.getRequiredNameSpace();
+        if (!StringUtil.isEmpty(requiredNameSpace)) {
+            if (globalNameSpace.getName().equals(requiredNameSpace)) {
+                linkingNameSpace = globalNameSpace;
+            } else {
+                Object object = globalNameSpace.getVariable(requiredNameSpace, true);
+                if (object != null && object instanceof NameSpace) {
+                    linkingNameSpace = ((NameSpace) object);
+                } else {
+                    linkingNameSpace = new NameSpace(linkingNameSpace, "KrineExt_" + requiredNameSpace);
+                    setUnchecked(requiredNameSpace, linkingNameSpace.getThis(this));
+                }
+            }
+        }
 
         for (Method m : nativeInterface.getMethods()) {
             KrineMethod method = new KrineMethod(m, javaObject);
