@@ -1,0 +1,3 @@
+#!/bin/bash
+
+java -jar "$(dirname $(readlink -f $0))/Krine.jar" $@
