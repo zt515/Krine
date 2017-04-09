@@ -1,14 +1,14 @@
 class App {
     public App() {
-        println("Constructor");
+        println("Constructor()");
     }
 
     public void main() {
-        println("App.main");
+        println("App.main()");
     }
 
     public static void launch() {
-        println("App::launch");
+        println("App::launch()");
         new App().main();
     }
 }

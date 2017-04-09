@@ -10,6 +10,7 @@ import com.krine.interpreter.KrineInterpreter;
  * @date 2017/2/24
  */
 @ExtensionConfig
+@SuppressWarnings("unused")
 public class KrineCoreExtension implements IKrineLinkable {
     private KrineInterpreter interpreter;
 

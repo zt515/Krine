@@ -841,13 +841,13 @@ public class Name implements Serializable {
             throw new InterpreterException(
                     "invokeLocalMethod: krineBasicInterpreter = null");
 
-        String commandName = value;
+        String methodName = value;
         Class[] argTypes = Types.getTypes(args);
 
         // Check for existing method
         KrineMethod method;
         try {
-            method = namespace.getMethod(commandName, argTypes);
+            method = namespace.getMethod(methodName, argTypes);
         } catch (UtilEvalException e) {
             throw e.toEvalError(
                     "Local method invocation", callerInfo, callStack);

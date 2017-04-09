@@ -5,6 +5,7 @@ import com.krine.extension.annotations.ExtensionConfig;
 import com.krine.extension.annotations.KrineMethod;
 import com.krine.interpreter.KrineInterpreter;
 import com.krine.lang.ast.EvalError;
+import krine.core.KRuntimeException;
 import krine.dynamic.DynamicMethod;
 
 /**
@@ -12,6 +13,7 @@ import krine.dynamic.DynamicMethod;
  * @date 2017/4/4
  */
 @ExtensionConfig(requiredNameSpace = "krine.dynamic")
+@SuppressWarnings("unused")
 public class KrineDynamicExtension implements IKrineLinkable {
     private KrineInterpreter interpreter;
 
@@ -21,7 +23,11 @@ public class KrineDynamicExtension implements IKrineLinkable {
     }
 
     @KrineMethod
-    public void loadDynamicMethod(DynamicMethod dynamicMethod) throws EvalError {
-        interpreter.eval(dynamicMethod.generateCode());
+    public void applyMethod(DynamicMethod dynamicMethod) throws KRuntimeException {
+        try {
+            interpreter.eval(dynamicMethod.generateCode());
+        } catch (EvalError evalError) {
+            throw new KRuntimeException(evalError.getCause());
+        }
     }
 }

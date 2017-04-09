@@ -381,7 +381,7 @@ public class KrineMethod
     }
 
     public String toString() {
-        return "Scripted Method: "
+        return "Method: "
                 + StringUtil.methodString(name, getParameterTypes());
     }
 

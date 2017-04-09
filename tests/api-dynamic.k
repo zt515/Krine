@@ -8,6 +8,6 @@ DynamicMethod m = new DynamicMethod.Builder()
     .withAccessibility(DynamicMethod.Accessibility.PUBLIC)
     .build();
 
-krine.dynamic.loadDynamicMethod(m);
+krine.dynamic.applyMethod(m);
 
 println(getInt(33));

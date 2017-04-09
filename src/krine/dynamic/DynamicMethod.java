@@ -1,11 +1,15 @@
 package krine.dynamic;
 
+import com.krine.api.annotations.KrineAPI;
+
 import java.util.HashMap;
 
 /**
  * @author kiva
  * @date 2017/4/4
  */
+@KrineAPI
+@SuppressWarnings("unused")
 public class DynamicMethod {
     public enum Accessibility {
         PUBLIC, PRIVATE, PROTECTED

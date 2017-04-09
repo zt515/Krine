@@ -1058,6 +1058,9 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
         importClass("com.krine.lang.KrineInterpreter");
         importClass("com.krine.interpreter.KrineInterpreter");
 
+        importPackage("krine.core");
+        importPackage("krine.dynamic");
+
         // Even if we don't allow Java classes,
         // We still need them.
         importPackage("java.net");
