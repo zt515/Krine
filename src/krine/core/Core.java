@@ -80,4 +80,8 @@ public final class Core {
     public static long getTime() {
         return System.currentTimeMillis();
     }
+    
+	public static void chdir(String dir) {
+        System.setProperty("user.dir", dir);
+	}
 }

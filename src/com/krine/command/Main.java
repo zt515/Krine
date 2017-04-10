@@ -5,6 +5,7 @@ import com.krine.lang.ast.KrineTargetException;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
+import krine.core.*;
 
 public class Main {
 
@@ -49,6 +50,6 @@ public class Main {
     }
 
     private static void showUsage() {
-        System.out.println("Usage: Krine [fileName]");
+        System.out.println("Usage: krine [fileName]");
     }
 }

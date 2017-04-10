@@ -13,6 +13,7 @@ import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
+import krine.extension.Extension;
 
 /**
  * A namespace	in which methods, variables, and imports (class names) live.
@@ -50,7 +51,8 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     private NameSpace parent;
     private Map<String, Variable> variables;
     private Map<String, List<KrineMethod>> methods;
-
+    private Map<String, Extension> extensions;
+    
     protected Map<String, String> importedClasses;
     private List<String> importedPackages;
     private List<Object> importedObjects;
@@ -1060,6 +1062,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
 
         importPackage("krine.core");
         importPackage("krine.dynamic");
+        importPackage("krine.extension");
 
         // Even if we don't allow Java classes,
         // We still need them.
@@ -1189,6 +1192,19 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
         importedStatic.add(clazz);
         nameSpaceChanged();
     }
+    
+    /**
+     * Import an extension.
+     *
+     * @param extension Extension
+     * @see Extension#export(This)
+     */
+    public void importExtension(Extension extension) {
+        if (extensions == null) {
+            extensions = new HashMap<>();
+        }
+        extensions.put(extension.getName(), extension);
+    }
 
     /**
      * Set the package name for classes defined in this namespace.
@@ -1215,6 +1231,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
             clone.thisReference = null;
             clone.variables = clone(variables);
             clone.methods = clone(methods);
+            clone.extensions = clone(extensions);
             clone.importedClasses = clone(importedClasses);
             clone.importedPackages = clone(importedPackages);
             clone.importedObjects = clone(importedObjects);

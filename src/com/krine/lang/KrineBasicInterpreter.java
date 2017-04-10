@@ -207,7 +207,7 @@ public class KrineBasicInterpreter
 
         setUnchecked("krine", new NameSpace(dcm, "Krine_Language").getThis(this));
         setUnchecked("krine.system", SYSTEM_OBJECT);
-
+        
         // save current working directory for dynamic loading
         try {
             setUnchecked("krine.cwd", System.getProperty("user.dir"));
