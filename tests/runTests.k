@@ -2,7 +2,7 @@ println("Krine Tests Runner");
 println("------------------");
 
 File self = new File(krine.args[0]);
-File testsDir = new File("tests");
+File testsDir = self.getParentFile();
 
 String[] args = new String[1];
 for (File file : testsDir.listFiles()) {

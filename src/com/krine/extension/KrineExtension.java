@@ -31,7 +31,7 @@ public class KrineExtension {
             throws IllegalAccessException, InstantiationException {
         ExtensionConfig config = clazz.getAnnotation(ExtensionConfig.class);
         if (config == null) {
-            throw new IllegalAccessException("No extension config for " + clazz.getName() + " found.");
+            throw new IllegalAccessException("No module config for " + clazz.getName() + " found.");
         }
 
         IKrineLinkable object = clazz.newInstance();

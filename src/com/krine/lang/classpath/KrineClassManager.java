@@ -17,10 +17,10 @@ import java.util.*;
 
 /**
  * KrineClassManager manages all classloading in Krine.
- * It also supports a dynamically loaded extension (krine.classpath package)
- * which allows classpath extension and class file reloading.
+ * It also supports a dynamically loaded module (krine.classpath package)
+ * which allows classpath module and class file reloading.
  * <p>
- * Currently the extension relies on 1.2 for KrineClassLoader and weak
+ * Currently the module relies on 1.2 for KrineClassLoader and weak
  * references.
  * <p>
  * Krine has a multi-tiered class loading architecture.  No class loader is

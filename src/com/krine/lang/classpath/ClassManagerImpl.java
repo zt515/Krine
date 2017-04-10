@@ -54,7 +54,7 @@ import java.util.*;
 /**
  * <pre>
  * Manage all classloading in Krine.
- * Allows classpath extension and class file reloading.
+ * Allows classpath module and class file reloading.
  *
  * This class holds the implementation of the KrineClassManager so that it
  * can be separated from the lang package.
@@ -99,7 +99,7 @@ public class ClassManagerImpl extends KrineClassManager {
      * The classpath of the base loader.  Initially and upon reset() this is
      * an empty instance of KrineClassPath.  It grows as paths are added or is
      * reset when the classpath is explicitly set.  This could also be called
-     * the "extension" class path, but is not strictly confined to added path
+     * the "module" class path, but is not strictly confined to added path
      * (could be set arbitrarily by setClassPath())
      */
     private KrineClassPath baseClassPath;
@@ -114,7 +114,7 @@ public class ClassManagerImpl extends KrineClassManager {
      * expensive.
      * <p>
      * The full class path is a composite of:
-     * baseClassPath (user extension) : userClassPath : bootClassPath
+     * baseClassPath (user module) : userClassPath : bootClassPath
      * in that order.
      */
     private KrineClassPath fullClassPath;
@@ -124,7 +124,7 @@ public class ClassManagerImpl extends KrineClassManager {
     private ReferenceQueue refQueue = new ReferenceQueue();
 
     /**
-     * This handles extension / modification of the base classpath
+     * This handles module / modification of the base classpath
      * The loader to use where no mapping of reloaded classes exists.
      * <p>
      * The baseLoader is initially null meaning no class loader is used.
@@ -192,7 +192,7 @@ public class ClassManagerImpl extends KrineClassManager {
             }
         }
 
-        // Check classpath extension / reloaded classes
+        // Check classpath module / reloaded classes
         if ((c == null) && (baseLoader != null)) {
             try {
                 c = baseLoader.loadClass(name);

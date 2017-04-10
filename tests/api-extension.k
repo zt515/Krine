@@ -1,1 +1,0 @@
-println(krine.getClass().getName());

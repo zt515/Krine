@@ -7,16 +7,13 @@ import com.krine.lang.classpath.ClassIdentifier;
 import com.krine.lang.classpath.KrineClassManager;
 import com.krine.lang.reflect.Reflect;
 import com.krine.lang.utils.CallStack;
+import krine.module.Module;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import krine.extension.Extension;
+import java.util.*;
 
 /**
  * A namespace	in which methods, variables, and imports (class names) live.
@@ -54,8 +51,8 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     private NameSpace parent;
     private Map<String, Variable> variables;
     private Map<String, List<KrineMethod>> methods;
-    private Map<String, Extension> extensions;
-    
+    private Map<String, Module> modules;
+
     protected Map<String, String> importedClasses;
     private List<String> importedPackages;
     private List<Object> importedObjects;
@@ -578,7 +575,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
         // Null value is just a declaration
         // Note: we might want to keep any existing value here instead of reset
     /*
-	// Moved to Variable
+    // Moved to Variable
 		if ( value == null )
 			value = Primitive.getDefaultValue( type );
 	*/
@@ -767,6 +764,17 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
                     return new Variable(name, field.getType(), new LeftValue(field));
             }
 
+        return null;
+    }
+
+    public Module getImportedModule(String moduleName) {
+        if (modules == null) {
+            return null;
+        }
+
+        if (modules.containsKey(moduleName)) {
+            return modules.get(moduleName);
+        }
         return null;
     }
 
@@ -1065,7 +1073,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
 
         importPackage("krine.core");
         importPackage("krine.dynamic");
-        importPackage("krine.extension");
+        importPackage("krine.module");
 
         // Even if we don't allow Java classes,
         // We still need them.
@@ -1150,6 +1158,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     public void clear() {
         variables = null;
         methods = null;
+        modules = null;
         importedClasses = null;
         importedPackages = null;
         importedObjects = null;
@@ -1195,18 +1204,20 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
         importedStatic.add(clazz);
         nameSpaceChanged();
     }
-    
+
     /**
-     * Import an extension.
+     * Import an module.
      *
-     * @param extension Extension
-     * @see Extension#export(This)
+     * @param module Module
+     * @see Module#export(This, String)
      */
-    public void importExtension(Extension extension) {
-        if (extensions == null) {
-            extensions = new HashMap<>();
+    public void importModule(Module module) {
+        if (modules == null) {
+            modules = new HashMap<>();
         }
-        extensions.put(extension.getName(), extension);
+
+        modules.remove(module.getName());
+        modules.put(module.getName(), module);
     }
 
     /**
@@ -1234,7 +1245,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
             clone.thisReference = null;
             clone.variables = clone(variables);
             clone.methods = clone(methods);
-            clone.extensions = clone(extensions);
+            clone.modules = clone(modules);
             clone.importedClasses = clone(importedClasses);
             clone.importedPackages = clone(importedPackages);
             clone.importedObjects = clone(importedObjects);
