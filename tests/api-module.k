@@ -1,6 +1,7 @@
 baseDir = new File(krine.args[0]).getParentFile();
 dir = new File(baseDir, "test-module-api");
 
-mod = Module.loadFile(this, new File(dir, "hello.k"));
+Module.addModuleSearchPath(dir);
+mod = Module.load(this, "hello");
 mod.say(mod.helloworld());
 

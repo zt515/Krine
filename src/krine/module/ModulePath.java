@@ -39,6 +39,6 @@ public class ModulePath {
             && builder.charAt(builder.length() - 1) == ',') {
             builder.deleteCharAt(builder.length() - 1);
         }
-        return super.toString();
+        return "[" + builder.toString() + "]";
     }
 }
