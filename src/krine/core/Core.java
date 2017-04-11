@@ -101,7 +101,7 @@ public final class Core {
      * @param aThis Context info.
      * @param file  File to be loaded.
      * @return true if successful, otherwise false.
-     * @see load(This, File)
+     * @see Core#load(This, File)
      */
     public static boolean load(This aThis, String file) {
         KrineBasicInterpreter interpreter = This.getInterpreter(aThis);
@@ -123,7 +123,7 @@ public final class Core {
      * @param aThis Context info.
      * @param file  File to be loaded.
      * @return true if successful, otherwise false.
-     * @see load(This, String)
+     * @see Core#load(This, String)
      */
     public static boolean load(This aThis, File file) {
         return Core.load(aThis, file.getAbsolutePath());

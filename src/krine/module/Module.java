@@ -6,9 +6,10 @@ import com.krine.lang.ast.NameSpace;
 import com.krine.lang.ast.This;
 import com.krine.lang.utils.Capabilities;
 import com.krine.lang.utils.LazySingleton;
-import java.io.File;
 import krine.core.Core;
 import krine.core.KRuntimeException;
+
+import java.io.File;
 
 /**
  * This class provides Krine the module system.
@@ -36,20 +37,33 @@ public final class Module {
             return mp;
         }
     };
-    
+
+    /**
+     * Add path in which module file located.
+     *
+     * @param path Path contains module file.
+     * @see Module#addModuleSearchPath(File)
+     */
     public static void addModuleSearchPath(String path) {
         Module.addModuleSearchPath(new File(path));
     }
-    
+
+    /**
+     * Add path in which module file located.
+     *
+     * @param file Path contains module file.
+     * @see Module#addModuleSearchPath(String)
+     */
     public static void addModuleSearchPath(File file) {
         if (file.isDirectory() && file.canRead()) {
             MODULE_PATH.get().addPath(file.getAbsolutePath());
         }
     }
-    
+
     /**
      * Get pure file name without path and suffix.
      * eg. /base/app.k => app
+     *
      * @param file File path
      * @return Pure file name.
      */
@@ -58,38 +72,37 @@ public final class Module {
         int index = file.lastIndexOf(".");
         return index == -1 ? file : file.substring(0, index);
     }
-    
+
     /**
      * Search ModulePath to find source file and load it as a module.
      *
      * @param aThis      Current namespace, in which we find needed module.
-     * @param fileName   File name, not file path.
+     * @param moduleName File name, not file path.
      * @return Module instance
-     * @throws KRuntimeException When somethings goes wrong.
      * @see Module#loadModuleFromFile(This, String)
      */
-    private static Module loadModuleFromModulePath(This aThis, String moduleName) throws KRuntimeException {
+    private static Module loadModuleFromModulePath(This aThis, String moduleName) {
+        // TODO: More suffix names.
         String filePath = MODULE_PATH.get().search(moduleName + ".k");
         if (filePath == null) {
             return null;
         }
-        
+
         return loadModuleFromFile(aThis, filePath);
     }
-    
+
     /**
      * Load a file as a module.
      * This method is a wrap method of Core.load() and Module.loadModuleFromImported()
-     *
+     * <p>
      * Note: The file must call Module.export() explicitly
      * or we cannot load it as a module.
      *
      * @param aThis    Current namespace, in which we find needed module.
-     * @param fileName File name, not file path.
+     * @param filePath File name, not file path.
      * @return Module instance
-     * @throws KRuntimeException When somethings goes wrong.
      */
-    private static Module loadModuleFromFile(This aThis, String filePath) throws KRuntimeException {
+    private static Module loadModuleFromFile(This aThis, String filePath) {
         // If module called Module.export() in source file
         // It must in the imported module list.
         // And we are able to get it.
@@ -99,20 +112,19 @@ public final class Module {
 
         return null;
     }
-    
+
     /**
      * Get a imported module by given name.
      *
      * @param aThis      Current namespace, in which we find needed module.
      * @param moduleName Module name
      * @return Module instance.
-     * @throw KRuntimeException When module not found in imported module list..
      */
     private static Module loadModuleFromImported(This aThis, String moduleName) {
         KrineBasicInterpreter interpreter = This.getInterpreter(aThis);
 
         if (interpreter == null) {
-            throw new KRuntimeException("Cannot get krine instance.");
+            return null;
         }
 
         NameSpace global = interpreter.getGlobalNameSpace();
@@ -125,16 +137,16 @@ public final class Module {
      * @param aThis      Current namespace, in which we find needed module.
      * @param moduleName Module name
      * @return Module instance
-     * @throws KRuntimeException When somethings goes wrong.
+     * @throws KRuntimeException When module not found.
      */
     public static This load(This aThis, String moduleName) throws KRuntimeException {
         Module mod = loadModuleFromImported(aThis, moduleName);
-        
-        // Try load from ModulePath
+
+        // Try to load from ModulePath
         if (mod == null) {
             mod = loadModuleFromModulePath(aThis, moduleName);
         }
-        
+
         if (mod == null) {
             throw new KRuntimeException("Module " + moduleName + " not found in " + MODULE_PATH.toString());
         }
@@ -160,8 +172,24 @@ public final class Module {
         NameSpace global = interpreter.getGlobalNameSpace();
         global.importModule(mod);
     }
-    
-    
+
+    /**
+     * Wrap a Java package to Module.
+     * We can load packages into NameSpaces
+     * and find classes more quickly.
+     *
+     * @param interpreter Context info
+     * @param packageName Java package name
+     * @return Module instance of warped Java package.
+     */
+    public static Module wrapJavaPackage(KrineBasicInterpreter interpreter, String packageName) {
+        NameSpace ns = new NameSpace((NameSpace) null, "JavaPackage_" + packageName);
+        ns.clearWithCoreImports();
+        ns.importPackage(packageName);
+
+        return new Module(packageName, ns.getThis(interpreter));
+    }
+
     private This moduleThis;
     private String name;
 

@@ -718,6 +718,13 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
         nameSpaceChanged();
     }
 
+    public void importPackageAsModule(KrineBasicInterpreter interpreter, String name) {
+        Module wrap = Module.wrapJavaPackage(interpreter, name);
+        if (wrap != null) {
+            importModule(wrap);
+        }
+    }
+
     protected KrineMethod getImportedMethod(String name, Class[] sig)
             throws UtilEvalException {
         // Try object imports
@@ -886,7 +893,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
         // class in parent...
 
         if (fullname != null) {
-			/*
+            /*
 				Found the full name in imported classes.
 			*/
             // Try to make the full imported name
@@ -1166,6 +1173,26 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
             importDefaultPackages();
         classCache = null;
         names = null;
+    }
+
+    /**
+     * Clear all imported things.
+     * And re-import core classes.
+     * This method is mainly for Java Package Wrap.
+     */
+    public void clearWithCoreImports() {
+        variables = null;
+        methods = null;
+        modules = null;
+        importedClasses = null;
+        importedPackages = null;
+        importedObjects = null;
+        classCache = null;
+        names = null;
+
+        importClass("com.krine.lang.ast.EvalError");
+        importClass("com.krine.lang.KrineInterpreter");
+        importClass("com.krine.interpreter.KrineInterpreter");
     }
 
     /**

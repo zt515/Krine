@@ -17,10 +17,10 @@ class KrineImportDeclaration extends SimpleNode {
             throws EvalError {
         waitForDebugger();
 
-        NameSpace namespace = callStack.top();
+        NameSpace nameSpace = callStack.top();
         if (superImport) {
             try {
-                namespace.doSuperImport();
+                nameSpace.doSuperImport();
             } catch (UtilEvalException e) {
                 throw e.toEvalError(this, callStack);
             }
@@ -29,7 +29,7 @@ class KrineImportDeclaration extends SimpleNode {
                 if (importPackage) {
                     Class clazz = ((KrineAmbiguousName) jjtGetChild(0)).toClass(
                             callStack, krineBasicInterpreter);
-                    namespace.importStatic(clazz);
+                    nameSpace.importStatic(clazz);
                 } else {
                     throw new EvalError(
                             "static leftValue imports not supported yet",
@@ -38,9 +38,10 @@ class KrineImportDeclaration extends SimpleNode {
             } else {
                 String name = ((KrineAmbiguousName) jjtGetChild(0)).text;
                 if (importPackage) {
-                    namespace.importPackage(name);
+                    nameSpace.importPackage(name);
+                    nameSpace.importPackageAsModule(krineBasicInterpreter, name);
                 } else {
-                    namespace.importClass(name);
+                    nameSpace.importClass(name);
                 }
             }
         }

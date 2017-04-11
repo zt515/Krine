@@ -3,5 +3,4 @@ dir = new File(baseDir, "test-module-api");
 
 Module.addModuleSearchPath(dir);
 mod = Module.load(this, "hello");
-mod.say(mod.helloworld());
-
+mod.say(mod.hello_world());

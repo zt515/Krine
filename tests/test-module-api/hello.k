@@ -8,7 +8,7 @@ public String hello() {
     return "hello";
 }
 
-public String helloworld() {
+public String hello_world() {
     return hello() + " " + world();
 }
 

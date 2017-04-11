@@ -1,7 +1,7 @@
 Profiler.begin("hello");
 Thread.sleep(50);
 Profiler.begin("inner timer");
-Thread.sleep(200);
+Thread.sleep(50);
 Profiler.end("inner timer");
 Profiler.end("hello");
 
