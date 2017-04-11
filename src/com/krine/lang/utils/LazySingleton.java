@@ -16,4 +16,9 @@ public abstract class LazySingleton<T>
         }
         return instance;
     }
+
+    @Override
+    public String toString() {
+        return get().toString();
+    }
 }

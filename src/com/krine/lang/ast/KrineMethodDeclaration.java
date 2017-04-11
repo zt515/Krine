@@ -92,10 +92,9 @@ class KrineMethodDeclaration extends SimpleNode {
         // Install an *instance* of this method in the namespace.
         // See notes in KrineMethod
 
-// This is not good...
-// need a way to update eval without re-installing...
-// so that we can re-eval params, etc. when classloader changes
-// look into this
+        // This is not good...
+        // need a way to update eval without re-installing...
+        // so that we can re-eval params, etc. when classloader changes
 
         NameSpace namespace = callStack.top();
         KrineMethod krineMethod = new KrineMethod(this, namespace, modifiers);
@@ -104,7 +103,7 @@ class KrineMethodDeclaration extends SimpleNode {
         } catch (UtilEvalException e) {
             throw e.toEvalError(this, callStack);
         }
-
+        
         return Primitive.VOID;
     }
 

@@ -4,6 +4,11 @@ import com.krine.api.annotations.KrineAPI;
 import com.krine.lang.utils.LazySingleton;
 
 import java.util.Properties;
+import java.io.File;
+import com.krine.lang.ast.This;
+import com.krine.lang.KrineBasicInterpreter;
+import com.krine.lang.ast.EvalError;
+import java.io.IOException;
 
 /**
  * This class provides Krine some system APIs.
@@ -81,7 +86,46 @@ public final class Core {
         return System.currentTimeMillis();
     }
     
+    /**
+     * Change current working directory.
+     *
+     * @param dir New working directory.
+     */
 	public static void chdir(String dir) {
         System.setProperty("user.dir", dir);
 	}
+    
+    /**
+     * Load a file into current program.
+     *
+     * @param aThis Context info.
+     * @param file  File to be loaded.
+     * @return true if successful, otherwise false.
+     * @see load(This, File)
+     */
+    public static boolean load(This aThis, String file) {
+        KrineBasicInterpreter interpreter = This.getInterpreter(aThis);
+        if (interpreter == null) {
+            return false;
+        }
+
+        try {
+            interpreter.source(file);
+        } catch (Exception e) {
+            interpreter.println("Error loading file " + file + ": " + e.getLocalizedMessage());
+        }
+        return true;
+    }
+    
+    /**
+     * Load a file into current program.
+     *
+     * @param aThis Context info.
+     * @param file  File to be loaded.
+     * @return true if successful, otherwise false.
+     * @see load(This, String)
+     */
+    public static boolean load(This aThis, File file) {
+        return Core.load(aThis, file.getAbsolutePath());
+    }
 }

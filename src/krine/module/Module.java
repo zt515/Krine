@@ -5,8 +5,10 @@ import com.krine.lang.KrineBasicInterpreter;
 import com.krine.lang.ast.NameSpace;
 import com.krine.lang.ast.This;
 import krine.core.KRuntimeException;
-
-import java.lang.reflect.Field;
+import com.krine.lang.utils.LazySingleton;
+import krine.core.Core;
+import com.krine.lang.utils.Capabilities;
+import java.io.File;
 
 /**
  * This class provides Krine the module system.
@@ -17,28 +19,96 @@ import java.lang.reflect.Field;
 @KrineAPI
 @SuppressWarnings("unused")
 public final class Module {
-    private This moduleThis;
-    private String name;
-
     /**
-     * Get the interpreter from This class.
-     *
-     * @param aThis This class object.
-     * @return KrineBasicInterpreter the This object has.
+     * Save all Module path.
+     * We only need it when Module.load called.
      */
-    private static KrineBasicInterpreter getInterpreter(This aThis) throws KRuntimeException {
-        try {
-            // Note: This doesn't provide getters for these field,
-            // And we don't want to neither, so let's use reflection.
-            Class<?> clazz = aThis.getClass();
-            Field field = clazz.getDeclaredField("declaringKrineBasicInterpreter");
-            field.setAccessible(true);
-            return (KrineBasicInterpreter) field.get(aThis);
-        } catch (NoSuchFieldException e) {
-            throw new KRuntimeException("Error reflecting interpreter.");
-        } catch (IllegalAccessException e) {
-            throw new KRuntimeException("Error accessing interpreter.");
+    private static final LazySingleton<ModulePath> MODULE_PATH = new LazySingleton<ModulePath>() {
+        @Override
+        public ModulePath onCreate() {
+            ModulePath mp = new ModulePath();
+            String pathFromEnv = Core.getEnv("MODULEPATH");
+            for (String path : pathFromEnv.split(Capabilities.envSeparator())) {
+                mp.addPath(path);
+            }
+            
+            return mp;
         }
+    };
+    
+    private static String parseModuleName(String fileName) {
+        fileName = new File(fileName).getName();
+        int index = fileName.lastIndexOf(".");
+        return index == -1 ? fileName : fileName.substring(0, index);
+    }
+    
+    /**
+     * Search ModulePath to find source file and load it as a module.
+     * This method is a wrap method of Core.load() and Module.load()
+     *
+     * Note: The file must call Module.export() explicitly
+     * or we cannot load it as a module.
+     *
+     * @param aThis      Current namespace, in which we find needed module.
+     * @param fileName   File name, not file path.
+     * @return Module instance
+     * @throws KRuntimeException When somethings goes wrong.
+     * @see Core#load(This, String)
+     * @see Module#load(This, String)
+     * @see Module#loadFile(This, String)
+     * @see Module#loadFile(This, File)
+     */
+    public static This from(This aThis, String fileName) throws KRuntimeException {
+        String filePath = MODULE_PATH.get().search(fileName);
+        if (filePath == null) {
+            throw new KRuntimeException("Module file " + fileName + " not found in " + MODULE_PATH.toString());
+        }
+        
+        return loadFile(aThis, filePath);
+    }
+    
+    /**
+     * Load a file as a module.
+     * This method is a wrap method of Core.load() and Module.load()
+     *
+     * Note: The file must call Module.export() explicitly
+     * or we cannot load it as a module.
+     *
+     * @param aThis      Current namespace, in which we find needed module.
+     * @param fileName   File name, not file path.
+     * @return Module instance
+     * @throws KRuntimeException When somethings goes wrong.
+     * @see Core#load(This, String)
+     * @see Module#from(This, String)
+     * @see Module#load(This, String)
+     * @see Module#loadFile(This, File)
+     */
+    public static This loadFile(This aThis, String filePath) throws KRuntimeException {
+        if (Core.load(aThis, filePath)) {
+            return Module.load(aThis, parseModuleName(filePath));
+        }
+
+        throw new KRuntimeException("Error loading module file " + filePath);
+    }
+    
+    /**
+     * Load a file as a module.
+     * This method is a wrap method of Core.load() and Module.load()
+     *
+     * Note: The file must call Module.export() explicitly
+     * or we cannot load it as a module.
+     *
+     * @param aThis      Current namespace, in which we find needed module.
+     * @param fileName   File name, not file path.
+     * @return Module instance
+     * @throws KRuntimeException When somethings goes wrong.
+     * @see Core#load(This, String)
+     * @see Module#from(This, String)
+     * @see Module#load(This, String)
+     * @see Module#loadFile(This, String)
+     */
+    public static This loadFile(This aThis, File file) throws KRuntimeException {
+        return Module.loadFile(aThis, file.getAbsolutePath());
     }
 
     /**
@@ -50,7 +120,7 @@ public final class Module {
      * @throws KRuntimeException When somethings goes wrong.
      */
     public static This load(This aThis, String moduleName) throws KRuntimeException {
-        KrineBasicInterpreter interpreter = getInterpreter(aThis);
+        KrineBasicInterpreter interpreter = This.getInterpreter(aThis);
 
         if (interpreter == null) {
             throw new KRuntimeException("Cannot get krine instance.");
@@ -74,7 +144,7 @@ public final class Module {
      * @throws KRuntimeException When cannot obtain the interpreter.
      */
     public static void export(This aThis, String moduleName) throws KRuntimeException {
-        KrineBasicInterpreter interpreter = getInterpreter(aThis);
+        KrineBasicInterpreter interpreter = This.getInterpreter(aThis);
 
         if (interpreter == null) {
             throw new KRuntimeException("Cannot get krine instance.");
@@ -84,6 +154,10 @@ public final class Module {
         NameSpace global = interpreter.getGlobalNameSpace();
         global.importModule(mod);
     }
+    
+    
+    private This moduleThis;
+    private String name;
 
     private Module(String name, This aThis) {
         this.name = name;

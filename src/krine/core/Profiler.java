@@ -5,6 +5,7 @@ import com.krine.lang.utils.LazySingleton;
 
 import java.util.HashMap;
 import java.util.Locale;
+import com.krine.lang.ast.This;
 
 /**
  * This class provides some profile APIs to Krine.
@@ -60,5 +61,9 @@ public final class Profiler {
         }
 
         System.err.printf(Locale.getDefault(), "[%s] execution time: %dms\n", tag, end - start);
+    }
+    
+    public static void execute(This aThis, String tag, String... code) {
+        
     }
 }

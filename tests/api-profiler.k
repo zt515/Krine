@@ -4,3 +4,9 @@ Profiler.begin("inner timer");
 Thread.sleep(200);
 Profiler.end("inner timer");
 Profiler.end("hello");
+
+void hello() {
+
+}
+
+Profiler.execute(this, "test_profiler", "hello();");

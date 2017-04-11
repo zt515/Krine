@@ -1,12 +1,12 @@
 println("Krine Tests Runner");
 println("------------------");
 
-File self = new File(krine.args[0]);
-File testsDir = self.getParentFile();
+self = new File(krine.args[0]);
+testsDir = self.getParentFile();
 
-String[] args = new String[1];
-for (File file : testsDir.listFiles()) {
-    if (file.equals(self)) {
+args = new String[1];
+for (file : testsDir.listFiles()) {
+    if (!file.isFile() || file.getName().equals(self.getName())) {
         continue;
     }
 

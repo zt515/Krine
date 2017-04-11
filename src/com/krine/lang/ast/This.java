@@ -4,12 +4,13 @@ import com.krine.lang.KrineBasicInterpreter;
 import com.krine.lang.UtilEvalException;
 import com.krine.lang.utils.CallStack;
 import com.krine.lang.utils.StringUtil;
-
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.Map;
+import krine.core.KRuntimeException;
 
 
 /**
@@ -407,5 +408,25 @@ public final class This implements java.io.Serializable, Runnable {
                         || name.equals("notifyAll");
     }
 
+    /**
+     * Get the interpreter from This class.
+     *
+     * @param aThis This class object.
+     * @return KrineBasicInterpreter the This object has.
+     */
+    public static KrineBasicInterpreter getInterpreter(This aThis) throws KRuntimeException {
+        try {
+            // Note: This doesn't provide getters for these field,
+            // And we don't want to neither, so let's use reflection.
+            Class<?> clazz = aThis.getClass();
+            Field field = clazz.getDeclaredField("declaringKrineBasicInterpreter");
+            field.setAccessible(true);
+            return (KrineBasicInterpreter) field.get(aThis);
+        } catch (NoSuchFieldException e) {
+            throw new KRuntimeException("Error reflecting interpreter.");
+        } catch (IllegalAccessException e) {
+            throw new KRuntimeException("Error accessing interpreter.");
+        }
+    }
 }
 

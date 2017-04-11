@@ -88,6 +88,10 @@ public class Capabilities {
             return false;
         }
     }
+    
+    public static String envSeparator() {
+        return System.getProperty("path.separator");
+    }
 
     /**
      * An attempt was made to use an unavailable capability supported by

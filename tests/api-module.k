@@ -1,12 +1,6 @@
-_() {
-    Module.export(this, "test_module");
+baseDir = new File(krine.args[0]).getParentFile();
+dir = new File(baseDir, "test-module-api");
 
-    public void say(String word) {
-        println("[Say]: " + word);
-    }
-}
-
-_();
-mod = Module.load(this, "test_module");
-mod.say("hello world");
+mod = Module.loadFile(this, new File(dir, "hello.k"));
+mod.say(mod.helloworld());
 
