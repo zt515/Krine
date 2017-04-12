@@ -1,6 +1,4 @@
-import krine.dynamic.DynamicMethod;
-
-DynamicMethod m = new DynamicMethod.Builder()
+m = new Dynamic.MethodBuilder()
     .withReturnType(Integer.class)
     .addParameter("x", Integer.class)
     .withName("getInt")
@@ -8,6 +6,6 @@ DynamicMethod m = new DynamicMethod.Builder()
     .withAccessibility(DynamicMethod.Accessibility.PUBLIC)
     .build();
 
-krine.dynamic.applyMethod(m);
+Dynamic.defineMethod(this, m);
 
 println(getInt(33));

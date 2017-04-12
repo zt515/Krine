@@ -128,4 +128,13 @@ public final class Core {
     public static boolean load(This aThis, File file) {
         return Core.load(aThis, file.getAbsolutePath());
     }
+    
+    /**
+     * Call a method when program exits.
+     *
+     * @param r Runnable
+     */
+    public static void doOnExit(Runnable r) {
+        Runtime.getRuntime().addShutdownHook(new Thread(r));
+    }
 }

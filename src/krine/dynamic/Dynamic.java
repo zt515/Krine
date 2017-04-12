@@ -3,6 +3,10 @@ package krine.dynamic;
 import com.krine.api.annotations.KrineAPI;
 
 import java.util.HashMap;
+import com.krine.lang.ast.This;
+import com.krine.lang.KrineBasicInterpreter;
+import krine.core.KRuntimeException;
+import com.krine.lang.ast.EvalError;
 
 /**
  * @author kiva
@@ -10,12 +14,25 @@ import java.util.HashMap;
  */
 @KrineAPI
 @SuppressWarnings("unused")
-public class DynamicMethod {
+public class Dynamic {
     public enum Accessibility {
         PUBLIC, PRIVATE, PROTECTED
     }
 
     private static final String[] ACCESSIBILITIES = new String[]{"public", "private", "protected"};
+    
+    public static void defineMethod(This aThis, Dynamic method) {
+        KrineBasicInterpreter interpreter = This.getInterpreter(aThis);
+        if (interpreter == null) {
+            throw new KRuntimeException("Cannot get krine instance.");
+        }
+        
+        try {
+            interpreter.eval(method.generateCode());
+        } catch (EvalError e) {
+            throw new KRuntimeException("Error defining method " + method.getName());
+        }
+    }
 
     private Class<?> returnType;
     private HashMap<String, Class<?>> parameters;
@@ -23,7 +40,7 @@ public class DynamicMethod {
     private String body;
     private Accessibility accessibility;
 
-    private DynamicMethod() {
+    private Dynamic() {
         parameters = new HashMap<>(2);
     }
 
@@ -74,39 +91,39 @@ public class DynamicMethod {
         return builder.toString();
     }
 
-    public static class Builder {
-        private final DynamicMethod method;
+    public static class MethodBuilder {
+        private final Dynamic method;
 
-        public Builder() {
-            method = new DynamicMethod();
+        public MethodBuilder() {
+            method = new Dynamic();
         }
 
-        public Builder withName(String name) {
+        public MethodBuilder withName(String name) {
             method.name = name;
             return this;
         }
 
-        public Builder withReturnType(Class<?> returnType) {
+        public MethodBuilder withReturnType(Class<?> returnType) {
             method.returnType = returnType;
             return this;
         }
 
-        public Builder addParameter(String name, Class<?> type) {
+        public MethodBuilder addParameter(String name, Class<?> type) {
             method.parameters.put(name, type);
             return this;
         }
 
-        public Builder withCode(String body) {
+        public MethodBuilder withCode(String body) {
             method.body = body;
             return this;
         }
 
-        public Builder withAccessibility(Accessibility accessibility) {
+        public MethodBuilder withAccessibility(Accessibility accessibility) {
             method.accessibility = accessibility;
             return this;
         }
 
-        public DynamicMethod build() {
+        public Dynamic build() {
             return method;
         }
     }

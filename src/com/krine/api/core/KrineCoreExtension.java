@@ -4,6 +4,7 @@ import com.krine.extension.IKrineLinkable;
 import com.krine.extension.annotations.ExtensionConfig;
 import com.krine.extension.annotations.KrineMethod;
 import com.krine.interpreter.KrineInterpreter;
+import com.krine.lang.Version;
 
 /**
  * @author kiva
@@ -26,7 +27,7 @@ public class KrineCoreExtension implements IKrineLinkable {
 
     @KrineMethod
     public String getKrineVersion() {
-        return KrineInterpreter.VERSION;
+        return Version.current();
     }
 
     @Override

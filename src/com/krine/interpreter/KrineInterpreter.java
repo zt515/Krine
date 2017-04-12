@@ -1,7 +1,6 @@
 package com.krine.interpreter;
 
 import com.krine.api.core.KrineCoreExtension;
-import com.krine.api.dynamic.KrineDynamicExtension;
 import com.krine.extension.IKrineLinkable;
 import com.krine.extension.KrineExtension;
 import com.krine.lang.InterpreterException;
@@ -22,11 +21,6 @@ import java.lang.reflect.Method;
  * @date 2016/10/15
  */
 public class KrineInterpreter extends KrineBasicInterpreter {
-
-    /**
-     * Krine Version
-     */
-    public static final String VERSION = "2.1.build_1";
 
     public KrineInterpreter(Reader in, PrintStream out, PrintStream err, NameSpace namespace, KrineBasicInterpreter parent, String sourceFileInfo) {
         super(in, out, err, namespace, parent, sourceFileInfo);
@@ -61,7 +55,6 @@ public class KrineInterpreter extends KrineBasicInterpreter {
     private void init() {
         try {
             linkNativeInterface(KrineExtension.fromClass(KrineCoreExtension.class));
-            linkNativeInterface(KrineExtension.fromClass(KrineDynamicExtension.class));
 
         } catch (Exception e) {
             e.printStackTrace();
