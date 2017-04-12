@@ -106,11 +106,22 @@ public final class Module {
         // If module called Module.export() in source file
         // It must in the imported module list.
         // And we are able to get it.
-        if (Core.load(aThis, filePath)) {
-            return Module.loadModuleFromImported(aThis, parseModuleName(filePath));
+        String moduleName = parseModuleName(filePath);
+        NameSpace ns = Core.load(aThis, filePath, "Module_" + moduleName);
+        
+        if (ns == null) {
+            //return Module.loadModuleFromImported(aThis, parseModuleName(filePath));
+            return null;
         }
-
-        return null;
+        
+        KrineBasicInterpreter interpreter = This.getInterpreter(aThis);
+        if (interpreter == null) {
+            return null;
+        }
+        
+        Module mod = new Module(moduleName, ns.getThis(interpreter));
+        interpreter.getGlobalNameSpace().importModule(mod);
+        return mod;
     }
 
     /**

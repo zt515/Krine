@@ -9,6 +9,7 @@ import com.krine.lang.ast.This;
 import com.krine.lang.KrineBasicInterpreter;
 import com.krine.lang.ast.EvalError;
 import java.io.IOException;
+import com.krine.lang.ast.NameSpace;
 
 /**
  * This class provides Krine some system APIs.
@@ -115,6 +116,31 @@ public final class Core {
             interpreter.println("Error loading file " + file + ": " + e.getLocalizedMessage());
         }
         return true;
+    }
+    
+    /**
+     * Load a file into namespace.
+     *
+     * @param aThis  Context info.
+     * @param file   File to be loaded.
+     * @param nsName New namespace name.
+     * @return namespace if successful, otherwise null.
+     * @see Core#load(This, File)
+     */
+    public static NameSpace load(This aThis, String file, String nsName) {
+        KrineBasicInterpreter interpreter = This.getInterpreter(aThis);
+        if (interpreter == null) {
+            return null;
+        }
+        
+        try {
+            NameSpace ns = new NameSpace((NameSpace) null, nsName);
+            interpreter.source(file, ns);
+            return ns;
+        } catch (Exception e) {
+            interpreter.println("Error loading file " + file + ": " + e.getLocalizedMessage());
+        }
+        return null;
     }
     
     /**
