@@ -431,7 +431,7 @@ public class KrineBasicInterpreter
                 if (DEBUG)
                     e.printStackTrace();
                 throw new EvalError(
-                        "Sourced file: " + sourceFileInfo + " unknown error: "
+                        "Sourced file: " + sourceFileInfo + e.getClass().getSimpleName()
                                 + e.getMessage(), node, callStack, e);
             } catch (KrineTokenException e) {
                 throw new EvalError(

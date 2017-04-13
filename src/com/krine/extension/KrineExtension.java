@@ -7,7 +7,6 @@ import com.krine.extension.annotations.KrineVariable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.IllegalFormatFlagsException;
 import java.util.List;
 
 /**

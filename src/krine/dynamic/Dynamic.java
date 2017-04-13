@@ -1,12 +1,12 @@
 package krine.dynamic;
 
 import com.krine.api.annotations.KrineAPI;
+import com.krine.lang.KrineBasicInterpreter;
+import com.krine.lang.ast.EvalError;
+import com.krine.lang.ast.This;
+import krine.core.KRuntimeException;
 
 import java.util.HashMap;
-import com.krine.lang.ast.This;
-import com.krine.lang.KrineBasicInterpreter;
-import krine.core.KRuntimeException;
-import com.krine.lang.ast.EvalError;
 
 /**
  * @author kiva

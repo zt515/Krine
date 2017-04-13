@@ -3,9 +3,7 @@ package com.krine.command;
 import com.krine.interpreter.KrineInterpreter;
 import com.krine.lang.ast.KrineTargetException;
 
-import java.io.File;
 import java.lang.reflect.InvocationTargetException;
-import krine.core.Core;
 
 public class Main {
 

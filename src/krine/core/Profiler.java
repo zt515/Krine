@@ -1,11 +1,11 @@
 package krine.core;
 
 import com.krine.api.annotations.KrineAPI;
+import com.krine.lang.ast.This;
 import com.krine.lang.utils.LazySingleton;
 
 import java.util.HashMap;
 import java.util.Locale;
-import com.krine.lang.ast.This;
 
 /**
  * This class provides some profile APIs to Krine.

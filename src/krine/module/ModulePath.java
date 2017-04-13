@@ -1,7 +1,8 @@
 package krine.module;
-import java.util.List;
-import java.util.LinkedList;
+
 import java.io.File;
+import java.util.LinkedList;
+import java.util.List;
 
 public class ModulePath {
     private List<String> modulePath;
