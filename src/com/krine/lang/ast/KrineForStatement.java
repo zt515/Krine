@@ -42,10 +42,10 @@ class KrineForStatement extends SimpleNode implements ParserConstants {
             Note: some interesting things are going on here.
 
 			1) We swap instead of push...  The primary mode of operation 
-			acts like we are in the enclosing namespace...  (super must be 
+			acts like we are in the enclosing nameSpace...  (super must be
 			preserved, etc.)
 
-			2) We do *not* call the body block eval with the namespace 
+			2) We do *not* call the body block eval with the nameSpace
 			override.  Instead we allow it to create a second subordinate 
 			BlockNameSpace child of the forNameSpace.  Variable propagation
 			still works through the chain, but the block's child cleans the 
@@ -55,7 +55,7 @@ class KrineForStatement extends SimpleNode implements ParserConstants {
 
         // put forNameSpace it on the top of the stack
         // Note: it's important that there is only one exit point from this
-        // method so that we can swap back the namespace.
+        // method so that we can swap back the nameSpace.
         callStack.swap(forNameSpace);
 
         // Do the for init

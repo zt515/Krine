@@ -4,8 +4,8 @@ import com.krine.lang.KrineBasicInterpreter;
 import com.krine.lang.UtilEvalException;
 
 /**
- * A specialized namespace	for Blocks (e.g. the body of a "for" statement).
- * The Block acts like a child namespace but only for typed variables
+ * A specialized nameSpace	for Blocks (e.g. the body of a "for" statement).
+ * The Block acts like a child nameSpace but only for typed variables
  * declared within it (block local scope) or untyped variables explicitly set
  * in it via setBlockVariable().  Otherwise variable assignment
  * (including untyped variable usage) acts like it is part of the containing
@@ -26,12 +26,12 @@ class BlockNameSpace extends NameSpace {
     }
 
     /**
-     * Override the standard namespace behavior to make assignments
-     * happen in our parent (enclosing) namespace, unless the variable has
+     * Override the standard nameSpace behavior to make assignments
+     * happen in our parent (enclosing) nameSpace, unless the variable has
      * already been assigned here via a typed declaration or through
      * the special setBlockVariable() (used for untyped args in try/catch).
      * <p>
-     * i.e. only allow typed var declaration to happen in this namespace.
+     * i.e. only allow typed var declaration to happen in this nameSpace.
      * Typed vars are handled in the ordinary way local scope.  All untyped
      * assignments are delegated to the enclosing context.
      */
@@ -44,15 +44,15 @@ class BlockNameSpace extends NameSpace {
             String name, Object value, boolean strictJava, boolean recurse)
             throws UtilEvalException {
         if (weHaveVar(name))
-            // set the var here in the block namespace
+            // set the var here in the block nameSpace
             super.setVariable(name, value, strictJava, false);
         else
-            // set the var in the enclosing (parent) namespace
+            // set the var in the enclosing (parent) nameSpace
             getParent().setVariable(name, value, strictJava, recurse);
     }
 
     /**
-     * Set an untyped variable in the block namespace.
+     * Set an untyped variable in the block nameSpace.
      * The BlockNameSpace would normally delegate this set to the parent.
      * Typed variables are naturally set locally.
      * This is used in try/catch block argument.
@@ -80,7 +80,7 @@ class BlockNameSpace extends NameSpace {
  Get the actual BlockNameSpace 'this' reference.
  <p/>
  Normally a 'this' reference to a BlockNameSpace (e.g. if () { } )
- resolves to the parent namespace (e.g. the namespace containing the
+ resolves to the parent nameSpace (e.g. the nameSpace containing the
  "if" statement).  However when code inside the BlockNameSpace needs to
  resolve things relative to 'this' we must use the actual block's 'this'
  reference.  Name.java is smart enough to handle this using
@@ -122,7 +122,7 @@ class BlockNameSpace extends NameSpace {
     /**
      * Get a 'this' reference is our parent's 'this' for the object closure.
      * e.g. Normally a 'this' reference to a BlockNameSpace (e.g. if () { } )
-     * resolves to the parent namespace (e.g. the namespace containing the
+     * resolves to the parent nameSpace (e.g. the nameSpace containing the
      * "if" statement).
      */
     public This getThis(KrineBasicInterpreter declaringKrineBasicInterpreter) {

@@ -77,8 +77,8 @@ class KrineTryStatement extends SimpleNode {
 
                     // Should cache this subject to classloader change message
                     // Evaluation of the formal parameter simply resolves its
-                    // type via the specified namespace.. it doesn't modify the
-                    // namespace.
+                    // type via the specified nameSpace.. it doesn't modify the
+                    // nameSpace.
                     fp.eval(callStack, krineBasicInterpreter);
 
                     if (fp.type == null && krineBasicInterpreter.isStrictJava())
@@ -120,11 +120,11 @@ class KrineTryStatement extends SimpleNode {
                             // set a typed variable (directly in the block)
                             Modifiers modifiers = new Modifiers();
                             cbNameSpace.setTypedVariable(
-                                    fp.name, fp.type, thrown, new Modifiers()/*none*/);
+                                    fp.name, fp.type, thrown, modifiers);
                         }
                     } catch (UtilEvalException e) {
                         throw new InterpreterException(
-                                "Unable to set var in catch block namespace.");
+                                "Unable to set var in catch block nameSpace.");
                     }
 
                     // put cbNameSpace on the top of the stack

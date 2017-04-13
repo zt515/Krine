@@ -1,8 +1,8 @@
 baseDir = new File(krine.args[0]).getParentFile();
 dir = new File(baseDir, "test-module-api");
 
-void methodInMain() {
-    println("method in main");
+private void h() {
+    println("233");
 }
 
 Module.addModuleSearchPath(dir);

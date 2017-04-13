@@ -17,11 +17,11 @@ class KrineBlock extends SimpleNode {
 
     /**
      * @param overrideNamespace if set to true the block will be executed
-     *                          in the current namespace (not a subordinate one).
+     *                          in the current nameSpace (not a subordinate one).
      *                          <p>
      *                          If true *no* new BlockNamespace will be swapped onto the stack and
      *                          the eval will happen in the current
-     *                          top namespace.  This is used by KrineMethod, TryStatement, etc.
+     *                          top nameSpace.  This is used by KrineMethod, TryStatement, etc.
      *                          which must initialize the block first and also for those that perform
      *                          multiple passes in the same block.
      */
@@ -98,7 +98,7 @@ class KrineBlock extends SimpleNode {
                     break;
             }
         } finally {
-            // make sure we put the namespace back when we leave.
+            // make sure we put the nameSpace back when we leave.
             if (!overrideNamespace)
                 callStack.swap(enclosingNameSpace);
         }

@@ -72,7 +72,7 @@ import java.util.*;
  * Note on jdk1.2 dependency:
  *
  * We are forced to use weak references here to accommodate all of the
- * fleeting namespace listeners.  (NameSpaces must be informed if the class
+ * fleeting nameSpace listeners.  (NameSpaces must be informed if the class
  * space changes so that they can un-cache names).  I had the interesting
  * thought that a way around this would be to implement Krine's own
  * garbage collector...  Then I came to my senses and said - screw it,
@@ -315,18 +315,6 @@ public class ClassManagerImpl extends KrineClassManager {
     }
 
     /**
-     * Set a new base classpath and create a new base classloader.
-     * This means all types change.
-     */
-    @Override
-    public void setClassPath(URL[] cp) {
-        baseClassPath.setPath(cp);
-        initBaseLoader();
-        loaderMap = new HashMap();
-        classLoaderChanged();
-    }
-
-    /**
      * Overlay the entire path with a new class loader.
      * Set the base path to the user path + base path.
      * <p>
@@ -350,8 +338,6 @@ public class ClassManagerImpl extends KrineClassManager {
             baseLoader = new KrineJavaClassLoader(this, baseClassPath);
         }
     }
-
-    // class reloading
 
     /**
      * Reloading classes means creating a new classloader and using it
@@ -407,6 +393,8 @@ public class ClassManagerImpl extends KrineClassManager {
         classLoaderChanged();
     }
 
+    // class reloading
+
     /**
      * Reload all classes in the specified package: e.g. "com.sun.tools"
      * <p>
@@ -432,17 +420,6 @@ public class ClassManagerImpl extends KrineClassManager {
     }
 
     /**
-     Unimplemented
-     For this we'd have to store a map by location as well as name...
-
-     public void reloadPathComponent( URL pc ) throws ClassPathException {
-     throw new ClassPathException("Unimplemented!");
-     }
-     */
-
-    // end reloading
-
-    /**
      * Get the full blown classpath.
      */
     public KrineClassPath getClassPath() throws ClassPathException {
@@ -459,6 +436,29 @@ public class ClassManagerImpl extends KrineClassManager {
         fullClassPath.addComponent(baseClassPath);
 
         return fullClassPath;
+    }
+
+    /**
+     Unimplemented
+     For this we'd have to store a map by location as well as name...
+
+     public void reloadPathComponent( URL pc ) throws ClassPathException {
+     throw new ClassPathException("Unimplemented!");
+     }
+     */
+
+    // end reloading
+
+    /**
+     * Set a new base classpath and create a new base classloader.
+     * This means all types change.
+     */
+    @Override
+    public void setClassPath(URL[] cp) {
+        baseClassPath.setPath(cp);
+        initBaseLoader();
+        loaderMap = new HashMap();
+        classLoaderChanged();
     }
 
     /**
@@ -554,7 +554,7 @@ public class ClassManagerImpl extends KrineClassManager {
      * class caches.
      * <p>
      * The listener list is implemented with weak references so that we
-     * will not keep every namespace in existence forever.
+     * will not keep every nameSpace in existence forever.
      */
     @Override
     protected void classLoaderChanged() {

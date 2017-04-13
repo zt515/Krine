@@ -1,15 +1,13 @@
 package krine.core;
 
 import com.krine.api.annotations.KrineAPI;
+import com.krine.lang.KrineBasicInterpreter;
+import com.krine.lang.ast.NameSpace;
+import com.krine.lang.ast.This;
 import com.krine.lang.utils.LazySingleton;
 
-import java.util.Properties;
 import java.io.File;
-import com.krine.lang.ast.This;
-import com.krine.lang.KrineBasicInterpreter;
-import com.krine.lang.ast.EvalError;
-import java.io.IOException;
-import com.krine.lang.ast.NameSpace;
+import java.util.Properties;
 
 /**
  * This class provides Krine some system APIs.
@@ -86,16 +84,16 @@ public final class Core {
     public static long getTime() {
         return System.currentTimeMillis();
     }
-    
+
     /**
      * Change current working directory.
      *
      * @param dir New working directory.
      */
-	public static void chdir(String dir) {
+    public static void chdir(String dir) {
         System.setProperty("user.dir", dir);
-	}
-    
+    }
+
     /**
      * Load a file into current program.
      *
@@ -117,24 +115,25 @@ public final class Core {
         }
         return true;
     }
-    
+
     /**
-     * Load a file into namespace.
+     * Load a file into nameSpace.
      *
-     * @param aThis  Context info.
-     * @param file   File to be loaded.
-     * @param nsName New namespace name.
-     * @return namespace if successful, otherwise null.
+     * @param aThis    Context info.
+     * @param file     File to be loaded.
+     * @param nsName   New nameSpace name.
+     * @param parentNs Parent NameSpace to return value.
+     * @return nameSpace if successful, otherwise null.
      * @see Core#load(This, File)
      */
-    public static NameSpace load(This aThis, String file, String nsName) {
+    public static NameSpace load(This aThis, String file, String nsName, NameSpace parentNs) {
         KrineBasicInterpreter interpreter = This.getInterpreter(aThis);
         if (interpreter == null) {
             return null;
         }
-        
+
         try {
-            NameSpace ns = new NameSpace((NameSpace) null, nsName);
+            NameSpace ns = new NameSpace(parentNs, nsName);
             interpreter.source(file, ns);
             return ns;
         } catch (Exception e) {
@@ -142,7 +141,7 @@ public final class Core {
         }
         return null;
     }
-    
+
     /**
      * Load a file into current program.
      *
@@ -154,7 +153,7 @@ public final class Core {
     public static boolean load(This aThis, File file) {
         return Core.load(aThis, file.getAbsolutePath());
     }
-    
+
     /**
      * Call a method when program exits.
      *

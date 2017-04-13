@@ -7,17 +7,17 @@ import java.util.*;
 
 
 /**
- * A namespace which maintains an external map of values held in variables in
+ * A nameSpace which maintains an external map of values held in variables in
  * its scope.  This mechanism provides a standard collections based interface
- * to the namespace as well as a convenient way to export and view values of
- * the namespace without the ordinary Krine wrappers.
+ * to the nameSpace as well as a convenient way to export and view values of
+ * the nameSpace without the ordinary Krine wrappers.
  * </p>
  * <p>
  * Variables are maintained internally in the normal fashion to support
  * meta-information (such as variable type and visibility modifiers), but
  * exported and imported in a synchronized way.  Variables are exported each
  * time they are written by Krine.  Imported variables from the map appear
- * in the Krine namespace as untyped variables with no modifiers and
+ * in the Krine nameSpace as untyped variables with no modifiers and
  * shadow any previously defined variables in the scope.
  * <p/>
  * <p>
@@ -27,7 +27,7 @@ import java.util.*;
  */
 /*
     Implementation notes:  krine methods are not currently exported to the
-	external namespace.  All that would be required to add this is to override
+	external nameSpace.  All that would be required to add this is to override
 	setMethod() and provide a friendlier view than vector (currently used) for
 	overloaded forms (perhaps a map by method SignatureKey).
 */
@@ -51,21 +51,21 @@ public class ExternalNameSpace extends NameSpace {
     }
 
     /**
-     * Get the map view of this namespace.
+     * Get the map view of this nameSpace.
      */
     public Map<String, Object> getMap() {
         return externalMap;
     }
 
     /**
-     * Set the external Map which to which this namespace synchronizes.
-     * The previous external map is detached from this namespace.  Previous
+     * Set the external Map which to which this nameSpace synchronizes.
+     * The previous external map is detached from this nameSpace.  Previous
      * map values are retained in the external map, but are removed from the
-     * Krine namespace.
+     * Krine nameSpace.
      */
     public void setMap(Map<String, Object> map) {
-        // Detach any existing namespace to preserve it, then clear this
-        // namespace and set the new one
+        // Detach any existing nameSpace to preserve it, then clear this
+        // nameSpace and set the new one
         this.externalMap = null;
         clear();
         this.externalMap = map;
@@ -90,7 +90,7 @@ public class ExternalNameSpace extends NameSpace {
     /**
      */
     public String[] getVariableNames() {
-        // union of the names in the internal namespace and external map
+        // union of the names in the internal nameSpace and external map
         Set<String> nameSet = new HashSet<>();
         String[] nsNames = super.getVariableNames();
         nameSet.addAll(Arrays.asList(nsNames));
@@ -104,7 +104,7 @@ public class ExternalNameSpace extends NameSpace {
         Notes: This implementation of getVariableImpl handles the following
 		cases:
 		1) var in map not in local scope - var was added through map
-		2) var in map and in local scope - var was added through namespace
+		2) var in map and in local scope - var was added through nameSpace
 		3) var not in map but in local scope - var was removed via map
 		4) var not in map and not in local scope - non-existent var
 	*/
@@ -174,7 +174,7 @@ public class ExternalNameSpace extends NameSpace {
 
     /*
         Note: kind of far-fetched, but... we could override this method to
-        allow krine methods to be inserted into this namespace via the map.
+        allow krine methods to be inserted into this nameSpace via the map.
     */
     public KrineMethod getMethod(
             String name, Class[] sig, boolean declaredOnly)
@@ -192,7 +192,7 @@ public class ExternalNameSpace extends NameSpace {
     }
 
     /**
-     * Clear all variables, methods, and imports from this namespace and clear
+     * Clear all variables, methods, and imports from this nameSpace and clear
      * all values from the external map (via Map clear()).
      */
     public void clear() {

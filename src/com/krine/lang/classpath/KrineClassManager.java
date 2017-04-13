@@ -35,26 +35,21 @@ import java.util.*;
 	Note on version dependency:  This base class is JDK 1.1 compatible,
 	however we are forced to use weak references in the full featured
 	implementation (the optional krine.classpath package) to accomodate all of
-	the fleeting namespace listeners as they fall out of scope.  (NameSpaces
+	the fleeting nameSpace listeners as they fall out of scope.  (NameSpaces
 	must be informed if the class space changes so that they can un-cache
 	names).  
 	<p>
 
 	Perhaps a simpler idea would be to have entities that reference cached
 	types always perform a light weight check with a counter / reference
-	value and use that to detect changes in the namespace.  This puts the 
+	value and use that to detect changes in the nameSpace.  This puts the
 	burden on the consumer to check at appropriate times, but could eliminate
 	the need for the listener system in many places and the necessity of weak 
 	references in this package.
 	<p>
 */
 public class KrineClassManager {
-    /**
-     * The krineBasicInterpreter which created the class manager
-     * This is used to load scripted classes from source files.
-     */
-    private KrineBasicInterpreter declaringKrineBasicInterpreter;
-
+    private static final Map<KrineClassManager, Object> classManagers = Collections.synchronizedMap(new WeakHashMap<KrineClassManager, Object>());
     /**
      * An external classloader supplied by the setClassLoader() command.
      */
@@ -80,11 +75,13 @@ public class KrineClassManager {
      */
     protected transient volatile Map<SignatureKey, Method> resolvedObjectMethods = new Hashtable<>();
     protected transient volatile Map<SignatureKey, Method> resolvedStaticMethods = new Hashtable<>();
-
-    private transient Set<String> definingClasses = Collections.synchronizedSet(new HashSet<String>());
     protected transient Map<String, String> definingClassesBaseNames = new Hashtable<>();
-
-    private static final Map<KrineClassManager, Object> classManagers = Collections.synchronizedMap(new WeakHashMap<KrineClassManager, Object>());
+    /**
+     * The krineBasicInterpreter which created the class manager
+     * This is used to load scripted classes from source files.
+     */
+    private KrineBasicInterpreter declaringKrineBasicInterpreter;
+    private transient Set<String> definingClasses = Collections.synchronizedSet(new HashSet<String>());
 
     public static void clearResolveCache() {
         KrineClassManager[] managers = classManagers.keySet().toArray(new KrineClassManager[0]);
@@ -124,8 +121,9 @@ public class KrineClassManager {
         return manager;
     }
 
-    public boolean classExists(String name) {
-        return (classForName(name) != null);
+    protected static UtilEvalException cmUnavailable() {
+        return new Capabilities.Unavailable(
+                "ClassLoading features unavailable.");
     }
 
     /**
@@ -146,7 +144,8 @@ public class KrineClassManager {
         Class clazz = null;
         try {
             clazz = plainClassForName(name);
-        } catch (ClassNotFoundException e) { /*ignore*/ }
+        } catch (ClassNotFoundException ignore) {
+        }
 
         return clazz;
     }
@@ -167,15 +166,15 @@ public class KrineClassManager {
      */
     public Class plainClassForName(String name)
             throws ClassNotFoundException {
-        Class c = null;
+        Class c;
 
-        if (externalClassLoader != null)
+        if (externalClassLoader != null) {
             c = externalClassLoader.loadClass(name);
-        else
+        } else {
             c = Class.forName(name);
+        }
 
         cacheClassInfo(name, c);
-
         return c;
     }
 
@@ -346,6 +345,14 @@ public class KrineClassManager {
     }
 
     /**
+     This has been removed from the interface to shield the lang from the
+     rest of the classpath package. If you need the classpath you will have
+     to cast the ClassManager to its impl.
+
+     public KrineClassPath getClassPath() throws ClassPathException;
+     */
+
+    /**
      * Reload all classes in the specified package: e.g. "com.sun.tools"
      * <p>
      * The special package name "<un-packaged>" can be used to refer
@@ -355,14 +362,6 @@ public class KrineClassManager {
             throws UtilEvalException {
         throw cmUnavailable();
     }
-
-    /**
-     This has been removed from the interface to shield the lang from the
-     rest of the classpath package. If you need the classpath you will have
-     to cast the ClassManager to its impl.
-
-     public KrineClassPath getClassPath() throws ClassPathException;
-     */
 
     /**
      * Support for "import *;"
@@ -405,11 +404,11 @@ public class KrineClassManager {
      */
     /*
         Note: this implementation is temporary. We currently keep a flat
-		namespace of the base name of classes.  i.e. Krine cannot be in the
+		nameSpace of the base name of classes.  i.e. Krine cannot be in the
 		process of defining two classes in different packages with the same
 		base name.  To remove this limitation requires that we work through
-		namespace imports in an analogous (or using the same path) as regular
-		class import resolution.  This workaround should handle most cases 
+		nameSpace imports in an analogous (or using the same path) as regular
+		class import resolution.  This workaround should handle most cases
 		so we'll try it for now.
 	*/
     public void definingClass(String className) {
@@ -459,21 +458,21 @@ public class KrineClassManager {
         throw new InterpreterException("Can't create class (" + name
                 + ") without class manager package.");
 	/*
-		Old implementation injected classes into the parent classloader.
+        Old implementation injected classes into the parent classloader.
 		This was incorrect behavior for several reasons.  The biggest problem
 		is that classes could therefore only be defined once across all
-		executions of the script...  
+		executions of the script...
 
 		ClassLoader cl = this.getClass().getClassLoader();
 		Class clazz;
 		try {
 			clazz = (Class)Reflect.invokeObjectMethod(
-				cl, "defineClass", 
-				new Object [] { 
-					name, code, 
-					new Primitive( (int)0 )/offset/, 
-					new Primitive( code.length )/len/ 
-				}, 
+				cl, "defineClass",
+				new Object [] {
+					name, code,
+					new Primitive( (int)0 )/offset/,
+					new Primitive( code.length )/len/
+				},
 				(KrineInterpreter)null, (CallStack)null, (SimpleNode)null
 			);
 		} catch ( Exception e ) {
@@ -486,11 +485,6 @@ public class KrineClassManager {
     }
 
     protected void classLoaderChanged() {
-    }
-
-    protected static UtilEvalException cmUnavailable() {
-        return new Capabilities.Unavailable(
-                "ClassLoading features unavailable.");
     }
 
     public interface Listener {

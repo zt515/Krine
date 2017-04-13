@@ -1,38 +1,18 @@
 package com.krine.lang;
 
 import com.krine.debugger.KrineDebugger;
-import com.krine.lang.ast.EvalError;
-import com.krine.lang.ast.JJTParserState;
-import com.krine.lang.ast.JavaCharStream;
-import com.krine.lang.ast.KrineTargetException;
-import com.krine.lang.ast.KrineTokenException;
-import com.krine.lang.ast.LeftValue;
-import com.krine.lang.ast.Name;
-import com.krine.lang.ast.NameSpace;
-import com.krine.lang.ast.ParseException;
-import com.krine.lang.ast.Parser;
-import com.krine.lang.ast.Primitive;
-import com.krine.lang.ast.ReturnControl;
-import com.krine.lang.ast.SimpleNode;
-import com.krine.lang.ast.This;
+import com.krine.lang.ast.*;
 import com.krine.lang.classpath.KrineClassManager;
 import com.krine.lang.io.SystemIOBridge;
 import com.krine.lang.reflect.Reflect;
 import com.krine.lang.utils.CallStack;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.io.Reader;
-import java.io.Serializable;
-import java.io.StringReader;
-import java.lang.reflect.Method;
-import java.util.Set;
-import java.util.Map;
 import krine.module.Module;
+
+import java.io.*;
+import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * The Krine script krineBasicInterpreter.
@@ -53,6 +33,7 @@ import java.util.HashMap;
  */
 public class KrineBasicInterpreter
         implements Runnable, SystemIOBridge, Serializable {
+    private static final This SYSTEM_OBJECT = This.getThis(new NameSpace(null, null, "krine.system"), null);
     /* --- Begin static members --- */
     /*
         Debug utils are static so that they are reachable by code that doesn't
@@ -63,10 +44,8 @@ public class KrineBasicInterpreter
         turns it on or off.
     */
     public static boolean DEBUG, TRACE, LOCAL_SCOPING;
-
     // This should be per instance
     private transient static PrintStream debugStream;
-    private static final This SYSTEM_OBJECT = This.getThis(new NameSpace(null, null, "krine.system"), null);
 
     static {
         staticInit();
@@ -102,11 +81,6 @@ public class KrineBasicInterpreter
      */
     private KrineBasicInterpreter parent;
 
-    /**
-     * The name of the file or other source that this krineBasicInterpreter is reading
-     */
-    private String sourceFileInfo;
-
     private boolean evalOnly;        // KrineInterpreter has no input stream, use eval() only
 
     private KrineDebugger debugger;
@@ -119,20 +93,17 @@ public class KrineBasicInterpreter
      * The main constructor.
      * All constructors should now pass through here.
      *
-     * @param namespace      If namespace is non-null then this krineBasicInterpreter's
-     *                       root namespace will be set to the one provided.  If it is null a new
+     * @param namespace      If nameSpace is non-null then this krineBasicInterpreter's
+     *                       root nameSpace will be set to the one provided.  If it is null a new
      *                       one will be created for it.
      * @param parent         The parent krineBasicInterpreter if this krineBasicInterpreter is a child
      *                       of another.  May be null.  Children share a KrineClassManager with
      *                       their parent instance.
-     * @param sourceFileInfo An informative string holding the filename
-     *                       or other description of the source from which this krineBasicInterpreter is
-     *                       reading... used for debugging.  May be null.
      */
     public KrineBasicInterpreter(
             Reader in, PrintStream out, PrintStream err,
             NameSpace namespace,
-            KrineBasicInterpreter parent, String sourceFileInfo) {
+            KrineBasicInterpreter parent) {
         parser = new Parser(in);
         long t1 = 0;
         if (KrineBasicInterpreter.DEBUG) {
@@ -145,7 +116,6 @@ public class KrineBasicInterpreter
         this.parent = parent;
         if (parent != null)
             setStrictJava(parent.isStrictJava());
-        this.sourceFileInfo = sourceFileInfo;
 
         KrineClassManager dcm = KrineClassManager.createClassManager(this);
         if (namespace == null) {
@@ -175,7 +145,7 @@ public class KrineBasicInterpreter
     public KrineBasicInterpreter(
             Reader in, PrintStream out, PrintStream err,
             NameSpace namespace) {
-        this(in, out, err, namespace, null, null);
+        this(in, out, err, namespace, null);
     }
 
     public KrineBasicInterpreter(
@@ -185,7 +155,7 @@ public class KrineBasicInterpreter
 
     /**
      * Construct a new interactive krineBasicInterpreter attached to the specified
-     * console using the specified parent namespace.
+     * console using the specified parent nameSpace.
      */
     public KrineBasicInterpreter(SystemIOBridge console, NameSpace globalNameSpace) {
 
@@ -215,6 +185,54 @@ public class KrineBasicInterpreter
 
     // End constructors
 
+    public static void invokeMain(Class clazz, String[] args)
+            throws Exception {
+        Method main = Reflect.resolveJavaMethod(
+                null/*KrineClassManager*/, clazz, "main",
+                new Class[]{String[].class}, true/*onlyStatic*/);
+        if (main != null)
+            main.invoke(null, new Object[]{args});
+    }
+
+    /**
+     * Print a debugStream message on debugStream stream associated with this krineBasicInterpreter
+     * only if debugging is turned on.
+     */
+    public static void debug(String s) {
+        if (DEBUG) {
+            debugStream.println(" *** <Debug>: " + s);
+        }
+    }
+
+    public static void redirectOutputToFile(String filename) {
+        try {
+            PrintStream pout = new PrintStream(
+                    new FileOutputStream(filename));
+            System.setOut(pout);
+            System.setErr(pout);
+        } catch (IOException e) {
+            System.err.println("Can't redirect output to file: " + filename);
+        }
+    }
+
+    private static void staticInit() {
+        try {
+            debugStream = System.err;
+            DEBUG = Boolean.getBoolean("debug");
+            TRACE = Boolean.getBoolean("trace");
+            LOCAL_SCOPING = Boolean.getBoolean("local_scoping");
+            String outFile = System.getProperty("outfile");
+            if (outFile != null)
+                redirectOutputToFile(outFile);
+        } catch (SecurityException e) {
+            System.err.println("Could not init static(level 1):" + e);
+        } catch (Exception e) {
+            System.err.println("Could not init static(level 2):" + e);
+        } catch (Throwable e) {
+            System.err.println("Could not init static(level 3):" + e);
+        }
+    }
+
     /**
      * Attach a console
      * Note: this method is incomplete.
@@ -227,12 +245,15 @@ public class KrineBasicInterpreter
         setErr(console.getErr());
     }
 
+
+    // begin source and eval
+
     private void initRootSystemObject() {
         KrineClassManager dcm = getClassManager();
 
         setUnchecked("krine", new NameSpace(dcm, "Krine_Language").getThis(this));
         setUnchecked("krine.system", SYSTEM_OBJECT);
-        
+
         // save current working directory for dynamic loading
         try {
             setUnchecked("krine.cwd", System.getProperty("user.dir"));
@@ -244,55 +265,43 @@ public class KrineBasicInterpreter
     }
 
     /**
-     * @deprecated Since Krine 1.1
-     * Set the global namespace for this krineBasicInterpreter.
+     * Get the global nameSpace of this krineBasicInterpreter.
      * <p>
      * <p>
      * Note: This is here for completeness.  If you're using this a lot
      * it may be an indication that you are doing more work than you have
      * to.  For example, caching the krineBasicInterpreter instance rather than the
-     * namespace should not add a significant overhead.  No state other
-     * than the debugStream status is stored in the krineBasicInterpreter.
-     * <p>
-     * <p>
-     * All features of the namespace can also be accessed using the
-     * krineBasicInterpreter via eval() and the script variable 'this.namespace'
-     * (or global.namespace as necessary).
-     */
-    public void setNameSpace(NameSpace globalNameSpace) {
-        this.globalNameSpace = globalNameSpace;
-    }
-
-    /**
-     * Get the global namespace of this krineBasicInterpreter.
-     * <p>
-     * <p>
-     * Note: This is here for completeness.  If you're using this a lot
-     * it may be an indication that you are doing more work than you have
-     * to.  For example, caching the krineBasicInterpreter instance rather than the
-     * namespace should not add a significant overhead.  No state other than
+     * nameSpace should not add a significant overhead.  No state other than
      * the debugStream status is stored in the krineBasicInterpreter.
      * <p>
      * <p>
-     * All features of the namespace can also be accessed using the
-     * krineBasicInterpreter via eval() and the script variable 'this.namespace'
-     * (or global.namespace as necessary).
+     * All features of the nameSpace can also be accessed using the
+     * krineBasicInterpreter via eval() and the script variable 'this.nameSpace'
+     * (or global.nameSpace as necessary).
      */
     public NameSpace getNameSpace() {
         return globalNameSpace;
     }
 
-    public static void invokeMain(Class clazz, String[] args)
-            throws Exception {
-        Method main = Reflect.resolveJavaMethod(
-                null/*KrineClassManager*/, clazz, "main",
-                new Class[]{String[].class}, true/*onlyStatic*/);
-        if (main != null)
-            main.invoke(null, new Object[]{args});
+    /**
+     * @deprecated Since Krine 1.1
+     * Set the global nameSpace for this krineBasicInterpreter.
+     * <p>
+     * <p>
+     * Note: This is here for completeness.  If you're using this a lot
+     * it may be an indication that you are doing more work than you have
+     * to.  For example, caching the krineBasicInterpreter instance rather than the
+     * nameSpace should not add a significant overhead.  No state other
+     * than the debugStream status is stored in the krineBasicInterpreter.
+     * <p>
+     * <p>
+     * All features of the nameSpace can also be accessed using the
+     * krineBasicInterpreter via eval() and the script variable 'this.nameSpace'
+     * (or global.nameSpace as necessary).
+     */
+    public void setNameSpace(NameSpace globalNameSpace) {
+        this.globalNameSpace = globalNameSpace;
     }
-
-
-    // begin source and eval
 
     /**
      * Read text from fileName and eval it.
@@ -308,7 +317,7 @@ public class KrineBasicInterpreter
 
     /**
      * Read text from fileName and eval it.
-     * Convenience method.  Use the global namespace.
+     * Convenience method.  Use the global nameSpace.
      */
     public Object source(String filename)
             throws IOException, EvalError {
@@ -317,7 +326,7 @@ public class KrineBasicInterpreter
 
     /**
      * Spawn a non-interactive local krineBasicInterpreter to evaluate text in the
-     * specified namespace.
+     * specified nameSpace.
      * <p>
      * Return value is the evaluated object (or corresponding primitive
      * wrapper).
@@ -344,14 +353,14 @@ public class KrineBasicInterpreter
         Object retVal = null;
         if (KrineBasicInterpreter.DEBUG) debug("eval: nameSpace = " + nameSpace);
 
-		/* 
-            Create non-interactive local krineBasicInterpreter for this namespace
-			with source from the input stream and out/err same as 
+		/*
+            Create non-interactive local krineBasicInterpreter for this nameSpace
+			with source from the input stream and out/err same as
 			this krineBasicInterpreter.
 		*/
         KrineBasicInterpreter localKrineBasicInterpreter =
                 new KrineBasicInterpreter(
-                        in, out, err, nameSpace, this, sourceFileInfo);
+                        in, out, err, nameSpace, this);
 
         CallStack callStack = new CallStack(nameSpace);
 
@@ -389,8 +398,8 @@ public class KrineBasicInterpreter
                 }
             } catch (ParseException e) {
 				/*
-				throw new EvalError(
-					"Sourced file: "+sourceFileInfo+" parser Error: " 
+                throw new EvalError(
+					"Sourced file: "+sourceFileInfo+" parser Error: "
 					+ e.getMessage( DEBUG ), node, callStack );
 				*/
                 if (DEBUG)
@@ -470,22 +479,29 @@ public class KrineBasicInterpreter
     }
 
     /**
-     * Evaluate the InputStream in this krineBasicInterpreter's global namespace.
+     * Evaluate the InputStream in this krineBasicInterpreter's global nameSpace.
      */
     public Object eval(Reader in) throws EvalError {
         return eval(in, globalNameSpace, "eval stream");
     }
 
+    // end source and eval
+
     /**
-     * Evaluate the string in this krineBasicInterpreter's global namespace.
+     * Evaluate the string in this krineBasicInterpreter's global nameSpace.
      */
     public Object eval(String statements) throws EvalError {
         if (KrineBasicInterpreter.DEBUG) debug("eval(String): " + statements);
         return eval(statements, globalNameSpace);
     }
 
+    // SystemIOBridge
+    // The krineBasicInterpreter reflexively implements the console interface that it
+    // uses.  Should clean this up by using an inner class to implement the
+    // console for us.
+
     /**
-     * Evaluate the string in the specified namespace.
+     * Evaluate the string in the specified nameSpace.
      */
     public Object eval(String statements, NameSpace nameSpace)
             throws EvalError {
@@ -504,8 +520,6 @@ public class KrineBasicInterpreter
         return s;
     }
 
-    // end source and eval
-
     /**
      * Print an error message in a standard format on the output stream
      * associated with this krineBasicInterpreter. On the GUI console this will appear
@@ -519,11 +533,6 @@ public class KrineBasicInterpreter
             err.flush();
         }
     }
-
-    // SystemIOBridge
-    // The krineBasicInterpreter reflexively implements the console interface that it
-    // uses.  Should clean this up by using an inner class to implement the
-    // console for us.
 
     /**
      * Get the input stream associated with this krineBasicInterpreter.
@@ -541,12 +550,27 @@ public class KrineBasicInterpreter
         return out;
     }
 
+    // End SystemIOBridge
+
+    public void setOut(PrintStream out) {
+        this.out = out;
+    }
+
+	/* 
+        Primary krineBasicInterpreter set and get variable methods
+		Note: These are squelching errors... should they?
+	*/
+
     /**
      * Get the error output stream associated with this krineBasicInterpreter.
      * This may be be stderr or the GUI console.
      */
     public PrintStream getErr() {
         return err;
+    }
+
+    public void setErr(PrintStream err) {
+        this.err = err;
     }
 
     public final void println(Object o) {
@@ -561,23 +585,6 @@ public class KrineBasicInterpreter
             out.flush();
         }
     }
-
-    // End SystemIOBridge
-
-    /**
-     * Print a debugStream message on debugStream stream associated with this krineBasicInterpreter
-     * only if debugging is turned on.
-     */
-    public static void debug(String s) {
-        if (DEBUG) {
-            debugStream.println(" *** <Debug>: " + s);
-        }
-    }
-
-	/* 
-		Primary krineBasicInterpreter set and get variable methods
-		Note: These are squelching errors... should they?
-	*/
 
     /**
      * Get the value of the name.
@@ -647,9 +654,13 @@ public class KrineBasicInterpreter
         set(name, new Primitive(value));
     }
 
+    // end primary set and get methods
+
     public void set(String name, double value) throws EvalError {
         set(name, new Primitive(value));
     }
+
+	/*	Methods for interacting with Parser */
 
     public void set(String name, float value) throws EvalError {
         set(name, new Primitive(value));
@@ -686,10 +697,10 @@ public class KrineBasicInterpreter
         }
     }
 
-    // end primary set and get methods
+	/*	End methods for interacting with Parser */
 
     /**
-     * Get a reference to the krineBasicInterpreter (global namespace), cast
+     * Get a reference to the krineBasicInterpreter (global nameSpace), cast
      * to the specified interface type.  Assuming the appropriate
      * methods of the interface are defined in the krineBasicInterpreter, then you may
      * use this interface from Java, just like any other Java object.
@@ -700,8 +711,6 @@ public class KrineBasicInterpreter
     public Object asInterface(Class interfaceClass) throws EvalError {
         return globalNameSpace.getThis(this).getInterface(interfaceClass);
     }
-
-	/*	Methods for interacting with Parser */
 
     private JJTParserState get_jjtree() {
         return parser.jjtree;
@@ -714,8 +723,6 @@ public class KrineBasicInterpreter
     private boolean Line() throws ParseException {
         return parser.Line();
     }
-
-	/*	End methods for interacting with Parser */
 
     /**
      * Localize a path to the file name based on the krine.cwd krineBasicInterpreter
@@ -734,17 +741,6 @@ public class KrineBasicInterpreter
         // The canonical file name is also absolute.
         // No need for getAbsolutePath() here...
         return new File(file.getCanonicalPath());
-    }
-
-    public static void redirectOutputToFile(String filename) {
-        try {
-            PrintStream pout = new PrintStream(
-                    new FileOutputStream(filename));
-            System.setOut(pout);
-            System.setErr(pout);
-        } catch (IOException e) {
-            System.err.println("Can't redirect output to file: " + filename);
-        }
     }
 
     /**
@@ -775,11 +771,19 @@ public class KrineBasicInterpreter
 
     /**
      * Get the class manager associated with this krineBasicInterpreter
-     * (the KrineClassManager of this krineBasicInterpreter's global namespace).
+     * (the KrineClassManager of this krineBasicInterpreter's global nameSpace).
      * This is primarily a convenience method.
      */
     public KrineClassManager getClassManager() {
         return getNameSpace().getClassManager();
+    }
+
+    /**
+     * @return Strict Java
+     * @see #setStrictJava(boolean)
+     */
+    public boolean isStrictJava() {
+        return this.strictJava;
     }
 
     /**
@@ -802,6 +806,14 @@ public class KrineBasicInterpreter
     }
 
     /**
+     * @return allow Java classes
+     * @see #setAllowJavaClass(boolean)
+     */
+    public boolean isAllowJavaClass() {
+        return allowJavaClass;
+    }
+
+    /**
      * Allow KrineInterpreter to load Java classes or not.
      *
      * @param b Allow Java classes
@@ -811,26 +823,10 @@ public class KrineBasicInterpreter
         this.allowJavaClass = b;
     }
 
-    /**
-     * @return Strict Java
-     * @see #setStrictJava(boolean)
-     */
-    public boolean isStrictJava() {
-        return this.strictJava;
-    }
-
-    /**
-     * @return allow Java classes
-     * @see #setAllowJavaClass(boolean)
-     */
-    public boolean isAllowJavaClass() {
-        return allowJavaClass;
-    }
-
     public void setDebugger(KrineDebugger debugger) {
         this.debugger = debugger;
     }
-    
+
     public Module getImportedModule(String moduleName) {
         if (modules == null) {
             return null;
@@ -841,7 +837,7 @@ public class KrineBasicInterpreter
         }
         return null;
     }
-    
+
     /**
      * Import an module.
      *
@@ -858,29 +854,11 @@ public class KrineBasicInterpreter
         }
         modules.put(module.getName(), module);
     }
-    
+
     public void importPackageAsModule(KrineBasicInterpreter interpreter, String name) {
         Module wrap = Module.wrapJavaPackage(interpreter, name);
         if (wrap != null) {
             importModule(wrap);
-        }
-    }
-
-    private static void staticInit() {
-        try {
-            debugStream = System.err;
-            DEBUG = Boolean.getBoolean("debug");
-            TRACE = Boolean.getBoolean("trace");
-            LOCAL_SCOPING = Boolean.getBoolean("local_scoping");
-            String outFile = System.getProperty("outfile");
-            if (outFile != null)
-                redirectOutputToFile(outFile);
-        } catch (SecurityException e) {
-            System.err.println("Could not init static(level 1):" + e);
-        } catch (Exception e) {
-            System.err.println("Could not init static(level 2):" + e);
-        } catch (Throwable e) {
-            System.err.println("Could not init static(level 3):" + e);
         }
     }
 
@@ -891,18 +869,10 @@ public class KrineBasicInterpreter
      * 2) Children indicate the parent's source file information in error
      * reporting.
      * When created as part of a source() / eval() the child also shares
-     * the parent's namespace.  But that is not necessary in general.
+     * the parent's nameSpace.  But that is not necessary in general.
      */
     public KrineBasicInterpreter getParent() {
         return parent;
-    }
-
-    public void setOut(PrintStream out) {
-        this.out = out;
-    }
-
-    public void setErr(PrintStream err) {
-        this.err = err;
     }
 
     public NameSpace getGlobalNameSpace() {

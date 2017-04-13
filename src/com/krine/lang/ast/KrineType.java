@@ -8,6 +8,7 @@ import java.lang.reflect.Array;
 
 class KrineType extends SimpleNode
         implements KrineClassManager.Listener {
+    String descriptor;
     /**
      * baseType is used during evaluation of full type and retained for the
      * case where we are an array type.
@@ -19,16 +20,32 @@ class KrineType extends SimpleNode
      * dimensionality of the array.  e.g. 2 for String[][];
      */
     private int arrayDims;
-
     /**
      * Internal cache of the type.  Cleared on classloader change.
      */
     private Class type;
 
-    String descriptor;
-
     KrineType(int id) {
         super(id);
+    }
+
+    public static String getTypeDescriptor(Class clazz) {
+        if (clazz == Boolean.TYPE) return "Z";
+        if (clazz == Character.TYPE) return "C";
+        if (clazz == Byte.TYPE) return "B";
+        if (clazz == Short.TYPE) return "S";
+        if (clazz == Integer.TYPE) return "I";
+        if (clazz == Long.TYPE) return "J";
+        if (clazz == Float.TYPE) return "F";
+        if (clazz == Double.TYPE) return "D";
+        if (clazz == Void.TYPE) return "V";
+        // Is getName() ok?  test with 1.1
+        String name = clazz.getName().replace('.', '/');
+
+        if (name.startsWith("[") || name.endsWith(";"))
+            return name;
+        else
+            return "L" + name.replace('.', '/') + ";";
     }
 
     /**
@@ -46,7 +63,7 @@ class KrineType extends SimpleNode
     /**
      * Returns a class descriptor for this type.
      * If the type is an ambiguous name (object type) evaluation is
-     * attempted through the namespace in order to resolve imports.
+     * attempted through the nameSpace in order to resolve imports.
      * If it is not found and the name is non-compound we assume the default
      * package for the name.
      */
@@ -158,24 +175,5 @@ class KrineType extends SimpleNode
     public void classLoaderChanged() {
         type = null;
         baseType = null;
-    }
-
-    public static String getTypeDescriptor(Class clazz) {
-        if (clazz == Boolean.TYPE) return "Z";
-        if (clazz == Character.TYPE) return "C";
-        if (clazz == Byte.TYPE) return "B";
-        if (clazz == Short.TYPE) return "S";
-        if (clazz == Integer.TYPE) return "I";
-        if (clazz == Long.TYPE) return "J";
-        if (clazz == Float.TYPE) return "F";
-        if (clazz == Double.TYPE) return "D";
-        if (clazz == Void.TYPE) return "V";
-        // Is getName() ok?  test with 1.1
-        String name = clazz.getName().replace('.', '/');
-
-        if (name.startsWith("[") || name.endsWith(";"))
-            return name;
-        else
-            return "L" + name.replace('.', '/') + ";";
     }
 }

@@ -20,13 +20,13 @@ import java.lang.reflect.InvocationTargetException;
  * <p>
  * <p>
  * This class is a name resolver.  It holds a possibly ambiguous dot
- * separated name and reference to a namespace in which it allegedly lives.
+ * separated name and reference to a nameSpace in which it allegedly lives.
  * It provides methods that attempt to resolve the name to various types of
  * entities: e.g. an Object, a Class, a declared scripted Krine method.
  * <p>
  * <p>
  * Name objects are created by the factory method NameSpace getNameResolver(),
- * which caches them subject to a class namespace change.  This means that
+ * which caches them subject to a class nameSpace change.  This means that
  * we can cache information about various types of resolution here.
  * Currently very little if any information is cached.  However with a future
  * "optimize" setting that defeats certain dynamic behavior we might be able
@@ -70,15 +70,24 @@ import java.lang.reflect.InvocationTargetException;
 	</pre>
 */
 public class Name implements Serializable {
+    private static String FINISHED = null; // null evalName and we're finished
     // These do not change during evaluation
-    public NameSpace namespace;
-    String value = null;
+    public NameSpace nameSpace;
 
     // ---------------------------------------------------------
     // The following instance variables mutate during evaluation and should
     // be reset by the reset() method where necessary
 
     // For evaluation
+    String value = null;
+    /**
+     * The result is a class
+     */
+    Class asClass;
+    /**
+     * The result is a static method call on the following class
+     */
+    Class classOfStaticMethod;
     /**
      * Remaining text to evaluate
      */
@@ -88,10 +97,6 @@ public class Name implements Serializable {
      * this, caller, and super resolution.
      */
     private String lastEvalName;
-    private static String FINISHED = null; // null evalName and we're finished
-    private Object evalBaseObject;    // base object for current eval
-
-    private int callStackDepth;        // number of times eval hit 'this.caller'
 
     //
     //  End mutable instance variables.
@@ -101,25 +106,11 @@ public class Name implements Serializable {
     // These are optimizations
 
     // Note: it's ok to cache class resolution here because when the class
-    // space changes the namespace will discard cached names.
-
-    /**
-     * The result is a class
-     */
-    Class asClass;
-
-    /**
-     * The result is a static method call on the following class
-     */
-    Class classOfStaticMethod;
+    // space changes the nameSpace will discard cached names.
+    private Object evalBaseObject;    // base object for current eval
+    private int callStackDepth;        // number of times eval hit 'this.caller'
 
     // End Cached result structures
-
-    private void reset() {
-        evalName = value;
-        evalBaseObject = null;
-        callStackDepth = 0;
-    }
 
     /**
      * This constructor should *not* be used in general.
@@ -128,9 +119,91 @@ public class Name implements Serializable {
      * @see NameSpace getNameResolver().
      */
     // I wish I could make this "friendly" to only NameSpace
-    Name(NameSpace namespace, String s) {
-        this.namespace = namespace;
+    Name(NameSpace nameSpace, String s) {
+        this.nameSpace = nameSpace;
         value = s;
+    }
+
+    /**
+     * @return the enclosing class body nameSpace or null if not in a class.
+     */
+    static NameSpace getClassNameSpace(NameSpace thisNameSpace) {
+        // is a class instance
+        //if ( thisNameSpace.classInstance != null )
+        if (thisNameSpace.isClass)
+            return thisNameSpace;
+
+        if (thisNameSpace.isMethod
+                && thisNameSpace.getParent() != null
+                //&& thisNameSpace.getParent().classInstance != null
+                && thisNameSpace.getParent().isClass
+                )
+            return thisNameSpace.getParent();
+
+        return null;
+    }
+
+    public static boolean isCompound(String value) {
+        return value.indexOf('.') != -1;
+        //return countParts(value) > 1;
+    }
+
+    static int countParts(String value) {
+        if (value == null)
+            return 0;
+
+        int count = 0;
+        int index = -1;
+        while ((index = value.indexOf('.', index + 1)) != -1)
+            count++;
+        return count + 1;
+    }
+
+    static String prefix(String value) {
+        if (!isCompound(value))
+            return null;
+
+        return prefix(value, countParts(value) - 1);
+    }
+
+    static String prefix(String value, int parts) {
+        if (parts < 1)
+            return null;
+
+        int count = 0;
+        int index = -1;
+
+        while (((index = value.indexOf('.', index + 1)) != -1)
+                && (++count < parts)) {
+        }
+
+        return (index == -1) ? value : value.substring(0, index);
+    }
+
+    static String suffix(String name) {
+        if (!isCompound(name))
+            return null;
+
+        return suffix(name, countParts(name) - 1);
+    }
+
+    public static String suffix(String value, int parts) {
+        if (parts < 1)
+            return null;
+
+        int count = 0;
+        int index = value.length() + 1;
+
+        while (((index = value.lastIndexOf('.', index - 1)) != -1)
+                && (++count < parts)) ;
+
+        return (index == -1) ? value : value.substring(index + 1);
+    }
+
+    private void reset() {
+        evalName = value;
+        evalBaseObject = null;
+        callStackDepth = 0;
     }
 
     /**
@@ -191,6 +264,9 @@ public class Name implements Serializable {
         return returnObject;
     }
 
+    // Static methods that operate on compound ('.' separated) names
+    // I guess we could move these to StringUtil someday
+
     /**
      * Get the next object by consuming one or more components of evalName.
      * Often this consumes just one component, but if the name is a classname
@@ -203,14 +279,14 @@ public class Name implements Serializable {
             throws UtilEvalException {
         /*
             Is it a simple variable name?
-			Doing this first gives the correct Java precedence for vars 
+			Doing this first gives the correct Java precedence for vars
 			vs. imported class names (at least in the simple case - see
 			tests/precedence1.krine).  It should also speed things up a bit.
 		*/
         if ((evalBaseObject == null && !isCompound(evalName))
                 && !forceClass) {
             Object obj = resolveThisFieldReference(
-                    callStack, namespace, krineBasicInterpreter, evalName, false);
+                    callStack, nameSpace, krineBasicInterpreter, evalName, false);
 
             if (obj != Primitive.VOID)
                 return completeRound(evalName, FINISHED, obj);
@@ -228,10 +304,10 @@ public class Name implements Serializable {
                 KrineBasicInterpreter.debug("trying to resolve variable: " + varName);
 
             Object obj;
-            // switch namespace and special var visibility
+            // switch nameSpace and special var visibility
             if (evalBaseObject == null) {
                 obj = resolveThisFieldReference(
-                        callStack, namespace, krineBasicInterpreter, varName, false);
+                        callStack, nameSpace, krineBasicInterpreter, varName, false);
             } else {
                 obj = resolveThisFieldReference(
                         callStack, ((This) evalBaseObject).namespace,
@@ -242,7 +318,7 @@ public class Name implements Serializable {
                 // Resolved the variable
                 if (KrineBasicInterpreter.DEBUG)
                     KrineBasicInterpreter.debug("resolved variable: " + varName +
-                            " in namespace: " + namespace);
+                            " in nameSpace: " + nameSpace);
 
                 return completeRound(varName, suffix(evalName), obj);
             }
@@ -255,16 +331,16 @@ public class Name implements Serializable {
         if (evalBaseObject == null) {
             if (KrineBasicInterpreter.DEBUG)
                 KrineBasicInterpreter.debug("trying class: " + evalName);
-			
+
 			/*
-				Keep adding parts until we have a class 
+                Keep adding parts until we have a class
 			*/
             Class clazz = null;
             int i = 1;
             String className = null;
             for (; i <= countParts(evalName); i++) {
                 className = prefix(evalName, i);
-                if ((clazz = namespace.getClass(className)) != null)
+                if ((clazz = nameSpace.getClass(className)) != null)
                     break;
             }
 
@@ -286,7 +362,7 @@ public class Name implements Serializable {
                 && !forceClass && autoAllocateThis) {
             NameSpace targetNameSpace =
                     (evalBaseObject == null) ?
-                            namespace : ((This) evalBaseObject).namespace;
+                            nameSpace : ((This) evalBaseObject).namespace;
             Object obj = new NameSpace(
                     targetNameSpace, "auto: " + varName).getThis(krineBasicInterpreter);
             targetNameSpace.setVariable(varName, obj, false);
@@ -294,10 +370,10 @@ public class Name implements Serializable {
         }
 
 		/*
-			If we didn't find a class or variable name (or prefix) above
+            If we didn't find a class or variable name (or prefix) above
 			there are two possibilities:
 
-			- If we are a simple name then we can pass as a void variable 
+			- If we are a simple name then we can pass as a void variable
 			reference.
 			- If we are compound then we must fail at this point.
 		*/
@@ -332,8 +408,8 @@ public class Name implements Serializable {
             throw new UtilEvalException("Can't treat primitive like an object. " +
                     "Error while evaluating: " + value);
 
-		/* 
-			Resolve relative to a class type
+		/*
+            Resolve relative to a class type
 			static leftValue, inner class, ?
 		*/
         if (evalBaseObject instanceof ClassIdentifier) {
@@ -344,7 +420,7 @@ public class Name implements Serializable {
             // e.g. 'MyOuterClass.this'
             if (field.equals("this")) {
                 // find the enclosing class instance space of the class name
-                NameSpace ns = namespace;
+                NameSpace ns = nameSpace;
                 while (ns != null) {
                     // getClassInstance() throws exception if not there
                     if (ns.classInstance != null
@@ -373,7 +449,7 @@ public class Name implements Serializable {
             // inner class?
             if (obj == null) {
                 String iclass = clazz.getName() + "$" + field;
-                Class c = namespace.getClass(iclass);
+                Class c = nameSpace.getClass(iclass);
                 if (c != null)
                     obj = new ClassIdentifier(c);
             }
@@ -394,8 +470,8 @@ public class Name implements Serializable {
             throw new UtilEvalException(
                     value + " does not resolve to a class name.");
 
-		/* 
-			Some kind of leftValue access?
+		/*
+            Some kind of leftValue access?
 		*/
 
         String field = prefix(evalName, 1);
@@ -422,7 +498,7 @@ public class Name implements Serializable {
      * Resolve a variable relative to a This reference.
      * <p>
      * This is the general variable resolution method, accomodating special
-     * fields from the This context.  Together the namespace and krineBasicInterpreter
+     * fields from the This context.  Together the nameSpace and krineBasicInterpreter
      * comprise the This context.  The callStack, if available allows for the
      * this.caller construct.
      * Optionally interpret special "magic" leftValue names: e.g. krineBasicInterpreter.
@@ -430,7 +506,7 @@ public class Name implements Serializable {
      *
      * @param callStack     may be null, but this is only legitimate in special
      *                      cases where we are sure resolution will not involve this.caller.
-     * @param thisNameSpace the namespace of the this reference (should be the
+     * @param thisNameSpace the nameSpace of the this reference (should be the
      *                      same as the top of the stack?
      */
     Object resolveThisFieldReference(
@@ -448,7 +524,7 @@ public class Name implements Serializable {
                 throw new UtilEvalException("Redundant to call .this on This type");
 
             // Allow getThis() to work through BlockNameSpace to the method
-            // namespace
+            // nameSpace
             // XXX re-eval this... do we need it?
             This ths = thisNameSpace.getThis(krineBasicInterpreter);
             thisNameSpace = ths.getNameSpace();
@@ -499,7 +575,7 @@ public class Name implements Serializable {
 
         if (obj == null && specialFieldsVisible) {
             switch (varName) {
-                case "namespace":
+                case "nameSpace":
                     obj = thisNameSpace;
                     break;
                 case "variables":
@@ -556,25 +632,6 @@ public class Name implements Serializable {
     }
 
     /**
-     * @return the enclosing class body namespace or null if not in a class.
-     */
-    static NameSpace getClassNameSpace(NameSpace thisNameSpace) {
-        // is a class instance
-        //if ( thisNameSpace.classInstance != null )
-        if (thisNameSpace.isClass)
-            return thisNameSpace;
-
-        if (thisNameSpace.isMethod
-                && thisNameSpace.getParent() != null
-                //&& thisNameSpace.getParent().classInstance != null
-                && thisNameSpace.getParent().isClass
-                )
-            return thisNameSpace.getParent();
-
-        return null;
-    }
-
-    /**
      * Check the cache, else use toObject() to try to resolve to a class
      * identifier.
      *
@@ -594,12 +651,12 @@ public class Name implements Serializable {
             return asClass = null;
 
 		/* Try straightforward class name first */
-        Class clazz = namespace.getClass(evalName);
+        Class clazz = nameSpace.getClass(evalName);
 
         if (clazz == null) {
-			/* 
-				Try toObject() which knows how to work through inner classes
-				and see what we end up with 
+            /*
+                Try toObject() which knows how to work through inner classes
+				and see what we end up with
 			*/
             Object obj = null;
             try {
@@ -615,7 +672,7 @@ public class Name implements Serializable {
 
         if (clazz == null)
             throw new ClassNotFoundException(
-                    "Class: " + value + " not found in namespace");
+                    "Class: " + value + " not found in nameSpace");
 
         asClass = clazz;
         return asClass;
@@ -636,7 +693,7 @@ public class Name implements Serializable {
                 throw new UtilEvalException("Can't assign to 'this'.");
 
             // KrineInterpreter.debug("Simple var LeftValue...");
-            lhs = new LeftValue(namespace, evalName, false/*bubble up if allowed*/);
+            lhs = new LeftValue(nameSpace, evalName, false/*bubble up if allowed*/);
             return lhs;
         }
 
@@ -662,7 +719,7 @@ public class Name implements Serializable {
         if (obj instanceof This) {
             // disallow assignment to magic fields
             if (
-                    evalName.equals("namespace")
+                    evalName.equals("nameSpace")
                             || evalName.equals("variables")
                             || evalName.equals("methods")
                             || evalName.equals("caller")
@@ -672,13 +729,13 @@ public class Name implements Serializable {
 
             KrineBasicInterpreter.debug("found This reference evaluating LeftValue");
 			/*
-				If this was a literal "super" reference then we allow recursion
+                If this was a literal "super" reference then we allow recursion
 				in setting the variable to get the normal effect of finding the
 				nearest definition starting at the super scope.  On any other
 				resolution qualified by a 'this' type reference we want to set
-				the variable directly in that scope. e.g. this.x=5;  or 
+				the variable directly in that scope. e.g. this.x=5;  or
 				someThisType.x=5;
-				
+
 				In the old scoping rules super didn't do this.
 			*/
             boolean localVar = !lastEvalName.equals("super");
@@ -821,13 +878,13 @@ public class Name implements Serializable {
 
     /**
      * Invoke a locally declared method or a krine command.
-     * If the method is not already declared in the namespace then try
+     * If the method is not already declared in the nameSpace then try
      * to load it as a resource from the imported command path (e.g.
      * /krine/commands)
      */
 	/*
-		Note: the krine command code should probably not be here...  we need to
-		scope it by the namespace that imported the command... so it probably
+        Note: the krine command code should probably not be here...  we need to
+		scope it by the nameSpace that imported the command... so it probably
 		needs to be integrated into NameSpace.
 	*/
     private Object invokeLocalMethod(
@@ -847,81 +904,30 @@ public class Name implements Serializable {
         // Check for existing method
         KrineMethod method;
         try {
-            method = namespace.getMethod(methodName, argTypes);
+            method = nameSpace.getMethod(methodName, argTypes);
         } catch (UtilEvalException e) {
             throw e.toEvalError(
                     "Local method invocation", callerInfo, callStack);
         }
 
         // If defined, invoke it
-        if (method != null)
+        if (method != null) {
+            // We only check private when we call local method.
+            // Why? Because Module methods are all local methods.
+            // We only prevent modules to call main program's methods.
+            // But there's no limit when calling a Java method.
+            NameSpace checkNameSpace = nameSpace.isMethod ? nameSpace.getParent() : nameSpace;
+            if (method.getModifiers().hasModifier("private")
+                    && method.getDeclaringNameSpace() != checkNameSpace) {
+                throw new InterpreterException(method.toString() + " is private in this scope.");
+            }
             return method.invoke(args, krineBasicInterpreter, callStack, callerInfo);
-
-        throw new InterpreterException("invalid method type");
-    }
-
-    // Static methods that operate on compound ('.' separated) names
-    // I guess we could move these to StringUtil someday
-
-    public static boolean isCompound(String value) {
-        return value.indexOf('.') != -1;
-        //return countParts(value) > 1;
-    }
-
-    static int countParts(String value) {
-        if (value == null)
-            return 0;
-
-        int count = 0;
-        int index = -1;
-        while ((index = value.indexOf('.', index + 1)) != -1)
-            count++;
-        return count + 1;
-    }
-
-    static String prefix(String value) {
-        if (!isCompound(value))
-            return null;
-
-        return prefix(value, countParts(value) - 1);
-    }
-
-    static String prefix(String value, int parts) {
-        if (parts < 1)
-            return null;
-
-        int count = 0;
-        int index = -1;
-
-        while (((index = value.indexOf('.', index + 1)) != -1)
-                && (++count < parts)) {
         }
 
-        return (index == -1) ? value : value.substring(0, index);
-    }
-
-    static String suffix(String name) {
-        if (!isCompound(name))
-            return null;
-
-        return suffix(name, countParts(name) - 1);
-    }
-
-    public static String suffix(String value, int parts) {
-        if (parts < 1)
-            return null;
-
-        int count = 0;
-        int index = value.length() + 1;
-
-        while (((index = value.lastIndexOf('.', index - 1)) != -1)
-                && (++count < parts)) ;
-
-        return (index == -1) ? value : value.substring(index + 1);
+        throw new InterpreterException("Method " + methodName + "() was not declared in this scope.");
     }
 
     // end compound name routines
-
 
     public String toString() {
         return value;

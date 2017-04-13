@@ -15,12 +15,10 @@ import java.util.Locale;
  * @see KrineTargetException
  */
 public class EvalError extends Exception {
+    private final CallStack callStack;
     private SimpleNode node;
-
     // Note: no way to mutate the Throwable message, must maintain our own
     private String message;
-
-    private final CallStack callStack;
 
     public EvalError(String s, SimpleNode node, CallStack callStack, Throwable cause) {
         this(s, node, callStack);
@@ -114,13 +112,14 @@ public class EvalError extends Exception {
                 traceBuilder.append("\nCalled from method: ");
                 traceBuilder.append(ns.getPackage() != null ? ns.getPackage() + "." : "");
                 traceBuilder.append(ns.getName());
+                traceBuilder.append("()");
 
                 if (node != null) {
-                    traceBuilder.append("at ")
+                    traceBuilder.append(" at ")
                             .append(node.getSourceFile())
                             .append(':')
                             .append(node.getLineNumber())
-                            .append(':')
+                            .append(": ")
                             .append(node.getText());
                 }
             }

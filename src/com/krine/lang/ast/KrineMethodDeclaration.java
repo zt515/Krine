@@ -8,17 +8,14 @@ class KrineMethodDeclaration extends SimpleNode {
     public String name;
 
     // Begin Child node structure evaluated by insureNodesParsed
-
+    public Modifiers modifiers;
     KrineReturnType returnTypeNode;
     KrineFormalParameters paramsNode;
     KrineBlock blockNode;
-    // arrayIndex of the first throws clause child node
-    int firstThrowsClause;
 
     // End Child node structure evaluated by insureNodesParsed
-
-    public Modifiers modifiers;
-
+    // arrayIndex of the first throws clause child node
+    int firstThrowsClause;
     // Unsafe caching of type here.
     Class returnType;  // null (none), Void.TYPE, or a Class
     int numThrows = 0;
@@ -80,7 +77,7 @@ class KrineMethodDeclaration extends SimpleNode {
 
     /**
      * Evaluate the declaration of the method.  That is, determine the
-     * structure of the method and install it into the caller's namespace.
+     * structure of the method and install it into the caller's nameSpace.
      */
     public Object eval(CallStack callStack, KrineBasicInterpreter krineBasicInterpreter)
             throws EvalError {
@@ -89,7 +86,7 @@ class KrineMethodDeclaration extends SimpleNode {
         returnType = evalReturnType(callStack, krineBasicInterpreter);
         evalNodes(callStack, krineBasicInterpreter);
 
-        // Install an *instance* of this method in the namespace.
+        // Install an *instance* of this method in the nameSpace.
         // See notes in KrineMethod
 
         // This is not good...

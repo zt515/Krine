@@ -799,7 +799,7 @@ public final class Reflect {
      * the result.
      */
     public static Object invokeCompiledMethod(Class commandClass, Object[] args, KrineBasicInterpreter krineBasicInterpreter, CallStack callStack) throws UtilEvalException {
-        // add interpreter and namespace to args list
+        // add interpreter and nameSpace to args list
         Object[] invokeArgs = new Object[args.length + 2];
         invokeArgs[0] = krineBasicInterpreter;
         invokeArgs[1] = callStack;

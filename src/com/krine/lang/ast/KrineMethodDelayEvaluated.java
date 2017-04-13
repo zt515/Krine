@@ -23,7 +23,7 @@ public class KrineMethodDelayEvaluated extends KrineMethod {
      */
     /*
         Note: technically I think we could get by passing in only the
-		current namespace or perhaps KrineClassManager here instead of
+		current nameSpace or perhaps KrineClassManager here instead of
 		CallStack and KrineInterpreter.  However let's just play it safe in case
 		of future changes - anywhere you eval a node you need these.
 	*/

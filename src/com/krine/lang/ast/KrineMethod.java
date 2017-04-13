@@ -13,12 +13,12 @@ import java.lang.reflect.Method;
 
 /**
  * This represents an instance of a krine method declaration in a particular
- * namespace.  This is a thin wrapper around the KrineMethodDeclaration
- * with a pointer to the declaring namespace.
+ * nameSpace.  This is a thin wrapper around the KrineMethodDeclaration
+ * with a pointer to the declaring nameSpace.
  * <p>
  * <p>
- * When a method is located in a subordinate namespace or invoked from an
- * arbitrary namespace it must nontheless execute with its 'super' as the
+ * When a method is located in a subordinate nameSpace or invoked from an
+ * arbitrary nameSpace it must nontheless execute with its 'super' as the
  * context in which it was declared.
  * <p/>
  */
@@ -29,27 +29,24 @@ import java.lang.reflect.Method;
 public class KrineMethod
         implements java.io.Serializable {
     /*
-        This is the namespace in which the method is set.
+        This is the nameSpace in which the method is set.
         It is a back-reference for the node, which needs to execute under this
-        namespace.  It is not necessary to declare this transient, because
-        we can only be saved as part of our namespace anyway... (currently).
+        nameSpace.  It is not necessary to declare this transient, because
+        we can only be saved as part of our nameSpace anyway... (currently).
     */
     NameSpace declaringNameSpace;
 
     // Begin Method components
 
     Modifiers modifiers;
+    // Scripted method body
+    KrineBlock methodBody;
     private String name;
     private Class returnType;
-
     // Arguments
     private String[] paramNames;
     private int numArgs;
     private Class[] paramTypes;
-
-    // Scripted method body
-    KrineBlock methodBody;
-
     // Java Method, for a KrineObject that delegates to a real Java method
     private Method javaMethod;
     private Object javaObject;
@@ -91,6 +88,10 @@ public class KrineMethod
 
         this.javaMethod = method;
         this.javaObject = object;
+    }
+
+    private static boolean equal(Object obj1, Object obj2) {
+        return obj1 == null ? obj2 == null : obj1.equals(obj2);
     }
 
     /**
@@ -153,7 +154,7 @@ public class KrineMethod
      * and callStack.
      * callerInfo is the node representing the method invocation
      * It is used primarily for debugging in order to provide access to the
-     * text of the construct that invoked the method through the namespace.
+     * text of the construct that invoked the method through the nameSpace.
      *
      * @param callerInfo is the Krine AST node representing the method
      *                   invocation.  It is used to print the line number and text of
@@ -161,10 +162,10 @@ public class KrineMethod
      *                   messages may not be able to point to the precise location and text
      *                   of the error.
      * @param callStack  is the callStack.  If callStack is null a new one
-     *                   will be created with the declaring namespace of the method on top
+     *                   will be created with the declaring nameSpace of the method on top
      *                   of the stack (i.e. it will look for purposes of the method
      *                   invocation like the method call occurred in the declaring
-     *                   (enclosing) namespace in which the method is defined).
+     *                   (enclosing) nameSpace in which the method is defined).
      */
     public Object invoke(
             Object[] argValues, KrineBasicInterpreter krineBasicInterpreter, CallStack callStack,
@@ -178,7 +179,7 @@ public class KrineMethod
      * and callStack.
      * callerInfo is the node representing the method invocation
      * It is used primarily for debugging in order to provide access to the
-     * text of the construct that invoked the method through the namespace.
+     * text of the construct that invoked the method through the nameSpace.
      *
      * @param callerInfo        is the Krine AST node representing the method
      *                          invocation.  It is used to print the line number and text of
@@ -186,12 +187,12 @@ public class KrineMethod
      *                          messages may not be able to point to the precise location and text
      *                          of the error.
      * @param callStack         is the callStack.  If callStack is null a new one
-     *                          will be created with the declaring namespace of the method on top
+     *                          will be created with the declaring nameSpace of the method on top
      *                          of the stack (i.e. it will look for purposes of the method
      *                          invocation like the method call occurred in the declaring
-     *                          (enclosing) namespace in which the method is defined).
-     * @param overrideNameSpace When true the method is executed in the namespace on the top of the
-     *                          stack instead of creating its own local namespace.  This allows it
+     *                          (enclosing) nameSpace in which the method is defined).
+     * @param overrideNameSpace When true the method is executed in the nameSpace on the top of the
+     *                          stack instead of creating its own local nameSpace.  This allows it
      *                          to be used in constructors.
      */
     Object invoke(
@@ -218,7 +219,7 @@ public class KrineMethod
 
         // is this a synchronized method?
         if (modifiers != null && modifiers.hasModifier("synchronized")) {
-            // The lock is our declaring namespace's This reference
+            // The lock is our declaring nameSpace's This reference
             // (the method's 'super').  Or in the case of a class it's the
             // class instance.
             Object lock;
@@ -263,7 +264,7 @@ public class KrineMethod
                             + name, callerInfo, callStack);
         }
 
-        // Make the local namespace for the method invocation
+        // Make the local nameSpace for the method invocation
         NameSpace localNameSpace;
         if (overrideNameSpace)
             localNameSpace = callStack.top();
@@ -274,7 +275,7 @@ public class KrineMethod
         // should we do this for both cases above?
         localNameSpace.setNode(callerInfo);
 
-        // set the method parameters in the local namespace
+        // set the method parameters in the local nameSpace
         for (int i = 0; i < numArgs; i++) {
             // Set typed variable
             if (paramTypes[i] != null) {
@@ -317,18 +318,18 @@ public class KrineMethod
             }
         }
 
-        // Push the new namespace on the call stack
+        // Push the new nameSpace on the call stack
         if (!overrideNameSpace)
             callStack.push(localNameSpace);
 
-        // Invoke the block, overriding namespace with localNameSpace
+        // Invoke the block, overriding nameSpace with localNameSpace
         Object ret = methodBody.eval(
                 callStack, krineBasicInterpreter, true/*override*/);
 
         // save the callStack including the called method, just for error mess
         CallStack returnStack = callStack.copy();
 
-        // Get back to caller namespace
+        // Get back to caller nameSpace
         if (!overrideNameSpace)
             callStack.pop();
 
@@ -406,12 +407,6 @@ public class KrineMethod
         return false;
     }
 
-
-    private static boolean equal(Object obj1, Object obj2) {
-        return obj1 == null ? obj2 == null : obj1.equals(obj2);
-    }
-
-
     @Override
     public int hashCode() {
         int h = name.hashCode();
@@ -419,5 +414,9 @@ public class KrineMethod
             h = h * 31 + paramType.hashCode();
         }
         return h;
+    }
+
+    NameSpace getDeclaringNameSpace() {
+        return declaringNameSpace;
     }
 }

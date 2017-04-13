@@ -4,18 +4,18 @@ import com.krine.lang.KrineBasicInterpreter;
 import com.krine.lang.UtilEvalException;
 import com.krine.lang.utils.CallStack;
 import com.krine.lang.utils.StringUtil;
-import java.lang.reflect.Field;
+import krine.core.KRuntimeException;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.Map;
-import krine.core.KRuntimeException;
 
 
 /**
  * 'This' is the type of krine scripted objects.
- * A 'This' object is a krine scripted object context.  It holds a namespace
+ * A 'This' object is a krine scripted object context.  It holds a nameSpace
  * reference and implements event listeners and various other interfaces.
  * <p>
  * This holds a reference to the declaring krineBasicInterpreter for callbacks from
@@ -23,10 +23,10 @@ import krine.core.KRuntimeException;
  */
 public final class This implements java.io.Serializable, Runnable {
     /**
-     * The namespace that this This reference wraps.
+     * The nameSpace that this This reference wraps.
      */
     public final NameSpace namespace;
-
+    private final InvocationHandler invocationHandler = new Handler();
     /**
      * This is the krineBasicInterpreter running when the This ref was created.
      * It's used as a default krineBasicInterpreter for callback through the This
@@ -34,14 +34,22 @@ public final class This implements java.io.Serializable, Runnable {
      * e.g. interface proxy or event call backs from outside of krine.
      */
     transient KrineBasicInterpreter declaringKrineBasicInterpreter;
-
     /**
      * A cache of proxy interface handlers.
      * Currently just one per interface.
      */
     private Map<Integer, Object> interfaces;
 
-    private final InvocationHandler invocationHandler = new Handler();
+    This(NameSpace namespace, KrineBasicInterpreter declaringKrineBasicInterpreter) {
+        this.namespace = namespace;
+        this.declaringKrineBasicInterpreter = declaringKrineBasicInterpreter;
+        //initCallStack( nameSpace );
+    }
+
+    /**
+     Get a version of this scripted object implementing the specified
+     interface.
+     */
 
     /**
      * getThis() is a factory for krine.This type references.  The capabilities
@@ -52,8 +60,8 @@ public final class This implements java.io.Serializable, Runnable {
      * reflection proxy mechanism was introduced which allowed us to
      * implement arbitrary interfaces.  This is fantastic.
      * <p>
-     * A This object is a thin layer over a namespace, comprising a krine object
-     * context.  We create it here only if needed for the namespace.
+     * A This object is a thin layer over a nameSpace, comprising a krine object
+     * context.  We create it here only if needed for the nameSpace.
      * <p>
      * Note: this method could be considered slow because of the way it
      * dynamically factories objects.  However I've also done tests where
@@ -66,9 +74,53 @@ public final class This implements java.io.Serializable, Runnable {
     }
 
     /**
-     Get a version of this scripted object implementing the specified
-     interface.
+     * Bind a This reference to a parent's nameSpace with the specified
+     * declaring krineBasicInterpreter.  Also re-init the callStack.  It's necessary
+     * to bind a This reference before it can be used after deserialization.
+     * This is used by the krine load() command.
+     * <p>
+     * <p>
+     * This is a static utility method because it's used by a krine command
+     * bind() and the krineBasicInterpreter doesn't currently allow access to direct
+     * methods of This objects (small hack)
      */
+    public static void bind(
+            This ths, NameSpace namespace, KrineBasicInterpreter declaringKrineBasicInterpreter) {
+        ths.namespace.setParent(namespace);
+        ths.declaringKrineBasicInterpreter = declaringKrineBasicInterpreter;
+    }
+
+    /**
+     * Allow invocations of these method names on This type objects.
+     * Don't give krine.This a chance to override their behavior.
+     * <p>
+     * <p>
+     * If the method is passed here the invocation will actually happen on
+     * the krine.This object via the regular reflective method invocation
+     * mechanism.  If not, then the method is evaluated by krine.This itself
+     * as a scripted method call.
+     */
+    public static boolean isExposedThisMethod(String name) {
+        return
+                name.equals("getClass")
+                        || name.equals("invokeMethod")
+                        || name.equals("asInterface")
+                        // These are necessary to let us test synchronization from scripts
+                        || name.equals("wait")
+                        || name.equals("notify")
+                        || name.equals("notifyAll");
+    }
+
+    /**
+     * Get the interpreter from This class.
+     *
+     * @param aThis This class object.
+     * @return KrineBasicInterpreter the This object has.
+     */
+    public static KrineBasicInterpreter getInterpreter(This aThis) throws KRuntimeException {
+        return aThis.declaringKrineBasicInterpreter;
+    }
+
     /**
      * Get dynamic proxy for interface, caching those it creates.
      */
@@ -100,108 +152,6 @@ public final class This implements java.io.Serializable, Runnable {
         return interf;
     }
 
-    /**
-     * This is the invocation handler for the dynamic proxy.
-     * <p>
-     * <p>
-     * Notes:
-     * Inner class for the invocation handler seems to shield this unavailable
-     * interface from JDK1.2 VM...
-     * <p>
-     * I don't understand this.  JThis works just fine even if those
-     * classes aren't there (doesn't it?)  This class shouldn't be loaded
-     * if an XThis isn't instantiated in NameSpace.java, should it?
-     */
-    class Handler implements InvocationHandler, java.io.Serializable {
-        public Object invoke(Object proxy, Method method, Object[] args)
-                throws Throwable {
-            try {
-                return invokeImpl(proxy, method, args);
-            } catch (KrineTargetException te) {
-                // Unwrap target exception.  If the interface declares that
-                // it throws the ex it will be delivered.  If not it will be
-                // wrapped in an UndeclaredThrowable
-
-                // This isn't simple because unwrapping this loses all context info.
-                // So rewrap is better than unwrap.  - fschmidt
-                Throwable t = te.getTarget();
-                Class<? extends Throwable> c = t.getClass();
-                String msg = t.getMessage();
-                try {
-                    Throwable t2 = msg == null
-                            ? c.getConstructor().newInstance()
-                            : c.getConstructor(String.class).newInstance(msg);
-                    t2.initCause(te);
-                    throw t2;
-                } catch (NoSuchMethodException e) {
-                    throw t;
-                }
-            } catch (EvalError ee) {
-                // Ease debugging...
-                // XThis.this refers to the enclosing class instance
-                if (KrineBasicInterpreter.DEBUG)
-                    KrineBasicInterpreter.debug("EvalError in scripted interface: "
-                            + This.this.toString() + ": " + ee);
-                throw ee;
-            }
-        }
-
-        public Object invokeImpl(Object proxy, Method method, Object[] args)
-                throws EvalError {
-            String methodName = method.getName();
-            CallStack callStack = new CallStack(namespace);
-
-			/*
-                If equals() is not explicitly defined we must override the
-				default implemented by the This object protocol for scripted
-				object.  To support XThis equals() must test for equality with 
-				the generated proxy object, not the scripted krine This object;
-				otherwise callers from outside in Java will not see a the 
-				proxy object as equal to itself.
-			*/
-            KrineMethod equalsMethod = null;
-            try {
-                equalsMethod = namespace.getMethod(
-                        "equals", new Class[]{Object.class});
-            } catch (UtilEvalException e) {/*leave null*/ }
-            if (methodName.equals("equals") && equalsMethod == null) {
-                Object obj = args[0];
-                return proxy == obj;
-            }
-
-			/*
-                If toString() is not explicitly defined override the default
-				to show the proxy interfaces.
-			*/
-            KrineMethod toStringMethod = null;
-            try {
-                toStringMethod =
-                        namespace.getMethod("toString", new Class[]{});
-            } catch (UtilEvalException e) {/*leave null*/ }
-
-            if (methodName.equals("toString") && toStringMethod == null) {
-                Class[] ints = proxy.getClass().getInterfaces();
-                // XThis.this refers to the enclosing class instance
-                StringBuilder sb = new StringBuilder(
-                        This.this.toString() + "\nimplements:");
-                for (Class anInt : ints)
-                    sb.append(" " + anInt.getName()
-                            + ((ints.length > 1) ? "," : ""));
-                return sb.toString();
-            }
-
-            Class[] paramTypes = method.getParameterTypes();
-            return Primitive.unwrap(
-                    invokeMethod(methodName, Primitive.wrap(args, paramTypes)));
-        }
-    }
-
-    This(NameSpace namespace, KrineBasicInterpreter declaringKrineBasicInterpreter) {
-        this.namespace = namespace;
-        this.declaringKrineBasicInterpreter = declaringKrineBasicInterpreter;
-        //initCallStack( namespace );
-    }
-
     public NameSpace getNameSpace() {
         return namespace;
     }
@@ -221,7 +171,7 @@ public final class This implements java.io.Serializable, Runnable {
 
     /**
      * Invoke specified method as from outside java code, using the
-     * declaring krineBasicInterpreter and current namespace.
+     * declaring krineBasicInterpreter and current nameSpace.
      * The call stack will indicate that the method is being invoked from
      * outside of krine in native java code.
      * Note: you must still wrap/unwrap args/return values using
@@ -238,7 +188,7 @@ public final class This implements java.io.Serializable, Runnable {
     }
 
     /**
-     * Invoke a method in this namespace with the specified args,
+     * Invoke a method in this nameSpace with the specified args,
      * krineBasicInterpreter reference, callStack, and caller info.
      * <p>
      * <p>
@@ -259,18 +209,18 @@ public final class This implements java.io.Serializable, Runnable {
      * <p>
      *
      * @param callStack    if callStack is null a new CallStack will be created and
-     *                     initialized with this namespace.
+     *                     initialized with this nameSpace.
      * @param declaredOnly if true then only methods declared directly in the
-     *                     namespace will be visible - no inherited or imported methods will
+     *                     nameSpace will be visible - no inherited or imported methods will
      *                     be visible.
      * @see Primitive
      */
     /*
-		invokeMethod() here is generally used by outside code to callback
+        invokeMethod() here is generally used by outside code to callback
 		into the krine krineBasicInterpreter. e.g. when we are acting as an interface
 		for a scripted listener, etc.  In this case there is no real call stack
-		so we make a default one starting with the special JAVA_CODE namespace
-		and our namespace as the next.
+		so we make a default one starting with the special JAVA_CODE nameSpace
+		and our nameSpace as the next.
 	*/
     public Object invokeMethod(
             String methodName, Object[] args,
@@ -351,7 +301,7 @@ public final class This implements java.io.Serializable, Runnable {
             return ns.getThis(declaringKrineBasicInterpreter);
         }
 
-        // Look for a default invoke() handler method in the namespace
+        // Look for a default invoke() handler method in the nameSpace
         // Note: this code duplicates that in NameSpace getCommand()
         // is that ok?
         try {
@@ -371,51 +321,99 @@ public final class This implements java.io.Serializable, Runnable {
     }
 
     /**
-     * Bind a This reference to a parent's namespace with the specified
-     * declaring krineBasicInterpreter.  Also re-init the callStack.  It's necessary
-     * to bind a This reference before it can be used after deserialization.
-     * This is used by the krine load() command.
+     * This is the invocation handler for the dynamic proxy.
      * <p>
      * <p>
-     * This is a static utility method because it's used by a krine command
-     * bind() and the krineBasicInterpreter doesn't currently allow access to direct
-     * methods of This objects (small hack)
+     * Notes:
+     * Inner class for the invocation handler seems to shield this unavailable
+     * interface from JDK1.2 VM...
+     * <p>
+     * I don't understand this.  JThis works just fine even if those
+     * classes aren't there (doesn't it?)  This class shouldn't be loaded
+     * if an XThis isn't instantiated in NameSpace.java, should it?
      */
-    public static void bind(
-            This ths, NameSpace namespace, KrineBasicInterpreter declaringKrineBasicInterpreter) {
-        ths.namespace.setParent(namespace);
-        ths.declaringKrineBasicInterpreter = declaringKrineBasicInterpreter;
-    }
+    class Handler implements InvocationHandler, java.io.Serializable {
+        public Object invoke(Object proxy, Method method, Object[] args)
+                throws Throwable {
+            try {
+                return invokeImpl(proxy, method, args);
+            } catch (KrineTargetException te) {
+                // Unwrap target exception.  If the interface declares that
+                // it throws the ex it will be delivered.  If not it will be
+                // wrapped in an UndeclaredThrowable
 
-    /**
-     * Allow invocations of these method names on This type objects.
-     * Don't give krine.This a chance to override their behavior.
-     * <p>
-     * <p>
-     * If the method is passed here the invocation will actually happen on
-     * the krine.This object via the regular reflective method invocation
-     * mechanism.  If not, then the method is evaluated by krine.This itself
-     * as a scripted method call.
-     */
-    public static boolean isExposedThisMethod(String name) {
-        return
-                name.equals("getClass")
-                        || name.equals("invokeMethod")
-                        || name.equals("asInterface")
-                        // These are necessary to let us test synchronization from scripts
-                        || name.equals("wait")
-                        || name.equals("notify")
-                        || name.equals("notifyAll");
-    }
+                // This isn't simple because unwrapping this loses all context info.
+                // So rewrap is better than unwrap.  - fschmidt
+                Throwable t = te.getTarget();
+                Class<? extends Throwable> c = t.getClass();
+                String msg = t.getMessage();
+                try {
+                    Throwable t2 = msg == null
+                            ? c.getConstructor().newInstance()
+                            : c.getConstructor(String.class).newInstance(msg);
+                    t2.initCause(te);
+                    throw t2;
+                } catch (NoSuchMethodException e) {
+                    throw t;
+                }
+            } catch (EvalError ee) {
+                // Ease debugging...
+                // XThis.this refers to the enclosing class instance
+                if (KrineBasicInterpreter.DEBUG)
+                    KrineBasicInterpreter.debug("EvalError in scripted interface: "
+                            + This.this.toString() + ": " + ee);
+                throw ee;
+            }
+        }
 
-    /**
-     * Get the interpreter from This class.
-     *
-     * @param aThis This class object.
-     * @return KrineBasicInterpreter the This object has.
-     */
-    public static KrineBasicInterpreter getInterpreter(This aThis) throws KRuntimeException {
-        return aThis.declaringKrineBasicInterpreter;
+        public Object invokeImpl(Object proxy, Method method, Object[] args)
+                throws EvalError {
+            String methodName = method.getName();
+            CallStack callStack = new CallStack(namespace);
+
+			/*
+                If equals() is not explicitly defined we must override the
+				default implemented by the This object protocol for scripted
+				object.  To support XThis equals() must test for equality with
+				the generated proxy object, not the scripted krine This object;
+				otherwise callers from outside in Java will not see a the
+				proxy object as equal to itself.
+			*/
+            KrineMethod equalsMethod = null;
+            try {
+                equalsMethod = namespace.getMethod(
+                        "equals", new Class[]{Object.class});
+            } catch (UtilEvalException e) {/*leave null*/ }
+            if (methodName.equals("equals") && equalsMethod == null) {
+                Object obj = args[0];
+                return proxy == obj;
+            }
+
+			/*
+                If toString() is not explicitly defined override the default
+				to show the proxy interfaces.
+			*/
+            KrineMethod toStringMethod = null;
+            try {
+                toStringMethod =
+                        namespace.getMethod("toString", new Class[]{});
+            } catch (UtilEvalException e) {/*leave null*/ }
+
+            if (methodName.equals("toString") && toStringMethod == null) {
+                Class[] ints = proxy.getClass().getInterfaces();
+                // XThis.this refers to the enclosing class instance
+                StringBuilder sb = new StringBuilder(
+                        This.this.toString() + "\nimplements:");
+                for (Class anInt : ints)
+                    sb.append(" " + anInt.getName()
+                            + ((ints.length > 1) ? "," : ""));
+                return sb.toString();
+            }
+
+            Class[] paramTypes = method.getParameterTypes();
+            return Primitive.unwrap(
+                    invokeMethod(methodName, Primitive.wrap(args, paramTypes)));
+        }
     }
 }
 

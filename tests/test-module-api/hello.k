@@ -4,7 +4,7 @@ private String world() {
     return "world";
 }
 
-public String hello() {
+private String hello() {
     return "hello";
 }
 
@@ -14,6 +14,5 @@ public String hello_world() {
 
 public void say(String word) {
     println("[Say]: " + word);
-    methodInMain();
 }
 

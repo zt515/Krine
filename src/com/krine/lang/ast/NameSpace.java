@@ -7,7 +7,6 @@ import com.krine.lang.classpath.ClassIdentifier;
 import com.krine.lang.classpath.KrineClassManager;
 import com.krine.lang.reflect.Reflect;
 import com.krine.lang.utils.CallStack;
-import krine.module.Module;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -16,7 +15,7 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 /**
- * A namespace	in which methods, variables, and imports (class names) live.
+ * A nameSpace	in which methods, variables, and imports (class names) live.
  * This is package public because it is used in the implementation of some
  * com.krine.lang commands.  However for normal use you should be using methods on
  * com.krine.lang.KrineInterpreter to interact with your scripts.
@@ -30,10 +29,9 @@ import java.util.*;
 // not at all thread-safe - fschmidt
 public class NameSpace implements Serializable, KrineClassManager.Listener, NameSource, Cloneable {
 
-    private static final long serialVersionUID = 5004976946651004751L;
-
     public static final NameSpace JAVA_CODE =
             new NameSpace((KrineClassManager) null, "Called from compiled Java code.");
+    private static final long serialVersionUID = 5004976946651004751L;
 
     static {
         JAVA_CODE.isMethod = true;
@@ -42,45 +40,14 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     // Begin instance data
     // Note: if we add something here we should reset it in the clear() method.
 
-    /**
-     * The name of this namespace.  If the namespace is a method body
-     * namespace then this is the name of the method.  If it's a class or
-     * class instance then it's the name of the class.
-     */
-    private String nsName;
-    private NameSpace parent;
-    private Map<String, Variable> variables;
-    private Map<String, List<KrineMethod>> methods;
-
     protected Map<String, String> importedClasses;
-    private List<String> importedPackages;
-    private List<Object> importedObjects;
-    private List<Class> importedStatic;
-    private String packageName;
-
-    transient private KrineClassManager classManager;
-
-    // See notes in getThis()
-    private This thisReference;
-
     /**
-     * Name resolver objects
-     */
-    private Map<String, Name> names;
-
-    /**
-     * The node associated with the creation of this namespace.
-     * This is used support getInvocationLine() and getInvocationText().
-     */
-    private SimpleNode callerInfoNode;
-
-    /**
-     * Note that the namespace is a method body namespace.  This is used for
+     * Note that the nameSpace is a method body nameSpace.  This is used for
      * printing stack traces in exceptions.
      */
     boolean isMethod;
     /**
-     * Note that the namespace is a class body or class instance namespace.
+     * Note that the nameSpace is a class body or class instance nameSpace.
      * This is used for controlling static/object import precedence, etc.
      */
     /*
@@ -90,47 +57,42 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     boolean isClass;
     Class classStatic;
     Object classInstance;
-
-    void setClassStatic(Class clazz) {
-        this.classStatic = clazz;
-        importStatic(clazz);
-    }
-
-    void setClassInstance(Object instance) {
-        this.classInstance = instance;
-        importObject(instance);
-    }
-
-    Object getClassInstance()
-            throws UtilEvalException {
-        if (classInstance != null)
-            return classInstance;
-
-        if (classStatic != null
-            //|| ( getParent()!=null && getParent().classStatic != null )
-                )
-            throw new UtilEvalException(
-                    "Can't refer to class instance from static context.");
-        else
-            throw new InterpreterException(
-                    "Can't resolve class instance 'this' in: " + this);
-    }
-
-
+    List<Listener> nameSourceListeners;
     /**
-     * Local class cache for classes resolved through this namespace using
+     * The name of this nameSpace.  If the nameSpace is a method body
+     * nameSpace then this is the name of the method.  If it's a class or
+     * class instance then it's the name of the class.
+     */
+    private String nsName;
+    private NameSpace parent;
+    private Map<String, Variable> variables;
+    private Map<String, List<KrineMethod>> methods;
+    private List<String> importedPackages;
+    private List<Object> importedObjects;
+    private List<Class> importedStatic;
+    private String packageName;
+    transient private KrineClassManager classManager;
+    // See notes in getThis()
+    private This thisReference;
+    /**
+     * Name resolver objects
+     */
+    private Map<String, Name> names;
+    /**
+     * The node associated with the creation of this nameSpace.
+     * This is used support getInvocationLine() and getInvocationText().
+     */
+    private SimpleNode callerInfoNode;
+    /**
+     * Local class cache for classes resolved through this nameSpace using
      * getClass() (taking into account imports).  Only unqualified class names
      * are cached here (those which might be imported).  Qualified names are
      * always absolute and are cached by KrineClassManager.
      */
     transient private Map<String, Class> classCache;
 
-    // End instance data
-
-    // Begin constructors
-
     /**
-     * @parent the parent namespace of this namespace.  Child namespaces
+     * @parent the parent nameSpace of this nameSpace.  Child namespaces
      * inherit all variables and methods of their parent and can (of course)
      * override / shadow them.
      */
@@ -139,9 +101,14 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
         this(parent, null, name);
     }
 
+
     public NameSpace(KrineClassManager classManager, String name) {
         this(null, classManager, name);
     }
+
+    // End instance data
+
+    // Begin constructors
 
     public NameSpace(
             NameSpace parent, KrineClassManager classManager, String name) {
@@ -159,28 +126,57 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
             classManager.addListener(this);
     }
 
+    /**
+     * This is a helper method for working inside of com.krine.lang scripts and commands.
+     * In that context it is impossible to see a ClassIdentifier object
+     * for what it is.  Attempting to access a method on a ClassIdentifier
+     * will look like a static method invocation.
+     * <p>
+     * This method is in NameSpace for convenience (you don't have to import
+     * com.krine.lang.classpath.ClassIdentifier to use it );
+     */
+    public static Class identifierToClass(ClassIdentifier ci) {
+        return ci.getTargetClass();
+    }
+
+    void setClassStatic(Class clazz) {
+        this.classStatic = clazz;
+        importStatic(clazz);
+    }
+
     // End constructors
 
-    public void setName(String name) {
-        this.nsName = name;
+    Object getClassInstance()
+            throws UtilEvalException {
+        if (classInstance != null)
+            return classInstance;
+
+        if (classStatic != null
+            //|| ( getParent()!=null && getParent().classStatic != null )
+                )
+            throw new UtilEvalException(
+                    "Can't refer to class instance from static context.");
+        else
+            throw new InterpreterException(
+                    "Can't resolve class instance 'this' in: " + this);
+    }
+
+    void setClassInstance(Object instance) {
+        this.classInstance = instance;
+        importObject(instance);
     }
 
     /**
-     * The name of this namespace.  If the namespace is a method body
-     * namespace then this is the name of the method.  If it's a class or
+     * The name of this nameSpace.  If the nameSpace is a method body
+     * nameSpace then this is the name of the method.  If it's a class or
      * class instance then it's the name of the class.
      */
     public String getName() {
         return this.nsName;
     }
 
-    /**
-     * Set the node associated with the creation of this namespace.
-     * This is used in debugging and to support the getInvocationLine()
-     * and getInvocationText() methods.
-     */
-    void setNode(SimpleNode node) {
-        callerInfoNode = node;
+    public void setName(String name) {
+        this.nsName = name;
     }
 
     /**
@@ -195,7 +191,16 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     }
 
     /**
-     * Resolve name to an object through this namespace.
+     * Set the node associated with the creation of this nameSpace.
+     * This is used in debugging and to support the getInvocationLine()
+     * and getInvocationText() methods.
+     */
+    void setNode(SimpleNode node) {
+        callerInfoNode = node;
+    }
+
+    /**
+     * Resolve name to an object through this nameSpace.
      */
     public Object get(String name, KrineBasicInterpreter krineBasicInterpreter)
             throws UtilEvalException {
@@ -204,7 +209,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     }
 
     /**
-     * Set the variable through this namespace.
+     * Set the variable through this nameSpace.
      * This method obeys the LOCAL_SCOPING property to determine how variables
      * are set.
      * <p>
@@ -216,7 +221,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
      * @see Primitive
      * <p>
      * Setting a new variable (which didn't exist before) or removing
-     * a variable causes a namespace change.
+     * a variable causes a nameSpace change.
      */
     public void setVariable(String name, Object value, boolean strictJava)
             throws UtilEvalException {
@@ -235,9 +240,9 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     }
 
     /**
-     * Set the value of a the variable 'name' through this namespace.
+     * Set the value of a the variable 'name' through this nameSpace.
      * The variable may be an existing or non-existing variable.
-     * It may live in this namespace or in a parent namespace if recurse is
+     * It may live in this nameSpace or in a parent nameSpace if recurse is
      * true.
      * <p>
      * Note: This method is not public and does *not* know about LOCAL_SCOPING.
@@ -255,7 +260,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
      * @see Primitive
      * <p>
      * Setting a new variable (which didn't exist before) or removing
-     * a variable causes a namespace change.
+     * a variable causes a nameSpace change.
      */
     void setVariable(
             String name, Object value, boolean strictJava, boolean recurse)
@@ -298,7 +303,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     }
 
     /**
-     * Remove the variable from the namespace.
+     * Remove the variable from the nameSpace.
      */
     public void unsetVariable(String name) {
         if (variables != null) {
@@ -308,7 +313,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     }
 
     /**
-     * Get the names of variables defined in this namespace.
+     * Get the names of variables defined in this nameSpace.
      * (This does not show variables in parent namespaces).
      */
     public String[] getVariableNames() {
@@ -319,7 +324,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     }
 
     /**
-     * Get the names of methods declared in this namespace.
+     * Get the names of methods declared in this nameSpace.
      * (This does not include methods in parent namespaces).
      */
     public String[] getMethodNames() {
@@ -330,7 +335,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     }
 
     /**
-     * Get the methods defined in this namespace.
+     * Get the methods defined in this nameSpace.
      * (This does not show methods in parent namespaces).
      * Note: This will probably be renamed getDeclaredMethods()
      */
@@ -347,16 +352,24 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     }
 
     /**
-     * Get the parent namespace.
+     * Get the parent nameSpace.
      * Note: this isn't quite the same as getSuper().
-     * getSuper() returns 'this' if we are at the root namespace.
+     * getSuper() returns 'this' if we are at the root nameSpace.
      */
     public NameSpace getParent() {
         return parent;
     }
 
+    public void setParent(NameSpace parent) {
+        this.parent = parent;
+
+        // If we are disconnected from root we need to handle the def imports
+        if (parent == null)
+            importDefaultPackages();
+    }
+
     /**
-     * Get the parent namespace' This reference or this namespace' This
+     * Get the parent nameSpace' This reference or this nameSpace' This
      * reference if we are the top.
      */
     public This getSuper(KrineBasicInterpreter declaringKrineBasicInterpreter) {
@@ -367,7 +380,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     }
 
     /**
-     * Get the top level namespace or this namespace if we are the top.
+     * Get the top level nameSpace or this nameSpace if we are the top.
      * Note: this method should probably return type com.krine.lang.ast.This to be consistent
      * with getThis();
      */
@@ -378,9 +391,8 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
             return getThis(declaringKrineBasicInterpreter);
     }
 
-
     /**
-     * A This object is a thin layer over a namespace, comprising a com.krine.lang object
+     * A This object is a thin layer over a nameSpace, comprising a com.krine.lang object
      * context.  It handles things like the interface types the com.krine.lang object
      * supports and aspects of method invocation on it.
      * <p>
@@ -401,11 +413,11 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
 		executes your script should be the one involved in call-backs from Java.
 
 		I do not know if there are corner cases where a child krineBasicInterpreter would
-		be the first to use a This reference in a namespace or if that would
+		be the first to use a This reference in a nameSpace or if that would
 		even cause any problems if it did...  We could do some experiments
 		to find out... and if necessary we could cache on a per krineBasicInterpreter
-		basis if we had weak references...  We might also look at skipping 
-		over child interpreters and going to the parent for the declaring 
+		basis if we had weak references...  We might also look at skipping
+		over child interpreters and going to the parent for the declaring
 		krineBasicInterpreter, so we'd be sure to get the top krineBasicInterpreter.
 	*/
     public This getThis(KrineBasicInterpreter declaringKrineBasicInterpreter) {
@@ -423,7 +435,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
 
         classManager = KrineClassManager.createClassManager(null/*interp*/);
 
-        //KrineInterpreter.debug("No class manager namespace:" +this);
+        //KrineInterpreter.debug("No class manager nameSpace:" +this);
         return classManager;
     }
 
@@ -437,7 +449,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     public void prune() {
         // Cut off from parent, we must have our own class manager.
         // Can't do this in the run() command (needs to resolve stuff)
-        // Should we do it by default when we create a namespace will no
+        // Should we do it by default when we create a nameSpace will no
         // parent of class manager?
 
         if (this.classManager == null)
@@ -449,16 +461,8 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
         setParent(null);
     }
 
-    public void setParent(NameSpace parent) {
-        this.parent = parent;
-
-        // If we are disconnected from root we need to handle the def imports
-        if (parent == null)
-            importDefaultPackages();
-    }
-
     /**
-     * Get the specified variable in this namespace or a parent namespace.
+     * Get the specified variable in this nameSpace or a parent nameSpace.
      * <p>
      * Note: this method is primarily intended for use internally.  If you use
      * this method outside of the com.krine.lang package you will have to use
@@ -473,7 +477,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     }
 
     /**
-     * Get the specified variable in this namespace.
+     * Get the specified variable in this nameSpace.
      *
      * @param recurse If recurse is true then we recursively search through
      *                parent namespaces for the variable.
@@ -494,7 +498,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
      * Locate a variable and return the Variable object with optional
      * recursion through parent name spaces.
      * <p/>
-     * If this namespace is static, return only static variables.
+     * If this nameSpace is static, return only static variables.
      *
      * @return the Variable value or null if it is not defined
      */
@@ -522,7 +526,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     }
 
     /*
-        Get variables declared in this namespace.
+        Get variables declared in this nameSpace.
     */
     public Variable[] getDeclaredVariables() {
         if (variables == null)
@@ -650,7 +654,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
      * with Krine's use of the Primitive wrapper class.
      *
      * @param declaredOnly if true then only methods declared directly in this
-     *                     namespace will be found and no inherited or imported methods will
+     *                     nameSpace will be found and no inherited or imported methods will
      *                     be visible.
      * @return the KrineMethod or null if not found
      * @see Primitive
@@ -779,7 +783,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     }
 
     /**
-     * Load a class through this namespace taking into account imports.
+     * Load a class through this nameSpace taking into account imports.
      * The class search will proceed through the parent namespaces if
      * necessary.
      *
@@ -801,7 +805,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     /**
      * Implementation of getClass()
      * <p>
-     * Load a class through this namespace taking into account imports.
+     * Load a class through this nameSpace taking into account imports.
      * <p>
      * <p>
      * Check the cache first.  If an unqualified name look for imported
@@ -962,8 +966,6 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
             parent.getAllNamesAux(list);
     }
 
-    List<Listener> nameSourceListeners;
-
     /**
      * Implements NameSource
      * Add a listener who is notified upon changes to names in this space.
@@ -982,7 +984,6 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
             throws UtilEvalException {
         getClassManager().doSuperImport();
     }
-
 
     public String toString() {
         return (nsName == null
@@ -1007,7 +1008,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     }
 
     /**
-     * Invoke a method in this namespace with the specified args and
+     * Invoke a method in this nameSpace with the specified args and
      * krineBasicInterpreter reference.  No caller information or call stack is
      * required.  The method will appear as if called externally from Java.
      * <p>
@@ -1073,7 +1074,7 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
 
     /**
      * This is the factory for Name objects which resolve names within
-     * this namespace (e.g. toObject(), toClass(), toLeftValue()).
+     * this nameSpace (e.g. toObject(), toClass(), toLeftValue()).
      * <p>
      * <p>
      * This was intended to support name resolver caching, allowing
@@ -1123,22 +1124,8 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     }
 
     /**
-     * This is a helper method for working inside of com.krine.lang scripts and commands.
-     * In that context it is impossible to see a ClassIdentifier object
-     * for what it is.  Attempting to access a method on a ClassIdentifier
-     * will look like a static method invocation.
-     * <p>
-     * This method is in NameSpace for convenience (you don't have to import
-     * com.krine.lang.classpath.ClassIdentifier to use it );
-     */
-    public static Class identifierToClass(ClassIdentifier ci) {
-        return ci.getTargetClass();
-    }
-
-
-    /**
-     * Clear all variables, methods, and imports from this namespace.
-     * If this namespace is the root, it will be reset to the default
+     * Clear all variables, methods, and imports from this nameSpace.
+     * If this nameSpace is the root, it will be reset to the default
      * imports.
      *
      * @see #importDefaultPackages()
@@ -1176,8 +1163,8 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
 
     /**
      * Import a compiled Java object's methods and variables into this
-     * namespace.  When no scripted method / command or variable is found
-     * locally in this namespace method / fields of the object will be
+     * nameSpace.  When no scripted method / command or variable is found
+     * locally in this nameSpace method / fields of the object will be
      * checked.  Objects are checked in the order of import with later imports
      * taking precedence.
      * <p/>
@@ -1211,14 +1198,6 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
         nameSpaceChanged();
     }
 
-    /**
-     * Set the package name for classes defined in this namespace.
-     * Subsequent sets override the package.
-     */
-    void setPackage(String packageName) {
-        this.packageName = packageName;
-    }
-
     String getPackage() {
         if (packageName != null)
             return packageName;
@@ -1229,6 +1208,13 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
         return null;
     }
 
+    /**
+     * Set the package name for classes defined in this nameSpace.
+     * Subsequent sets override the package.
+     */
+    void setPackage(String packageName) {
+        this.packageName = packageName;
+    }
 
     NameSpace copy() {
         try {

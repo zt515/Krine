@@ -42,7 +42,7 @@ import com.krine.lang.utils.CallStack;
 
 /*
     Note: great care (and lots of typing) were taken to insure that the
-	namespace and krineBasicInterpreter references are passed on the stack and not
+	nameSpace and krineBasicInterpreter references are passed on the stack and not
 	(as they were erroneously before) installed in instance variables...
 	Each of these node objects must be re-entrable to allow for recursive 
 	situations.
@@ -71,19 +71,16 @@ public class SimpleNode implements Node {
                     return "<Compiled Java Code>";
                 }
             };
-
+    public Token firstToken, lastToken;
     protected KrineDebugger debugger = null;
-    private boolean isDebugging = false;
-
     protected Node parent;
     protected Node[] children;
     protected int id;
-    public Token firstToken, lastToken;
-
     /**
      * the source of the text from which this was parsed
      */
     String sourceFile;
+    private boolean isDebugging = false;
 
     public SimpleNode(int i) {
         id = i;
@@ -181,14 +178,6 @@ public class SimpleNode implements Node {
     }
 
     /**
-     * Set the name of the source file (or more generally source) of
-     * the text from which this node was parsed.
-     */
-    public void setSourceFile(String sourceFile) {
-        this.sourceFile = sourceFile;
-    }
-
-    /**
      * Get the name of the source file (or more generally source) of
      * the text from which this node was parsed.
      * This will recursively search up the chain of parent nodes until
@@ -203,6 +192,14 @@ public class SimpleNode implements Node {
                 return "<unknown file>";
         else
             return sourceFile;
+    }
+
+    /**
+     * Set the name of the source file (or more generally source) of
+     * the text from which this node was parsed.
+     */
+    public void setSourceFile(String sourceFile) {
+        this.sourceFile = sourceFile;
     }
 
     /**

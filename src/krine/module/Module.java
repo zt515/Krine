@@ -37,6 +37,13 @@ public final class Module {
             return mp;
         }
     };
+    private This moduleThis;
+    private String name;
+
+    private Module(String name, This aThis) {
+        this.name = name;
+        this.moduleThis = aThis;
+    }
 
     /**
      * Add path in which module file located.
@@ -76,7 +83,7 @@ public final class Module {
     /**
      * Search ModulePath to find source file and load it as a module.
      *
-     * @param aThis      Current namespace, in which we find needed module.
+     * @param aThis      Current nameSpace, in which we find needed module.
      * @param moduleName File name, not file path.
      * @return Module instance
      * @see Module#loadModuleFromFile(This, String)
@@ -98,7 +105,7 @@ public final class Module {
      * Note: The file must call Module.export() explicitly
      * or we cannot load it as a module.
      *
-     * @param aThis    Current namespace, in which we find needed module.
+     * @param aThis    Current nameSpace, in which we find needed module.
      * @param filePath File name, not file path.
      * @return Module instance
      */
@@ -106,19 +113,19 @@ public final class Module {
         // If module called Module.export() in source file
         // It must in the imported module list.
         // And we are able to get it.
-        String moduleName = parseModuleName(filePath);
-        NameSpace ns = Core.load(aThis, filePath, "Module_" + moduleName);
-        
-        if (ns == null) {
-            //return Module.loadModuleFromImported(aThis, parseModuleName(filePath));
-            return null;
-        }
-        
         KrineBasicInterpreter interpreter = This.getInterpreter(aThis);
         if (interpreter == null) {
             return null;
         }
-        
+
+        String moduleName = parseModuleName(filePath);
+        NameSpace ns = Core.load(aThis, filePath,
+                "Module_" + moduleName, interpreter.getGlobalNameSpace());
+
+        if (ns == null) {
+            return null;
+        }
+
         Module mod = new Module(moduleName, This.getThis(ns, interpreter));
         interpreter.importModule(mod);
         return mod;
@@ -127,7 +134,7 @@ public final class Module {
     /**
      * Get a imported module by given name.
      *
-     * @param aThis      Current namespace, in which we find needed module.
+     * @param aThis      Current nameSpace, in which we find needed module.
      * @param moduleName Module name
      * @return Module instance.
      */
@@ -137,14 +144,14 @@ public final class Module {
         if (interpreter == null) {
             return null;
         }
-        
+
         return interpreter.getImportedModule(moduleName);
     }
 
     /**
      * Get the loaded module by given name.
      *
-     * @param aThis      Current namespace, in which we find needed module.
+     * @param aThis      Current nameSpace, in which we find needed module.
      * @param moduleName Module name
      * @return Module instance
      * @throws KRuntimeException When module not found.
@@ -197,14 +204,6 @@ public final class Module {
         ns.importPackage(packageName);
 
         return new Module(packageName, ns.getThis(interpreter));
-    }
-
-    private This moduleThis;
-    private String name;
-
-    private Module(String name, This aThis) {
-        this.name = name;
-        this.moduleThis = aThis;
     }
 
     public String getName() {

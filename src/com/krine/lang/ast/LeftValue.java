@@ -24,12 +24,6 @@ import java.lang.reflect.Field;
  * <p>
  */
 public class LeftValue implements ParserConstants, java.io.Serializable {
-    public NameSpace nameSpace;
-    /**
-     * The assignment should be to a local variable
-     */
-    boolean localVar;
-
     /**
      * Identifiers for the various types of LeftValue.
      */
@@ -39,9 +33,12 @@ public class LeftValue implements ParserConstants, java.io.Serializable {
     static final int PROPERTY = 2;
     static final int INDEX = 3;
     static final int METHOD_EVAL = 4;
-
+    public NameSpace nameSpace;
     public int type;
-
+    /**
+     * The assignment should be to a local variable
+     */
+    boolean localVar;
     String varName;
     String propName;
     Field leftValue;
@@ -150,7 +147,7 @@ public class LeftValue implements ParserConstants, java.io.Serializable {
     public Object assign(Object val, boolean strictJava)
             throws UtilEvalException {
         if (type == VARIABLE) {
-            // Set the variable in namespace according to localVar flag
+            // Set the variable in nameSpace according to localVar flag
             if (localVar)
                 nameSpace.setLocalVariable(varName, val, strictJava);
             else

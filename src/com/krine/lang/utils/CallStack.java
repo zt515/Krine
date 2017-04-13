@@ -43,7 +43,7 @@ import java.util.Stack;
 /**
  * A stack of NameSpaces representing the call path.
  * Each method invocation, for example, pushes a new NameSpace onto the stack.
- * The top of the stack is always the current namespace of evaluation.
+ * The top of the stack is always the current nameSpace of evaluation.
  * <p>
  * <p>
  * This is used to support the this.caller magic reference and to print

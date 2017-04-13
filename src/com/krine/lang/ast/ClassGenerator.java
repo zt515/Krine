@@ -24,13 +24,13 @@ public final class ClassGenerator {
 
     /**
      * The name of the static leftValue holding the reference to the krine
-     * static This (the callback namespace for static methods)
+     * static This (the callback nameSpace for static methods)
      */
     public static final String KRINE_STATIC = "_krineStatic";
 
     /**
      * The name of the instance leftValue holding the reference to the krine
-     * instance This (the callback namespace for instance methods)
+     * instance This (the callback nameSpace for instance methods)
      */
     public static final String KRINE_THIS = "_krineThis";
 
@@ -41,12 +41,12 @@ public final class ClassGenerator {
     public static final String KRINE_SUPER = "_krineSuper";
 
     /**
-     * The krine static namespace variable name of the instance initializer
+     * The krine static nameSpace variable name of the instance initializer
      */
     public static final String KRINE_INSTANCE_INITIALIZER = "_krineInstanceInitializer";
 
     /**
-     * The krine static namespace variable that holds the constructor methods
+     * The krine static nameSpace variable that holds the constructor methods
      */
     public static final String KRINE_CONSTRUCTORS = "_krineConstructors";
 
@@ -57,13 +57,10 @@ public final class ClassGenerator {
     public static final int DEFAULT_CONSTRUCTOR = -1;
 
     public static final String OBJECT = "Ljava/lang/Object;";
-
-    private static ClassGenerator cg;
     private static final String DEBUG_DIR = System.getProperty("krine.debugClassesDir");
-
     private static final ThreadLocal<NameSpace> CONTEXT_NAMESPACE = new ThreadLocal<>();
     private static final ThreadLocal<KrineBasicInterpreter> CONTEXT_INTERPRETER = new ThreadLocal<>();
-
+    private static ClassGenerator cg;
 
     /**
      * Register actual context, used by generated class constructor, which calls
@@ -90,39 +87,6 @@ public final class ClassGenerator {
         return cg;
     }
 
-
-    /**
-     * Parse the KrineBlock for the class definition and generate the class.
-     */
-    public Class generateClass(String name, Modifiers modifiers, Class[] interfaces, Class superClass, KrineBlock block, boolean isInterface, CallStack callStack, KrineBasicInterpreter krineBasicInterpreter) throws EvalError {
-        // Delegate to the static method
-        return generateClassImpl(name, modifiers, interfaces, superClass, block, isInterface, callStack, krineBasicInterpreter);
-    }
-
-
-    /**
-     * Invoke a super.method() style superclass method on an object instance.
-     * This is not a normal function of the Java reflection API and is
-     * provided by generated class accessor methods.
-     */
-    public Object invokeSuperclassMethod(KrineClassManager dcm, Object instance, String methodName, Object[] args) throws UtilEvalException, ReflectException, InvocationTargetException {
-        // Delegate to the static method
-        return invokeSuperclassMethodImpl(dcm, instance, methodName, args);
-    }
-
-
-    /**
-     * Change the parent of the class instance namespace.
-     * This is currently used for inner class support.
-     * Note: This method will likely be removed in the future.
-     */
-    // This could be static
-    public void setInstanceNameSpaceParent(Object instance, String className, NameSpace parent) {
-        This instanceThis = getClassInstanceThis(instance, className);
-        instanceThis.getNameSpace().setParent(parent);
-    }
-
-
     /**
      * Parse the KrineBlock for for the class definition and generate the class
      * using ClassGenerator.
@@ -137,7 +101,7 @@ public final class ClassGenerator {
         // Race condition here...
         dcm.definingClass(fqClassName);
 
-        // Create the class static namespace
+        // Create the class static nameSpace
         NameSpace classStaticNameSpace = new NameSpace(enclosingNameSpace, className);
         classStaticNameSpace.isClass = true;
 
@@ -213,7 +177,6 @@ public final class ClassGenerator {
         return genClass;
     }
 
-
     static Variable[] getDeclaredVariables(KrineBlock body, CallStack callStack, KrineBasicInterpreter krineBasicInterpreter, String defaultPackage) {
         List<Variable> vars = new ArrayList<>();
         for (int child = 0; child < body.jjtGetNumChildren(); child++) {
@@ -238,7 +201,6 @@ public final class ClassGenerator {
         return vars.toArray(new Variable[vars.size()]);
     }
 
-
     static KrineMethodDelayEvaluated[] getDeclaredMethods(KrineBlock body, CallStack callStack, KrineBasicInterpreter krineBasicInterpreter, String defaultPackage) throws EvalError {
         List<KrineMethodDelayEvaluated> methods = new ArrayList<>();
         for (int child = 0; child < body.jjtGetNumChildren(); child++) {
@@ -260,57 +222,6 @@ public final class ClassGenerator {
         }
         return methods.toArray(new KrineMethodDelayEvaluated[methods.size()]);
     }
-
-
-    /**
-     * A node filter that filters nodes for either a class body static
-     * initializer or instance initializer.  In the static case only static
-     * members are passed, etc.
-     */
-    static class ClassNodeFilter implements KrineBlock.NodeFilter {
-        public static final int STATIC = 0, INSTANCE = 1, CLASSES = 2;
-
-        public static ClassNodeFilter CLASSSTATIC = new ClassNodeFilter(STATIC);
-        public static ClassNodeFilter CLASSINSTANCE = new ClassNodeFilter(INSTANCE);
-        public static ClassNodeFilter CLASSCLASSES = new ClassNodeFilter(CLASSES);
-
-        int context;
-
-
-        private ClassNodeFilter(int context) {
-            this.context = context;
-        }
-
-
-        public boolean isVisible(SimpleNode node) {
-            if (context == CLASSES) return node instanceof KrineClassDeclaration;
-
-            // Only show class decs in CLASSES
-            if (node instanceof KrineClassDeclaration) return false;
-
-            if (context == STATIC) return isStatic(node);
-
-            if (context == INSTANCE) return !isStatic(node);
-
-            // ALL
-            return true;
-        }
-
-
-        boolean isStatic(SimpleNode node) {
-            if (node instanceof KrineTypedVariableDeclaration)
-                return ((KrineTypedVariableDeclaration) node).modifiers != null && ((KrineTypedVariableDeclaration) node).modifiers.hasModifier("static");
-
-            if (node instanceof KrineMethodDeclaration)
-                return ((KrineMethodDeclaration) node).modifiers != null && ((KrineMethodDeclaration) node).modifiers.hasModifier("static");
-
-            // need to add static block here
-            if (node instanceof KrineBlock) return false;
-
-            return false;
-        }
-    }
-
 
     public static Object invokeSuperclassMethodImpl(KrineClassManager dcm, Object instance, String methodName, Object[] args) throws UtilEvalException, ReflectException, InvocationTargetException {
         String superName = KRINE_SUPER + methodName;
@@ -383,7 +294,7 @@ public final class ClassGenerator {
             return ConstructorArgs.DEFAULT;
         } // use default super constructor
 
-        // Make a tmp namespace to hold the original constructor args for
+        // Make a tmp nameSpace to hold the original constructor args for
         // use in eval of the parameters node
         NameSpace consArgsNameSpace = new NameSpace(classStaticThis.getNameSpace(), "consArgs");
         String[] consArgNames = constructor.getParameterNames();
@@ -452,7 +363,7 @@ public final class ClassGenerator {
      * Initialize an instance of the class.
      * This method is called from the generated class constructor to evaluate
      * the instance initializer and scripted constructor in the instance
-     * namespace.
+     * nameSpace.
      */
     public static void initInstance(GeneratedClass instance, String className, Object[] args) {
         Class[] sig = Types.getTypes(args);
@@ -466,7 +377,7 @@ public final class ClassGenerator {
 
         // XXX clean up this conditional
         if (instanceThis == null) {
-            // Create the instance 'This' namespace, set it on the object
+            // Create the instance 'This' nameSpace, set it on the object
             // instance and invoke the instance initializer
 
             // Get the static This reference from the proto-instance
@@ -485,7 +396,7 @@ public final class ClassGenerator {
                 throw new InterpreterException("unable to get instance initializer: " + e);
             }
 
-            // Create the instance namespace
+            // Create the instance nameSpace
             if (CONTEXT_NAMESPACE.get() != null) {
                 instanceNameSpace = classStaticThis.getNameSpace().copy();
                 instanceNameSpace.setParent(CONTEXT_NAMESPACE.get());
@@ -529,7 +440,7 @@ public final class ClassGenerator {
 
         String constructorName = getBaseName(className);
         try {
-            // Find the constructor (now in the instance namespace)
+            // Find the constructor (now in the instance nameSpace)
             KrineMethod constructor = instanceNameSpace.getMethod(constructorName, sig, true/*declaredOnly*/);
 
             // if args, we must have constructor
@@ -561,7 +472,7 @@ public final class ClassGenerator {
     }
 
     /**
-     * Get the instance krine namespace leftValue from the object instance.
+     * Get the instance krine nameSpace leftValue from the object instance.
      *
      * @return the class instance This object or null if the object has not
      * been initialized.
@@ -585,7 +496,7 @@ public final class ClassGenerator {
     }
 
     /**
-     * Get the static krine namespace leftValue from the class.
+     * Get the static krine nameSpace leftValue from the class.
      *
      * @param className may be the name of clazz itself or a superclass of clazz.
      */
@@ -597,6 +508,83 @@ public final class ClassGenerator {
         }
     }
 
+    /**
+     * Parse the KrineBlock for the class definition and generate the class.
+     */
+    public Class generateClass(String name, Modifiers modifiers, Class[] interfaces, Class superClass, KrineBlock block, boolean isInterface, CallStack callStack, KrineBasicInterpreter krineBasicInterpreter) throws EvalError {
+        // Delegate to the static method
+        return generateClassImpl(name, modifiers, interfaces, superClass, block, isInterface, callStack, krineBasicInterpreter);
+    }
+
+    /**
+     * Invoke a super.method() style superclass method on an object instance.
+     * This is not a normal function of the Java reflection API and is
+     * provided by generated class accessor methods.
+     */
+    public Object invokeSuperclassMethod(KrineClassManager dcm, Object instance, String methodName, Object[] args) throws UtilEvalException, ReflectException, InvocationTargetException {
+        // Delegate to the static method
+        return invokeSuperclassMethodImpl(dcm, instance, methodName, args);
+    }
+
+    /**
+     * Change the parent of the class instance nameSpace.
+     * This is currently used for inner class support.
+     * Note: This method will likely be removed in the future.
+     */
+    // This could be static
+    public void setInstanceNameSpaceParent(Object instance, String className, NameSpace parent) {
+        This instanceThis = getClassInstanceThis(instance, className);
+        instanceThis.getNameSpace().setParent(parent);
+    }
+
+    /**
+     * A node filter that filters nodes for either a class body static
+     * initializer or instance initializer.  In the static case only static
+     * members are passed, etc.
+     */
+    static class ClassNodeFilter implements KrineBlock.NodeFilter {
+        public static final int STATIC = 0, INSTANCE = 1, CLASSES = 2;
+
+        public static ClassNodeFilter CLASSSTATIC = new ClassNodeFilter(STATIC);
+        public static ClassNodeFilter CLASSINSTANCE = new ClassNodeFilter(INSTANCE);
+        public static ClassNodeFilter CLASSCLASSES = new ClassNodeFilter(CLASSES);
+
+        int context;
+
+
+        private ClassNodeFilter(int context) {
+            this.context = context;
+        }
+
+
+        public boolean isVisible(SimpleNode node) {
+            if (context == CLASSES) return node instanceof KrineClassDeclaration;
+
+            // Only show class decs in CLASSES
+            if (node instanceof KrineClassDeclaration) return false;
+
+            if (context == STATIC) return isStatic(node);
+
+            if (context == INSTANCE) return !isStatic(node);
+
+            // ALL
+            return true;
+        }
+
+
+        boolean isStatic(SimpleNode node) {
+            if (node instanceof KrineTypedVariableDeclaration)
+                return ((KrineTypedVariableDeclaration) node).modifiers != null && ((KrineTypedVariableDeclaration) node).modifiers.hasModifier("static");
+
+            if (node instanceof KrineMethodDeclaration)
+                return ((KrineMethodDeclaration) node).modifiers != null && ((KrineMethodDeclaration) node).modifiers.hasModifier("static");
+
+            // need to add static block here
+            if (node instanceof KrineBlock) return false;
+
+            return false;
+        }
+    }
 
     /**
      * A ConstructorArgs object holds evaluated arguments for a constructor

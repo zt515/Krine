@@ -23,7 +23,7 @@ import java.lang.reflect.Method;
 public class KrineInterpreter extends KrineBasicInterpreter {
 
     public KrineInterpreter(Reader in, PrintStream out, PrintStream err, NameSpace namespace, KrineBasicInterpreter parent, String sourceFileInfo) {
-        super(in, out, err, namespace, parent, sourceFileInfo);
+        super(in, out, err, namespace, parent);
         init();
     }
 
