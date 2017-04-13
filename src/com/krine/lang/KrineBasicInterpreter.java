@@ -30,6 +30,9 @@ import java.io.Serializable;
 import java.io.StringReader;
 import java.lang.reflect.Method;
 import java.util.Set;
+import java.util.Map;
+import krine.module.Module;
+import java.util.HashMap;
 
 /**
  * The Krine script krineBasicInterpreter.
@@ -107,6 +110,8 @@ public class KrineBasicInterpreter
     private boolean evalOnly;        // KrineInterpreter has no input stream, use eval() only
 
     private KrineDebugger debugger;
+    
+    private Map<String, Module> modules;
 
 	/* --- End instance data --- */
 
@@ -824,6 +829,41 @@ public class KrineBasicInterpreter
 
     public void setDebugger(KrineDebugger debugger) {
         this.debugger = debugger;
+    }
+    
+    public Module getImportedModule(String moduleName) {
+        if (modules == null) {
+            return null;
+        }
+
+        if (modules.containsKey(moduleName)) {
+            return modules.get(moduleName);
+        }
+        return null;
+    }
+    
+    /**
+     * Import an module.
+     *
+     * @param module Module
+     * @see Module#export(This, String)
+     */
+    public void importModule(Module module) {
+        if (modules == null) {
+            modules = new HashMap<>();
+        }
+
+        if (modules.containsKey(module.getName())) {
+            return;
+        }
+        modules.put(module.getName(), module);
+    }
+    
+    public void importPackageAsModule(KrineBasicInterpreter interpreter, String name) {
+        Module wrap = Module.wrapJavaPackage(interpreter, name);
+        if (wrap != null) {
+            importModule(wrap);
+        }
     }
 
     private static void staticInit() {

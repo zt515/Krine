@@ -119,8 +119,8 @@ public final class Module {
             return null;
         }
         
-        Module mod = new Module(moduleName, ns.getThis(interpreter));
-        interpreter.getGlobalNameSpace().importModule(mod);
+        Module mod = new Module(moduleName, This.getThis(ns, interpreter));
+        interpreter.importModule(mod);
         return mod;
     }
 
@@ -137,9 +137,8 @@ public final class Module {
         if (interpreter == null) {
             return null;
         }
-
-        NameSpace global = interpreter.getGlobalNameSpace();
-        return global.getImportedModule(moduleName);
+        
+        return interpreter.getImportedModule(moduleName);
     }
 
     /**
@@ -180,8 +179,7 @@ public final class Module {
         }
 
         Module mod = new Module(moduleName, aThis);
-        NameSpace global = interpreter.getGlobalNameSpace();
-        global.importModule(mod);
+        interpreter.importModule(mod);
     }
 
     /**

@@ -51,7 +51,6 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     private NameSpace parent;
     private Map<String, Variable> variables;
     private Map<String, List<KrineMethod>> methods;
-    private Map<String, Module> modules;
 
     protected Map<String, String> importedClasses;
     private List<String> importedPackages;
@@ -718,13 +717,6 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
         nameSpaceChanged();
     }
 
-    public void importPackageAsModule(KrineBasicInterpreter interpreter, String name) {
-        Module wrap = Module.wrapJavaPackage(interpreter, name);
-        if (wrap != null) {
-            importModule(wrap);
-        }
-    }
-
     protected KrineMethod getImportedMethod(String name, Class[] sig)
             throws UtilEvalException {
         // Try object imports
@@ -771,17 +763,6 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
                     return new Variable(name, field.getType(), new LeftValue(field));
             }
 
-        return null;
-    }
-
-    public Module getImportedModule(String moduleName) {
-        if (modules == null) {
-            return null;
-        }
-
-        if (modules.containsKey(moduleName)) {
-            return modules.get(moduleName);
-        }
         return null;
     }
 
@@ -1165,7 +1146,6 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     public void clear() {
         variables = null;
         methods = null;
-        modules = null;
         importedClasses = null;
         importedPackages = null;
         importedObjects = null;
@@ -1183,7 +1163,6 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     public void clearWithCoreImports() {
         variables = null;
         methods = null;
-        modules = null;
         importedClasses = null;
         importedPackages = null;
         importedObjects = null;
@@ -1233,21 +1212,6 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
     }
 
     /**
-     * Import an module.
-     *
-     * @param module Module
-     * @see Module#export(This, String)
-     */
-    public void importModule(Module module) {
-        if (modules == null) {
-            modules = new HashMap<>();
-        }
-
-        modules.remove(module.getName());
-        modules.put(module.getName(), module);
-    }
-
-    /**
      * Set the package name for classes defined in this namespace.
      * Subsequent sets override the package.
      */
@@ -1272,7 +1236,6 @@ public class NameSpace implements Serializable, KrineClassManager.Listener, Name
             clone.thisReference = null;
             clone.variables = clone(variables);
             clone.methods = clone(methods);
-            clone.modules = clone(modules);
             clone.importedClasses = clone(importedClasses);
             clone.importedPackages = clone(importedPackages);
             clone.importedObjects = clone(importedObjects);

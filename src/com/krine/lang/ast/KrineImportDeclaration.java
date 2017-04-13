@@ -39,7 +39,7 @@ class KrineImportDeclaration extends SimpleNode {
                 String name = ((KrineAmbiguousName) jjtGetChild(0)).text;
                 if (importPackage) {
                     nameSpace.importPackage(name);
-                    nameSpace.importPackageAsModule(krineBasicInterpreter, name);
+                    krineBasicInterpreter.importPackageAsModule(krineBasicInterpreter, name);
                 } else {
                     nameSpace.importClass(name);
                 }
