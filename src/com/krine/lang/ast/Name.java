@@ -919,7 +919,7 @@ public class Name implements Serializable {
             NameSpace checkNameSpace = nameSpace.isMethod ? nameSpace.getParent() : nameSpace;
             if (method.getModifiers().hasModifier("private")
                     && method.getDeclaringNameSpace() != checkNameSpace) {
-                throw new InterpreterException(method.toString() + " is private in this scope.");
+                throw new EvalError(method.toString() + " is private in this scope.", callerInfo, callStack);
             }
             return method.invoke(args, krineBasicInterpreter, callStack, callerInfo);
         }

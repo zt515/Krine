@@ -1,4 +1,4 @@
-make(int base) {
+private make(int base) {
     public int calc(int n) {
         return base + n;
     }
