@@ -23,6 +23,6 @@ public class ClassGeneratorFactory {
         if (Capabilities.isAndroid()) {
             return new DalvikClassGenerator();
         }
-        return new DefaultJavaClassGenerator();
+        return new JavaClassGenerator();
     }
 }

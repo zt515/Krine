@@ -119,27 +119,25 @@ public final class Core {
     /**
      * Load a file into nameSpace.
      *
-     * @param aThis    Context info.
-     * @param file     File to be loaded.
-     * @param nsName   New nameSpace name.
-     * @param parentNs Parent NameSpace to return value.
-     * @return nameSpace if successful, otherwise null.
+     * @param aThis     Context info.
+     * @param file      File to be loaded.
+     * @param nameSpace NameSpace to hold the results.
+     * @return true if successful, false if failed.
      * @see Core#load(This, File)
      */
-    public static NameSpace load(This aThis, String file, String nsName, NameSpace parentNs) {
+    public static boolean load(This aThis, String file, NameSpace nameSpace) {
         KrineBasicInterpreter interpreter = This.getInterpreter(aThis);
         if (interpreter == null) {
-            return null;
+            return false;
         }
 
         try {
-            NameSpace ns = new NameSpace(parentNs, nsName);
-            interpreter.source(file, ns);
-            return ns;
+            interpreter.source(file, nameSpace);
+            return true;
         } catch (Exception e) {
             interpreter.println("Error loading file " + file + ": " + e.getLocalizedMessage());
         }
-        return null;
+        return false;
     }
 
     /**

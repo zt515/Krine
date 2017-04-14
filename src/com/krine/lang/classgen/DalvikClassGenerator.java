@@ -13,7 +13,7 @@ import java.io.IOException;
  * @author kiva
  * @date 2017/3/18
  */
-class DalvikClassGenerator extends DefaultJavaClassGenerator implements IClassGenerator {
+class DalvikClassGenerator extends JavaClassGenerator implements IClassGenerator {
     private static DexConverter DEX_CONVERTER = null;
 
     private static DexConverter getDexConverter() {

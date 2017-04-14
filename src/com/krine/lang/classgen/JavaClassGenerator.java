@@ -20,7 +20,7 @@ import static com.krine.lang.ast.ClassGenerator.*;
  * @author kiva
  * @date 2017/3/18
  */
-class DefaultJavaClassGenerator implements IClassGenerator, Constants {
+class JavaClassGenerator implements IClassGenerator, Constants {
     private String className;
     /**
      * fully qualified class name (with package) e.g. foo/bar/Blah

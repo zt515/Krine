@@ -9,7 +9,7 @@ import java.net.URL;
  */
 public class KrineDexClassLoader implements KrineClassLoader {
 
-    public KrineDexClassLoader(KrineClassManager classManager, KrineClassPath bcp) {
+    public KrineDexClassLoader(KrineClassManager classManager, KrineClassPath kcp) {
 
     }
 
@@ -25,15 +25,13 @@ public class KrineDexClassLoader implements KrineClassLoader {
     }
 
     @Override
-    public InputStream getResourceAsStream(String substring) {
-        // TODO: Implement this method
-        return null;
+    public InputStream getResourceAsStream(String name) {
+        return getClassLoader().getResourceAsStream(name);
     }
 
     @Override
-    public URL getResource(String substring) {
-        // TODO: Implement this method
-        return null;
+    public URL getResource(String name) {
+        return getClassLoader().getResource(name);
     }
 
     @Override

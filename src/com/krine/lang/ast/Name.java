@@ -765,7 +765,7 @@ public class Name implements Serializable {
      * Performs caching of method resolution using SignatureKey.
      * <p>
      * <p>
-     * Name contains a wholely unqualified messy name; resolve it to
+     * Name contains a wholly unqualified messy name; resolve it to
      * ( object | static prefix ) + method name and invoke.
      * <p>
      * <p>

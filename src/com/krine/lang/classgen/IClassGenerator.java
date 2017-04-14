@@ -10,5 +10,8 @@ import com.krine.lang.ast.Variable;
  * @date 2017/3/18
  */
 public interface IClassGenerator {
-    byte[] generateClass(Modifiers classModifiers, String className, String packageName, Class superClass, Class[] interfaces, Variable[] vars, KrineMethodDelayEvaluated[] dragonMethods, NameSpace classStaticNameSpace, boolean isInterface);
+    byte[] generateClass(Modifiers classModifiers, String className,
+                         String packageName, Class superClass, Class[] interfaces,
+                         Variable[] vars, KrineMethodDelayEvaluated[] dragonMethods,
+                         NameSpace classStaticNameSpace, boolean isInterface);
 }

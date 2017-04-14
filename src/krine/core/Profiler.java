@@ -62,8 +62,15 @@ public final class Profiler {
 
         System.err.printf(Locale.getDefault(), "[%s] execution time: %dms\n", tag, end - start);
     }
-    
+
+    /**
+     * Execute code in profiling mode.
+     *
+     * @param aThis Context info.
+     * @param tag   Timer tag.
+     * @param code  Code to execute.
+     */
     public static void execute(This aThis, String tag, String... code) {
-        
+        // TODO: Implement this method.
     }
 }

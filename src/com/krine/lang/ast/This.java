@@ -369,7 +369,7 @@ public final class This implements java.io.Serializable, Runnable {
         public Object invokeImpl(Object proxy, Method method, Object[] args)
                 throws EvalError {
             String methodName = method.getName();
-            CallStack callStack = new CallStack(namespace);
+//            CallStack callStack = new CallStack(namespace);
 
 			/*
                 If equals() is not explicitly defined we must override the
@@ -405,8 +405,7 @@ public final class This implements java.io.Serializable, Runnable {
                 StringBuilder sb = new StringBuilder(
                         This.this.toString() + "\nimplements:");
                 for (Class anInt : ints)
-                    sb.append(" " + anInt.getName()
-                            + ((ints.length > 1) ? "," : ""));
+                    sb.append(" ").append(anInt.getName()).append((ints.length > 1) ? "," : "");
                 return sb.toString();
             }
 
