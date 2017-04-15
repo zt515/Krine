@@ -1,6 +1,6 @@
 package com.krine.lang;
 
-import com.krine.debugger.KrineDebugger;
+import com.krine.debugger.IDebugger;
 import com.krine.lang.ast.*;
 import com.krine.lang.classpath.KrineClassManager;
 import com.krine.lang.io.SystemIOBridge;
@@ -83,8 +83,8 @@ public class KrineBasicInterpreter
 
     private boolean evalOnly;        // KrineInterpreter has no input stream, use eval() only
 
-    private KrineDebugger debugger;
-    
+    private IDebugger debugger;
+
     private Map<String, Module> modules;
 
 	/* --- End instance data --- */
@@ -93,12 +93,12 @@ public class KrineBasicInterpreter
      * The main constructor.
      * All constructors should now pass through here.
      *
-     * @param namespace      If nameSpace is non-null then this krineBasicInterpreter's
-     *                       root nameSpace will be set to the one provided.  If it is null a new
-     *                       one will be created for it.
-     * @param parent         The parent krineBasicInterpreter if this krineBasicInterpreter is a child
-     *                       of another.  May be null.  Children share a KrineClassManager with
-     *                       their parent instance.
+     * @param namespace If nameSpace is non-null then this krineBasicInterpreter's
+     *                  root nameSpace will be set to the one provided.  If it is null a new
+     *                  one will be created for it.
+     * @param parent    The parent krineBasicInterpreter if this krineBasicInterpreter is a child
+     *                  of another.  May be null.  Children share a KrineClassManager with
+     *                  their parent instance.
      */
     public KrineBasicInterpreter(
             Reader in, PrintStream out, PrintStream err,
@@ -134,7 +134,7 @@ public class KrineBasicInterpreter
 
         // now done in NameSpace automatically when root
         // The classes which are imported by default
-        //globalNameSpace.importDefaultPackages();
+        // globalNameSpace.importDefaultPackages();
 
         if (KrineBasicInterpreter.DEBUG) {
             long t2 = System.currentTimeMillis();
@@ -190,8 +190,10 @@ public class KrineBasicInterpreter
         Method main = Reflect.resolveJavaMethod(
                 null/*KrineClassManager*/, clazz, "main",
                 new Class[]{String[].class}, true/*onlyStatic*/);
-        if (main != null)
+        if (main != null) {
+
             main.invoke(null, new Object[]{args});
+        }
     }
 
     /**
@@ -379,8 +381,8 @@ public class KrineBasicInterpreter
 
                     // bind debugger if we are debugging
                     if (debugger != null) {
-                        debugger.bindCallStack(callStack);
                         bindDebugger(node, debugger);
+                        debugger.onProgramStarted(callStack);
                     }
 
                     // evaluate the program
@@ -397,7 +399,7 @@ public class KrineBasicInterpreter
                     }
                 }
             } catch (ParseException e) {
-				/*
+                /*
                 throw new EvalError(
 					"Sourced file: "+sourceFileInfo+" parser Error: "
 					+ e.getMessage( DEBUG ), node, callStack );
@@ -447,6 +449,10 @@ public class KrineBasicInterpreter
                 }
             }
         }
+
+        if (debugger != null) {
+            debugger.onProgramExited(retVal);
+        }
         return Primitive.unwrap(retVal);
     }
 
@@ -456,10 +462,9 @@ public class KrineBasicInterpreter
      * @param node     node to debugStream
      * @param debugger debugger
      */
-    private void bindDebugger(SimpleNode node, KrineDebugger debugger) {
+    private void bindDebugger(SimpleNode node, IDebugger debugger) {
         SimpleNode child;
         Set<Integer> breakPoints = debugger.getFileBreakPoints(node.getSourceFile());
-
 
         if (breakPoints == null) {
             return;
@@ -676,7 +681,7 @@ public class KrineBasicInterpreter
      */
     public void unset(String name)
             throws EvalError {
-		/*
+        /*
 			We jump through some hoops here to handle arbitrary cases like
 			unset("krine.foo");
 		*/
@@ -823,7 +828,7 @@ public class KrineBasicInterpreter
         this.allowJavaClass = b;
     }
 
-    public void setDebugger(KrineDebugger debugger) {
+    public void setDebugger(IDebugger debugger) {
         this.debugger = debugger;
     }
 

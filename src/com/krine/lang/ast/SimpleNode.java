@@ -35,7 +35,7 @@
 package com.krine.lang.ast;
 
 import com.krine.debugger.BreakPoint;
-import com.krine.debugger.KrineDebugger;
+import com.krine.debugger.IDebugger;
 import com.krine.lang.InterpreterException;
 import com.krine.lang.KrineBasicInterpreter;
 import com.krine.lang.utils.CallStack;
@@ -72,7 +72,7 @@ public class SimpleNode implements Node {
                 }
             };
     public Token firstToken, lastToken;
-    protected KrineDebugger debugger = null;
+    protected IDebugger debugger = null;
     protected Node parent;
     protected Node[] children;
     protected int id;
@@ -235,7 +235,7 @@ public class SimpleNode implements Node {
         return text.toString();
     }
 
-    public void setDebugger(KrineDebugger debugger) {
+    public void setDebugger(IDebugger debugger) {
         this.debugger = debugger;
         isDebugging = debugger != null;
     }
