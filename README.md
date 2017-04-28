@@ -4,7 +4,7 @@ The Krine Programming Language. <br/>
 Based on JVM. <br/>
 
 ##### Getting Started
-1. Download [Krine.jar](https://coding.net/u/Kiva/p/Krine/git/raw/master/bin/Krine.jar)
+1. Download [Krine.jar](https://raw.githubusercontent.com/zt515/Krine/master/bin/Krine.jar)
 2. Use following shell to run a Krine program.
 ```bash
 $ java -jar Krine.jar <file>
