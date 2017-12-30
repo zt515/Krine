@@ -50,7 +50,7 @@ class DexConverter {
     public byte[] convertJavaClass(String fullClassName, byte[] bytes) {
         prepare();
 
-        classTranslatorPool = new ThreadPoolExecutor(numThreads, numThreads, 0L, TimeUnit.SECONDS, new ArrayBlockingQueue<>(2 * numThreads, true), new ThreadPoolExecutor.CallerRunsPolicy());
+        classTranslatorPool = new ThreadPoolExecutor(numThreads, numThreads, 0L, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(2 * numThreads, true));
         classDefItemConsumer = Executors.newSingleThreadExecutor();
 
         processJavaClass(fullClassName, bytes);

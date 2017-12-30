@@ -6,7 +6,8 @@ testsDir = self.getParentFile();
 
 args = new String[1];
 for (file : testsDir.listFiles()) {
-    if (!file.isFile() || file.getName().equals(self.getName())) {
+    if (!file.isFile() || file.getName().equals(self.getName())
+        || !file.getName().endsWith(".k")) {
         continue;
     }
 
